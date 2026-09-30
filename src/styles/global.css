@@ -1,13 +1,13 @@
 :root[data-theme="spring"] {
   color-scheme: light;
-  --color-background: #ff788d;
-  --color-text: #165823;
+  --color-background: #9fcb98;
+  --color-text: #346739;
   --color-primary: var(--color-text);
-  --color-accent-soft: #fff2f2;
-  --color-accent: #ffdada;
-  --color-border: #c4455a;
-  --color-window-control: #000;
-  --color-window-control-hover: #165823;
+  --color-accent-soft: #f2edc2;
+  --color-accent: #79ae6f;
+  --color-border: #346739;
+  --color-window-control: #346739;
+  --color-window-control-hover: #346739;
 }
 
 :root[data-theme="winter"] {

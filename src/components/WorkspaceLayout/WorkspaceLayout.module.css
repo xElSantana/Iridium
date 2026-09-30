@@ -2,7 +2,7 @@
   box-sizing: border-box;
   display: grid;
   flex: 1;
-  grid-template-columns: var(--sidebar-width, 240px) 3px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(0, 1fr);
   min-height: 0;
   width: 100%;
   overflow: hidden;
