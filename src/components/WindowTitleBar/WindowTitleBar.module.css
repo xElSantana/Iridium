@@ -7,6 +7,10 @@
   user-select: none;
 }
 
+.titleBar[hidden] {
+  display: none;
+}
+
 .dragRegion {
   display: flex;
   flex: 1;
