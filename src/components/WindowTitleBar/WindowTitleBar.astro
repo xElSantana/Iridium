@@ -16,9 +16,7 @@ const { labels } = Astro.props;
 ---
 
 <header class={styles.titleBar}>
-  <div class={styles.dragRegion} data-window-drag-region>
-    <span class={styles.title}>Iridium</span>
-  </div>
+  <div class={styles.dragRegion} data-window-drag-region></div>
   <div class={styles.windowControls} role="group" aria-label={labels.controls}>
     <FiInbox className={`${styles.icon} ${styles.inboxIcon}`} aria-hidden="true" />
     <span class={styles.separator} aria-hidden="true">
