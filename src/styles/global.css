@@ -44,7 +44,6 @@ body {
   height: 100vh;
   overflow: hidden;
   margin: 0;
-  background-color: var(--color-background);
   color: var(--color-text);
   font-family: "Comic Relief", system-ui;
   font-weight: 400;

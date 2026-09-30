@@ -1,16 +1,17 @@
 ---
 import "../styles/global.css";
 import WindowTitleBar from "../components/WindowTitleBar/WindowTitleBar.astro";
+import styles from "./Layout.module.css";
 import { createTranslator } from "../i18n";
 
 const t = await createTranslator();
 ---
 
 <!doctype html>
-<!-- <html lang="es" data-theme="spring"> -->
-<!-- <html lang="es" data-theme="winter"> -->
-<html lang="es" data-theme="autumn">
-<!-- <html lang="es" data-theme="dark"> -->
+<html lang="es" data-theme="spring">
+  <!-- <html lang="es" data-theme="winter"> -->
+  <!-- <html lang="es" data-theme="autumn"> -->
+  <!-- <html lang="es" data-theme="dark"> -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
@@ -26,15 +27,17 @@ const t = await createTranslator();
     />
   </head>
   <body>
-    <WindowTitleBar
-      labels={{
-        controls: t("window.controls"),
-        minimize: t("window.minimize"),
-        maximize: t("window.maximize"),
-        restore: t("window.restore"),
-        close: t("window.close"),
-      }}
-    />
-    <slot />
+    <div class={styles.windowFrame}>
+      <WindowTitleBar
+        labels={{
+          controls: t("window.controls"),
+          minimize: t("window.minimize"),
+          maximize: t("window.maximize"),
+          restore: t("window.restore"),
+          close: t("window.close"),
+        }}
+      />
+      <slot />
+    </div>
   </body>
 </html>

@@ -1,0 +1,9 @@
+.windowFrame {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: var(--color-background);
+}

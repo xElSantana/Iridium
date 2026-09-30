@@ -1,17 +1,20 @@
 .workspace {
+  box-sizing: border-box;
   display: grid;
   flex: 1;
-  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width, 240px) 3px minmax(0, 1fr);
   min-height: 0;
   width: 100%;
   overflow: hidden;
+  padding: 3px;
 }
 
 .sidebar {
   min-width: 0;
   overflow: auto;
-  border-right: 1px solid var(--color-accent);
+  border: 1px solid var(--color-accent);
   background-color: var(--color-accent-soft);
+  border-radius: 6px;
 }
 
 .resizeHandle {
@@ -19,7 +22,6 @@
   z-index: 1;
   cursor: col-resize;
   touch-action: none;
-  background-color: var(--color-accent-soft);
 }
 
 .resizeIcon {
@@ -33,11 +35,6 @@
   pointer-events: none;
 }
 
-.resizeHandle:hover,
-.resizeHandle:focus-visible {
-  background-color: var(--color-accent);
-}
-
 .resizeHandle:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
@@ -46,6 +43,9 @@
 .main {
   min-width: 0;
   overflow: auto;
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-accent-soft);
+  border-radius: 6px;
 }
 
 .workspace[data-resizing] {
