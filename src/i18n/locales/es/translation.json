@@ -1,7 +1,9 @@
 {
   "workspace": {
     "resizeSidebar": "Cambiar ancho de la barra lateral",
-    "sidebar": "Barra lateral"
+    "sidebar": "Barra lateral",
+    "hideSidebar": "Ocultar barra lateral",
+    "showSidebar": "Mostrar barra lateral"
   },
   "window": {
     "controls": "Controles de ventana",

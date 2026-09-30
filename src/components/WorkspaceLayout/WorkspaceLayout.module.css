@@ -10,11 +10,56 @@
 }
 
 .sidebar {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   overflow: auto;
   border: 1px solid var(--color-accent);
   background-color: var(--color-accent-soft);
   border-radius: 6px;
+}
+
+.sidebarFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding: 6px;
+}
+
+.sidebarToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 6px;
+  color: var(--color-primary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.toggleIcon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.expandIcon,
+.workspace[data-sidebar-collapsed] .collapseIcon {
+  display: none;
+}
+
+.workspace[data-sidebar-collapsed] .expandIcon {
+  display: block;
+}
+
+.workspace[data-sidebar-collapsed] .sidebarFooter {
+  justify-content: center;
+}
+
+.sidebarToggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .resizeHandle {

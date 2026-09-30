@@ -1,23 +1,49 @@
 ---
 import { FiMoreVertical } from "react-icons/fi";
+import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import styles from "./WorkspaceLayout.module.css";
 
 interface Props {
   resizeLabel: string;
   sidebarLabel: string;
+  hideSidebarLabel: string;
+  showSidebarLabel: string;
 }
 
-const { resizeLabel, sidebarLabel } = Astro.props;
+const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.props;
 ---
 
 <div class={styles.workspace} data-workspace>
-  <aside class={styles.sidebar} aria-label={sidebarLabel}></aside>
+  <aside id="workspace-sidebar" class={styles.sidebar} aria-label={sidebarLabel}>
+    <div class={styles.sidebarFooter}>
+      <button
+        class={styles.sidebarToggle}
+        type="button"
+        aria-label={hideSidebarLabel}
+        title={hideSidebarLabel}
+        aria-expanded="true"
+        aria-controls="workspace-sidebar"
+        data-collapse-label={hideSidebarLabel}
+        data-expand-label={showSidebarLabel}
+        data-collapse-sidebar
+      >
+        <LuPanelLeftClose
+          className={`${styles.toggleIcon} ${styles.collapseIcon}`}
+          aria-hidden="true"
+        />
+        <LuPanelLeftOpen
+          className={`${styles.toggleIcon} ${styles.expandIcon}`}
+          aria-hidden="true"
+        />
+      </button>
+    </div>
+  </aside>
   <div
     class={styles.resizeHandle}
     role="separator"
     aria-label={resizeLabel}
     aria-orientation="vertical"
-    aria-valuemin="180"
+    aria-valuemin="48"
     aria-valuenow="240"
     tabindex="0"
     data-resize-handle
@@ -29,6 +55,7 @@ const { resizeLabel, sidebarLabel } = Astro.props;
 
 <script>
   const MIN_SIDEBAR_WIDTH = 180;
+  const COLLAPSED_SIDEBAR_WIDTH = 48;
   const MAIN_MIN_WIDTH = 160;
   const WORKSPACE_PADDING = 3;
   const RESIZE_HANDLE_WIDTH = 3;
@@ -36,26 +63,61 @@ const { resizeLabel, sidebarLabel } = Astro.props;
 
   document.querySelectorAll<HTMLElement>("[data-workspace]").forEach((workspace) => {
     const handle = workspace.querySelector<HTMLElement>("[data-resize-handle]");
-    if (!handle) return;
+    const collapseButton = workspace.querySelector<HTMLButtonElement>("[data-collapse-sidebar]");
+    if (!handle || !collapseButton) return;
 
     let sidebarWidth = 240;
+    let visibleSidebarWidth = 240;
+    let pointerStartX = 0;
+    let pointerMoved = false;
 
     const setSidebarWidth = (width: number) => {
       const maximumWidth = Math.max(
         MIN_SIDEBAR_WIDTH,
         workspace.clientWidth - WORKSPACE_PADDING * 2 - RESIZE_HANDLE_WIDTH - MAIN_MIN_WIDTH,
       );
-      sidebarWidth = Math.min(Math.max(width, MIN_SIDEBAR_WIDTH), maximumWidth);
-      workspace.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
-      handle.setAttribute("aria-valuenow", String(sidebarWidth));
+      visibleSidebarWidth = Math.min(Math.max(width, COLLAPSED_SIDEBAR_WIDTH), maximumWidth);
+      const collapsed = visibleSidebarWidth < MIN_SIDEBAR_WIDTH;
+      workspace.style.setProperty("--sidebar-width", `${visibleSidebarWidth}px`);
+      if (!collapsed) sidebarWidth = visibleSidebarWidth;
+
+      if (workspace.hasAttribute("data-sidebar-collapsed") !== collapsed) {
+        workspace.toggleAttribute("data-sidebar-collapsed", collapsed);
+        const label = collapsed
+          ? collapseButton.dataset.expandLabel
+          : collapseButton.dataset.collapseLabel;
+        if (!label) throw new Error("Sidebar toggle labels are missing.");
+        collapseButton.setAttribute("aria-label", label);
+        collapseButton.setAttribute("title", label);
+        collapseButton.setAttribute("aria-expanded", String(!collapsed));
+      }
+
+      handle.setAttribute("aria-valuemin", String(COLLAPSED_SIDEBAR_WIDTH));
+      handle.setAttribute("aria-valuenow", String(visibleSidebarWidth));
       handle.setAttribute("aria-valuemax", String(maximumWidth));
     };
 
     setSidebarWidth(sidebarWidth);
 
+    collapseButton.addEventListener("click", () => {
+      setSidebarWidth(
+        workspace.hasAttribute("data-sidebar-collapsed") ? sidebarWidth : COLLAPSED_SIDEBAR_WIDTH,
+      );
+    });
+
+    handle.addEventListener("click", () => {
+      const dragged = pointerMoved;
+      pointerMoved = false;
+      if (workspace.hasAttribute("data-sidebar-collapsed") && !dragged) {
+        setSidebarWidth(sidebarWidth);
+      }
+    });
+
     handle.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
 
+      pointerStartX = event.clientX;
+      pointerMoved = false;
       handle.setPointerCapture(event.pointerId);
       workspace.toggleAttribute("data-resizing", true);
     });
@@ -63,13 +125,17 @@ const { resizeLabel, sidebarLabel } = Astro.props;
     handle.addEventListener("pointermove", (event) => {
       if (!handle.hasPointerCapture(event.pointerId)) return;
 
-      setSidebarWidth(event.clientX - workspace.getBoundingClientRect().left - WORKSPACE_PADDING);
+      pointerMoved ||= Math.abs(event.clientX - pointerStartX) >= 4;
+      const requestedWidth =
+        event.clientX - workspace.getBoundingClientRect().left - WORKSPACE_PADDING;
+      setSidebarWidth(requestedWidth);
     });
 
     const stopResizing = (event: PointerEvent) => {
       if (handle.hasPointerCapture(event.pointerId)) {
         handle.releasePointerCapture(event.pointerId);
       }
+      if (event.type === "pointercancel") pointerMoved = false;
       workspace.removeAttribute("data-resizing");
     };
 
@@ -81,16 +147,19 @@ const { resizeLabel, sidebarLabel } = Astro.props;
 
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        setSidebarWidth(sidebarWidth - step);
+        setSidebarWidth(visibleSidebarWidth - step);
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        setSidebarWidth(sidebarWidth + step);
+        setSidebarWidth(visibleSidebarWidth + step);
       } else if (event.key === "Home") {
         event.preventDefault();
-        setSidebarWidth(MIN_SIDEBAR_WIDTH);
+        setSidebarWidth(COLLAPSED_SIDEBAR_WIDTH);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        setSidebarWidth(Number(handle.getAttribute("aria-valuemax")));
       }
     });
 
-    window.addEventListener("resize", () => setSidebarWidth(sidebarWidth));
+    window.addEventListener("resize", () => setSidebarWidth(visibleSidebarWidth));
   });
 </script>
