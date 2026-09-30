@@ -6,6 +6,7 @@ interface Props {
   labels: {
     close: string;
     controls: string;
+    inbox: string;
     maximize: string;
     minimize: string;
     restore: string;
@@ -18,10 +19,14 @@ const { labels } = Astro.props;
 <header class={styles.titleBar} data-window-title-bar hidden>
   <div class={styles.dragRegion} data-window-drag-region></div>
   <div class={styles.windowControls} role="group" aria-label={labels.controls}>
-    <FiInbox className={`${styles.icon} ${styles.inboxIcon}`} aria-hidden="true" />
-    <span class={styles.separator} aria-hidden="true">
-      |
-    </span>
+    <button
+      class={styles.windowButton}
+      type="button"
+      aria-label={labels.inbox}
+      title={labels.inbox}
+    >
+      <FiInbox className={styles.icon} aria-hidden="true" />
+    </button>
     <button
       class={styles.windowButton}
       type="button"
