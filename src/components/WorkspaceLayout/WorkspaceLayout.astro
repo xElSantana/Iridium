@@ -60,16 +60,53 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
   const WORKSPACE_PADDING = 3;
   const RESIZE_HANDLE_WIDTH = 3;
   const STEP = 16;
+  const SIDEBAR_STORAGE_KEY = "iridium.workspace.sidebar";
 
   document.querySelectorAll<HTMLElement>("[data-workspace]").forEach((workspace) => {
     const handle = workspace.querySelector<HTMLElement>("[data-resize-handle]");
     const collapseButton = workspace.querySelector<HTMLButtonElement>("[data-collapse-sidebar]");
     if (!handle || !collapseButton) return;
 
-    let sidebarWidth = 240;
+    let savedSidebarWidth = 240;
+    let savedCollapsedState = false;
+    const savedSidebarState = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (savedSidebarState !== null) {
+      try {
+        const state: unknown = JSON.parse(savedSidebarState);
+        if (
+          typeof state === "object" &&
+          state !== null &&
+          "width" in state &&
+          typeof state.width === "number" &&
+          Number.isFinite(state.width) &&
+          state.width >= MIN_SIDEBAR_WIDTH &&
+          "collapsed" in state &&
+          typeof state.collapsed === "boolean"
+        ) {
+          savedSidebarWidth = state.width;
+          savedCollapsedState = state.collapsed;
+        } else {
+          console.error("Saved workspace sidebar settings are invalid.");
+        }
+      } catch (error) {
+        console.error("Could not parse saved workspace sidebar settings.", error);
+      }
+    }
+
+    let sidebarWidth = savedSidebarWidth;
     let visibleSidebarWidth = 240;
     let pointerStartX = 0;
     let pointerMoved = false;
+
+    const persistSidebarState = () => {
+      localStorage.setItem(
+        SIDEBAR_STORAGE_KEY,
+        JSON.stringify({
+          width: sidebarWidth,
+          collapsed: workspace.hasAttribute("data-sidebar-collapsed"),
+        }),
+      );
+    };
 
     const setSidebarWidth = (width: number) => {
       const maximumWidth = Math.max(
@@ -97,12 +134,13 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
       handle.setAttribute("aria-valuemax", String(maximumWidth));
     };
 
-    setSidebarWidth(sidebarWidth);
+    setSidebarWidth(savedCollapsedState ? COLLAPSED_SIDEBAR_WIDTH : sidebarWidth);
 
     collapseButton.addEventListener("click", () => {
       setSidebarWidth(
         workspace.hasAttribute("data-sidebar-collapsed") ? sidebarWidth : COLLAPSED_SIDEBAR_WIDTH,
       );
+      persistSidebarState();
     });
 
     handle.addEventListener("click", () => {
@@ -110,6 +148,7 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
       pointerMoved = false;
       if (workspace.hasAttribute("data-sidebar-collapsed") && !dragged) {
         setSidebarWidth(sidebarWidth);
+        persistSidebarState();
       }
     });
 
@@ -137,6 +176,7 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
       }
       if (event.type === "pointercancel") pointerMoved = false;
       workspace.removeAttribute("data-resizing");
+      if (event.type === "pointerup") persistSidebarState();
     };
 
     handle.addEventListener("pointerup", stopResizing);
@@ -157,6 +197,9 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
       } else if (event.key === "End") {
         event.preventDefault();
         setSidebarWidth(Number(handle.getAttribute("aria-valuemax")));
+      }
+      if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+        persistSidebarState();
       }
     });
 
