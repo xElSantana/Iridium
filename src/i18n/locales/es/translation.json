@@ -1,4 +1,8 @@
 {
+  "workspace": {
+    "resizeSidebar": "Cambiar ancho de la barra lateral",
+    "sidebar": "Barra lateral"
+  },
   "window": {
     "controls": "Controles de ventana",
     "minimize": "Minimizar",

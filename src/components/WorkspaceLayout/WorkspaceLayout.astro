@@ -1,0 +1,91 @@
+---
+import { FiMoreVertical } from "react-icons/fi";
+import styles from "./WorkspaceLayout.module.css";
+
+interface Props {
+  resizeLabel: string;
+  sidebarLabel: string;
+}
+
+const { resizeLabel, sidebarLabel } = Astro.props;
+---
+
+<div class={styles.workspace} data-workspace>
+  <aside class={styles.sidebar} aria-label={sidebarLabel}></aside>
+  <div
+    class={styles.resizeHandle}
+    role="separator"
+    aria-label={resizeLabel}
+    aria-orientation="vertical"
+    aria-valuemin="180"
+    aria-valuenow="240"
+    tabindex="0"
+    data-resize-handle
+  >
+    <FiMoreVertical className={styles.resizeIcon} aria-hidden="true" />
+  </div>
+  <main class={styles.main}></main>
+</div>
+
+<script>
+  const MIN_SIDEBAR_WIDTH = 180;
+  const MAIN_MIN_WIDTH = 160;
+  const STEP = 16;
+
+  document.querySelectorAll<HTMLElement>("[data-workspace]").forEach((workspace) => {
+    const handle = workspace.querySelector<HTMLElement>("[data-resize-handle]");
+    if (!handle) return;
+
+    let sidebarWidth = 240;
+
+    const setSidebarWidth = (width: number) => {
+      const maximumWidth = Math.max(MIN_SIDEBAR_WIDTH, window.innerWidth - MAIN_MIN_WIDTH);
+      sidebarWidth = Math.min(Math.max(width, MIN_SIDEBAR_WIDTH), maximumWidth);
+      workspace.style.setProperty("--sidebar-width", `${sidebarWidth}px`);
+      handle.setAttribute("aria-valuenow", String(sidebarWidth));
+      handle.setAttribute("aria-valuemax", String(maximumWidth));
+    };
+
+    setSidebarWidth(sidebarWidth);
+
+    handle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+
+      handle.setPointerCapture(event.pointerId);
+      workspace.toggleAttribute("data-resizing", true);
+    });
+
+    handle.addEventListener("pointermove", (event) => {
+      if (!handle.hasPointerCapture(event.pointerId)) return;
+
+      setSidebarWidth(event.clientX - workspace.getBoundingClientRect().left);
+    });
+
+    const stopResizing = (event: PointerEvent) => {
+      if (handle.hasPointerCapture(event.pointerId)) {
+        handle.releasePointerCapture(event.pointerId);
+      }
+      workspace.removeAttribute("data-resizing");
+    };
+
+    handle.addEventListener("pointerup", stopResizing);
+    handle.addEventListener("pointercancel", stopResizing);
+
+    handle.addEventListener("keydown", (event) => {
+      const step = event.shiftKey ? STEP * 3 : STEP;
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setSidebarWidth(sidebarWidth - step);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setSidebarWidth(sidebarWidth + step);
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        setSidebarWidth(MIN_SIDEBAR_WIDTH);
+      }
+    });
+
+    window.addEventListener("resize", () => setSidebarWidth(sidebarWidth));
+  });
+</script>

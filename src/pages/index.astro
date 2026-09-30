@@ -1,8 +1,14 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import WorkspaceLayout from "../components/WorkspaceLayout/WorkspaceLayout.astro";
+import { createTranslator } from "../i18n";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const t = await createTranslator();
 ---
 
-<Layout />
+<Layout>
+  <WorkspaceLayout
+    sidebarLabel={t("workspace.sidebar")}
+    resizeLabel={t("workspace.resizeSidebar")}
+  />
+</Layout>

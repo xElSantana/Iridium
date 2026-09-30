@@ -27,14 +27,22 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-background: #222831;
+  /* --color-background: #222831; */
+  --color-background: #393e46;
+
   --color-text: #dfd0b8;
   --color-primary: var(--color-text);
-  --color-accent-soft: #393e46;
+  --color-accent-soft: #222831;
+  /* --color-accent-soft: #393e46; */
+
   --color-accent: #94979d;
 }
 
 body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
   margin: 0;
   background-color: var(--color-background);
   color: var(--color-text);
