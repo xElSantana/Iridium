@@ -1,0 +1,76 @@
+.titleBar {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  color: var(--color-text);
+  background-color: var(--color-accent-soft);
+  user-select: none;
+}
+
+.dragRegion {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  padding-inline: 12px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.windowControls {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.windowButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.windowButton:hover {
+  background-color: var(--color-accent);
+}
+
+.windowButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+.inboxIcon {
+  margin-inline-end: 8px;
+}
+
+.separator {
+  margin-inline-end: 8px;
+}
+
+.restoreIcon {
+  display: none;
+}
+
+.windowButton[data-maximized="true"] .maximizeIcon {
+  display: none;
+}
+
+.windowButton[data-maximized="true"] .restoreIcon {
+  display: block;
+}

@@ -1,0 +1,9 @@
+{
+  "window": {
+    "controls": "Controles de ventana",
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
+    "close": "Cerrar"
+  }
+}

@@ -1,9 +1,13 @@
 ---
 import "../styles/global.css";
+import WindowTitleBar from "../components/WindowTitleBar/WindowTitleBar.astro";
+import { createTranslator } from "../i18n";
+
+const t = await createTranslator();
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="es" data-theme="spring">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
@@ -19,6 +23,15 @@ import "../styles/global.css";
     />
   </head>
   <body>
+    <WindowTitleBar
+      labels={{
+        controls: t("window.controls"),
+        minimize: t("window.minimize"),
+        maximize: t("window.maximize"),
+        restore: t("window.restore"),
+        close: t("window.close"),
+      }}
+    />
     <slot />
   </body>
 </html>

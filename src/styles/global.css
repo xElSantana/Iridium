@@ -1,4 +1,16 @@
+:root[data-theme="spring"] {
+  color-scheme: light;
+  --color-background: #fff2f2;
+  --color-text: #165823;
+  --color-primary: var(--color-text);
+  --color-accent-soft: #ffdada;
+  --color-accent: #ff788d;
+}
+
 body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-text);
   font-family: "Comic Relief", system-ui;
   font-weight: 400;
   font-style: normal;

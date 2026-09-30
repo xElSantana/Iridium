@@ -1,0 +1,126 @@
+---
+import { FiCopy, FiInbox, FiMinus, FiSquare, FiX } from "react-icons/fi";
+import styles from "./WindowTitleBar.module.css";
+
+interface Props {
+  labels: {
+    close: string;
+    controls: string;
+    maximize: string;
+    minimize: string;
+    restore: string;
+  };
+}
+
+const { labels } = Astro.props;
+---
+
+<header class={styles.titleBar}>
+  <div class={styles.dragRegion} data-window-drag-region>
+    <span class={styles.title}>Iridium</span>
+  </div>
+  <div class={styles.windowControls} role="group" aria-label={labels.controls}>
+    <FiInbox className={`${styles.icon} ${styles.inboxIcon}`} aria-hidden="true" />
+    <span class={styles.separator} aria-hidden="true">
+      |
+    </span>
+    <button
+      class={styles.windowButton}
+      type="button"
+      data-window-action="minimize"
+      aria-label={labels.minimize}
+      title={labels.minimize}
+    >
+      <FiMinus className={styles.icon} aria-hidden="true" />
+    </button>
+    <button
+      class={styles.windowButton}
+      type="button"
+      data-window-action="toggle-maximize"
+      data-maximize-label={labels.maximize}
+      data-restore-label={labels.restore}
+      aria-label={labels.maximize}
+      title={labels.maximize}
+    >
+      <FiSquare className={`${styles.icon} ${styles.maximizeIcon}`} aria-hidden="true" />
+      <FiCopy className={`${styles.icon} ${styles.restoreIcon}`} aria-hidden="true" />
+    </button>
+    <button
+      class={styles.windowButton}
+      type="button"
+      data-window-action="close"
+      aria-label={labels.close}
+      title={labels.close}
+    >
+      <FiX className={styles.icon} aria-hidden="true" />
+    </button>
+  </div>
+</header>
+
+<script>
+  interface TauriWindowControl {
+    close: () => Promise<void>;
+    isMaximized: () => Promise<boolean>;
+    minimize: () => Promise<void>;
+    toggleMaximize: () => Promise<void>;
+    startDragging: () => Promise<void>;
+  }
+
+  interface TauriGlobal {
+    window: {
+      getCurrentWindow: () => TauriWindowControl;
+    };
+  }
+
+  const tauri = (window as Window & { __TAURI__?: TauriGlobal }).__TAURI__;
+
+  if (tauri) {
+    const appWindow = tauri.window.getCurrentWindow();
+    const minimizeButton = document.querySelector<HTMLButtonElement>(
+      '[data-window-action="minimize"]',
+    );
+    const maximizeButton = document.querySelector<HTMLButtonElement>(
+      '[data-window-action="toggle-maximize"]',
+    );
+    const closeButton = document.querySelector<HTMLButtonElement>('[data-window-action="close"]');
+    const dragRegion = document.querySelector<HTMLElement>("[data-window-drag-region]");
+
+    const updateMaximizeButton = async () => {
+      if (!maximizeButton) return;
+
+      const isMaximized = await appWindow.isMaximized();
+      const label = maximizeButton.dataset[isMaximized ? "restoreLabel" : "maximizeLabel"];
+      if (!label) return;
+
+      maximizeButton.toggleAttribute("data-maximized", isMaximized);
+      maximizeButton.setAttribute("aria-label", label);
+      maximizeButton.setAttribute("title", label);
+    };
+
+    minimizeButton?.addEventListener("click", () => {
+      void appWindow.minimize();
+    });
+
+    maximizeButton?.addEventListener("click", async () => {
+      await appWindow.toggleMaximize();
+      await updateMaximizeButton();
+    });
+
+    closeButton?.addEventListener("click", () => {
+      void appWindow.close();
+    });
+
+    dragRegion?.addEventListener("mousedown", async (event) => {
+      if (event.buttons !== 1) return;
+
+      if (event.detail === 2) {
+        await appWindow.toggleMaximize();
+        await updateMaximizeButton();
+      } else {
+        await appWindow.startDragging();
+      }
+    });
+
+    void updateMaximizeButton();
+  }
+</script>

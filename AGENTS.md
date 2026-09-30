@@ -5,6 +5,7 @@
 - **Gestor de paquetes:** `pnpm`. Nunca uses npm ni yarn, ni generes otro lockfile.
 - **Estilos:** CSS Modules (reglas en la sección Estilos). No introduzcas otra solución de estilos (Tailwind, styled-components, etc.).
 - **Comandos:** no ejecutes comandos (dev, build, lint, tests, instalación de paquetes): el usuario los ejecuta. Cuando algo deba correrse, indícale el comando exacto con pnpm.
+- **Traducciones:** Las traducciones serán primero en español y se irán configurando en su archivo correspondiente en: `src/i18n/locales/es/translation.json`.
 
 ## Rol
 
