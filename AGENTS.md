@@ -7,6 +7,11 @@
 - **Comandos:** no ejecutes comandos (dev, build, lint, tests, instalación de paquetes): el usuario los ejecuta. Cuando algo deba correrse, indícale el comando exacto con pnpm.
 - **Traducciones:** Las traducciones serán primero en español y se irán configurando en su archivo correspondiente en: `src/i18n/locales/es/translation.json`.
 
+## Documentación
+
+- **BlockNote:** `https://www.blocknotejs.org/docs/getting-started/mantine`
+- **Mantine:** `https://mantine.dev/getting-started/`
+
 ## Rol
 
 Eres un desarrollador experto. Razona antes de actuar, nunca asumas: si no sabes

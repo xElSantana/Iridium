@@ -1,5 +1,5 @@
 ---
-import { FiCopy, FiInbox, FiMinus, FiSquare, FiX } from "react-icons/fi";
+import { FiInbox, FiMaximize2, FiMinus, FiMinimize2, FiX } from "react-icons/fi";
 import styles from "./WindowTitleBar.module.css";
 
 interface Props {
@@ -45,8 +45,8 @@ const { labels } = Astro.props;
       aria-label={labels.maximize}
       title={labels.maximize}
     >
-      <FiSquare className={`${styles.icon} ${styles.maximizeIcon}`} aria-hidden="true" />
-      <FiCopy className={`${styles.icon} ${styles.restoreIcon}`} aria-hidden="true" />
+      <FiMaximize2 className={`${styles.icon} ${styles.maximizeIcon}`} aria-hidden="true" />
+      <FiMinimize2 className={`${styles.icon} ${styles.restoreIcon}`} aria-hidden="true" />
     </button>
     <button
       class={styles.windowButton}
@@ -78,7 +78,6 @@ const { labels } = Astro.props;
   const tauri = (window as Window & { __TAURI__?: TauriGlobal }).__TAURI__;
 
   if (tauri) {
-    const titleBar = document.querySelector<HTMLElement>("[data-window-title-bar]");
     const appWindow = tauri.window.getCurrentWindow();
     const minimizeButton = document.querySelector<HTMLButtonElement>(
       '[data-window-action="minimize"]',
@@ -89,7 +88,7 @@ const { labels } = Astro.props;
     const closeButton = document.querySelector<HTMLButtonElement>('[data-window-action="close"]');
     const dragRegion = document.querySelector<HTMLElement>("[data-window-drag-region]");
 
-    titleBar?.removeAttribute("hidden");
+    document.querySelector<HTMLElement>("[data-window-title-bar]")?.removeAttribute("hidden");
 
     const updateMaximizeButton = async () => {
       if (!maximizeButton) return;
@@ -103,13 +102,17 @@ const { labels } = Astro.props;
       maximizeButton.setAttribute("title", label);
     };
 
+    const toggleMaximizeAndUpdate = async () => {
+      await appWindow.toggleMaximize();
+      await updateMaximizeButton();
+    };
+
     minimizeButton?.addEventListener("click", () => {
       void appWindow.minimize();
     });
 
-    maximizeButton?.addEventListener("click", async () => {
-      await appWindow.toggleMaximize();
-      await updateMaximizeButton();
+    maximizeButton?.addEventListener("click", () => {
+      void toggleMaximizeAndUpdate();
     });
 
     closeButton?.addEventListener("click", () => {
@@ -120,8 +123,7 @@ const { labels } = Astro.props;
       if (event.buttons !== 1) return;
 
       if (event.detail === 2) {
-        await appWindow.toggleMaximize();
-        await updateMaximizeButton();
+        await toggleMaximizeAndUpdate();
       } else {
         await appWindow.startDragging();
       }
