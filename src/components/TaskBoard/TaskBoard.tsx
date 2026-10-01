@@ -22,6 +22,7 @@ interface Props {
 export default memo(function TaskBoard({ title, tasks, labels, onTasksChange }: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskStatus | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const draftCommitted = useRef(false);
   const taskElements = useRef(new Map<string, HTMLElement>());
   const taskToRefocus = useRef<string | null>(null);
   const { contextMenu, onContextMenu } = useContextMenu({
@@ -48,17 +49,23 @@ export default memo(function TaskBoard({ title, tasks, labels, onTasksChange }: 
     );
   };
 
-  const handleCreateTask = (event: SyntheticEvent<HTMLFormElement>, status: TaskStatus) => {
-    event.preventDefault();
-    const taskTitle = draftTitle.trim();
-    if (!taskTitle) return;
+  const commitDraft = (title: string, status: TaskStatus) => {
+    const taskTitle = title.trim();
+    if (!taskTitle || draftCommitted.current) return;
 
+    draftCommitted.current = true;
     onTasksChange([...tasks, { id: crypto.randomUUID(), title: taskTitle, status }]);
     setActiveColumn(null);
   };
 
+  const handleCreateTask = (event: SyntheticEvent<HTMLFormElement>, status: TaskStatus) => {
+    event.preventDefault();
+    commitDraft(draftTitle, status);
+  };
+
   const openTaskForm = (status: TaskStatus) => {
     setDraftTitle("");
+    draftCommitted.current = false;
     setActiveColumn(status);
   };
 
@@ -116,45 +123,47 @@ export default memo(function TaskBoard({ title, tasks, labels, onTasksChange }: 
                   </div>
                 </div>
 
-                <div className={styles.taskList}>
-                  {columnTasks.map((task) => (
-                    <article
-                      className={styles.task}
-                      key={task.id}
-                      ref={(element) => {
-                        if (element) {
-                          taskElements.current.set(task.id, element);
-                        } else {
-                          taskElements.current.delete(task.id);
-                        }
-                      }}
-                      draggable
-                      tabIndex={0}
-                      aria-label={`${task.title}, ${labels.statusLabels[status]}`}
-                      aria-keyshortcuts="ArrowLeft ArrowRight"
-                      onContextMenu={(event) => onContextMenu(event, task.id)}
-                      onDragStart={(event) => {
-                        event.dataTransfer.setData("text/plain", task.id);
-                        event.dataTransfer.effectAllowed = "move";
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.target !== event.currentTarget) return;
-                        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                {columnTasks.length > 0 && (
+                  <div className={styles.taskList}>
+                    {columnTasks.map((task) => (
+                      <article
+                        className={styles.task}
+                        key={task.id}
+                        ref={(element) => {
+                          if (element) {
+                            taskElements.current.set(task.id, element);
+                          } else {
+                            taskElements.current.delete(task.id);
+                          }
+                        }}
+                        draggable
+                        tabIndex={0}
+                        aria-label={`${task.title}, ${labels.statusLabels[status]}`}
+                        aria-keyshortcuts="ArrowLeft ArrowRight"
+                        onContextMenu={(event) => onContextMenu(event, task.id)}
+                        onDragStart={(event) => {
+                          event.dataTransfer.setData("text/plain", task.id);
+                          event.dataTransfer.effectAllowed = "move";
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
 
-                        const statusIndex = TASK_STATUSES.indexOf(status);
-                        const nextIndex = statusIndex + (event.key === "ArrowRight" ? 1 : -1);
-                        const nextStatus = TASK_STATUSES[nextIndex];
-                        if (!nextStatus) return;
+                          const statusIndex = TASK_STATUSES.indexOf(status);
+                          const nextIndex = statusIndex + (event.key === "ArrowRight" ? 1 : -1);
+                          const nextStatus = TASK_STATUSES[nextIndex];
+                          if (!nextStatus) return;
 
-                        event.preventDefault();
-                        taskToRefocus.current = task.id;
-                        moveTask(task.id, nextStatus);
-                      }}
-                    >
-                      <p>{task.title}</p>
-                    </article>
-                  ))}
-                </div>
+                          event.preventDefault();
+                          taskToRefocus.current = task.id;
+                          moveTask(task.id, nextStatus);
+                        }}
+                      >
+                        <p>{task.title}</p>
+                      </article>
+                    ))}
+                  </div>
+                )}
 
                 {activeColumn === status ? (
                   <form
@@ -169,6 +178,14 @@ export default memo(function TaskBoard({ title, tasks, labels, onTasksChange }: 
                       placeholder={labels.taskPlaceholder}
                       aria-label={labels.taskPlaceholder}
                       onChange={(event) => setDraftTitle(event.currentTarget.value)}
+                      onBlur={(event) => {
+                        const title = event.currentTarget.value;
+                        if (title.trim()) {
+                          commitDraft(title, status);
+                        } else {
+                          setActiveColumn(null);
+                        }
+                      }}
                       onKeyDown={(event) => {
                         if (event.key !== "Escape") return;
 
