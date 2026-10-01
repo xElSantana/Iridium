@@ -58,7 +58,7 @@
   display: block;
 }
 
-.workspace [data-sidebar-label] {
+.workspace[data-sidebar-ready] [data-sidebar-label] {
   transition: opacity 120ms ease;
 }
 
@@ -107,7 +107,7 @@
   border-radius: 6px;
 }
 
-.workspace:not([data-resizing]) {
+.workspace[data-sidebar-ready]:not([data-resizing]) {
   transition: grid-template-columns 240ms ease;
 }
 

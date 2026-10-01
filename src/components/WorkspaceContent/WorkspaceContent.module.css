@@ -75,19 +75,12 @@
   cursor: not-allowed;
 }
 
-.message,
-.error,
-.emptyWorkspace {
+.error {
   padding: 6px;
 }
 
 .error {
   font-weight: 700;
-}
-
-.emptyWorkspace h1,
-.emptyWorkspace p {
-  margin: 0 0 6px;
 }
 
 .templateDialog {

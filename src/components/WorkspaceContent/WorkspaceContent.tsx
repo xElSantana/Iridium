@@ -20,10 +20,6 @@ export interface WorkspaceContentLabels {
   templateModalDescription: string;
   taskListTemplate: string;
   closeModal: string;
-  noTaskListTitle: string;
-  noTaskListDescription: string;
-  openTemplateModal: string;
-  loading: string;
   loadError: string;
   saveError: string;
   taskBoard: TaskBoardLabels;
@@ -94,8 +90,26 @@ export default function WorkspaceContent({ labels }: Props) {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    dialog.showModal();
-    return () => dialog.close();
+    const regularFont = '400 1em "Comic Relief"';
+    const boldFont = '700 1em "Comic Relief"';
+    let cancelled = false;
+    const openDialog = async () => {
+      try {
+        if (!document.fonts.check(regularFont) || !document.fonts.check(boldFont)) {
+          await Promise.all([document.fonts.load(regularFont), document.fonts.load(boldFont)]);
+        }
+      } catch (error) {
+        console.error("Could not load template dialog fonts.", error);
+      }
+
+      if (!cancelled) dialog.showModal();
+    };
+
+    void openDialog();
+    return () => {
+      cancelled = true;
+      if (dialog.open) dialog.close();
+    };
   }, [isTemplateModalOpen]);
 
   const selectedTaskList =
@@ -117,7 +131,9 @@ export default function WorkspaceContent({ labels }: Props) {
   );
 
   const selectTaskList = (id: string) => {
-    setWorkspace((current) => ({ ...current, selectedTaskListId: id }));
+    setWorkspace((current) =>
+      current.selectedTaskListId === id ? current : { ...current, selectedTaskListId: id },
+    );
   };
 
   const deleteTaskList = (id: string) => {
@@ -198,9 +214,7 @@ export default function WorkspaceContent({ labels }: Props) {
     <>
       {sidebar}
       {contextMenu}
-      {storageStatus === "loading" ? (
-        <p className={styles.message}>{labels.loading}</p>
-      ) : loadError ? (
+      {storageStatus === "loading" ? null : loadError ? (
         <p className={styles.error} role="alert">
           {labels.loadError}
         </p>
@@ -219,15 +233,7 @@ export default function WorkspaceContent({ labels }: Props) {
               labels={labels.taskBoard}
               onTasksChange={handleTasksChange}
             />
-          ) : (
-            <section className={styles.emptyWorkspace}>
-              <h1>{labels.noTaskListTitle}</h1>
-              <p>{labels.noTaskListDescription}</p>
-              <button type="button" onClick={() => setIsTemplateModalOpen(true)}>
-                {labels.openTemplateModal}
-              </button>
-            </section>
-          )}
+          ) : null}
         </>
       )}
 

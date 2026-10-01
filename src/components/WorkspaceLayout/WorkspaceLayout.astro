@@ -151,6 +151,8 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
     };
 
     setSidebarWidth(visibleSidebarWidth);
+    void workspace.offsetWidth;
+    workspace.setAttribute("data-sidebar-ready", "");
 
     collapseButton.addEventListener("click", () => {
       setSidebarWidth(

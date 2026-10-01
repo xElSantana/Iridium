@@ -48,11 +48,6 @@
     background-color 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.closeButton {
-  border: 0;
-  border-radius: 0;
-}
-
 .windowButton:hover {
   color: var(--color-window-control-hover);
   background-color: var(--color-accent-soft);

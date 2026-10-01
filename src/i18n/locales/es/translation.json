@@ -7,10 +7,6 @@
     "addTemplate": "Agregar plantilla",
     "deleteTaskList": "Eliminar plantilla",
     "pages": "Páginas",
-    "emptyTitle": "Tu espacio está vacío",
-    "emptyDescription": "Agrega una plantilla para empezar a organizar tus tareas.",
-    "openTemplates": "Ver plantillas",
-    "loading": "Cargando espacio de trabajo...",
     "loadError": "No se pudieron cargar las plantillas guardadas. Los cambios están deshabilitados para proteger tus datos.",
     "saveError": "No se pudieron guardar los cambios en este dispositivo."
   },
