@@ -1,0 +1,201 @@
+.board {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 100%;
+  padding: 12px;
+}
+
+.header {
+  margin-bottom: 12px;
+}
+
+.titleLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titleLine svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.titleLine h1,
+.columnHeader h2,
+.task p {
+  margin: 0;
+}
+
+.titleLine h1 {
+  font-size: 1.8rem;
+  line-height: 1.2;
+}
+
+.viewToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.viewTabs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.activeView {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 2px solid var(--color-primary);
+  padding: 6px;
+  font-weight: 700;
+}
+
+.activeView svg {
+  width: 16px;
+  height: 16px;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: stretch;
+  justify-content: flex-start;
+  border: 1px solid transparent;
+  padding: 6px;
+  color: var(--color-text);
+  background-color: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.addButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 260px));
+  align-items: start;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 42%, transparent);
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--color-accent-soft) 72%, transparent);
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 28px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background-color: color-mix(in srgb, var(--color-text) 14%, transparent);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.columnActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 4px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.iconButton:hover,
+.addButton:hover {
+  background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.iconButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.taskList {
+  display: grid;
+  gap: 6px;
+}
+
+.task {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 26%, transparent);
+  border-radius: 6px;
+  background-color: var(--color-accent-soft);
+}
+
+.task:hover {
+  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
+}
+
+.createForm {
+  min-width: 0;
+}
+
+.taskInput {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  padding: 8px;
+  color: var(--color-text);
+  background-color: var(--color-accent-soft);
+  font: inherit;
+}
+
+.taskInput:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.addButton:focus-visible,
+.iconButton:focus-visible,
+.task:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}

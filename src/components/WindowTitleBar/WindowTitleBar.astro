@@ -49,7 +49,7 @@ const { labels } = Astro.props;
       <FiMinimize2 className={`${styles.icon} ${styles.restoreIcon}`} aria-hidden="true" />
     </button>
     <button
-      class={styles.windowButton}
+      class={`${styles.windowButton} ${styles.closeButton}`}
       type="button"
       data-window-action="close"
       aria-label={labels.close}

@@ -1,6 +1,9 @@
 ---
 import { FiMoreVertical } from "react-icons/fi";
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
+import WorkspaceContent, {
+  type WorkspaceContentLabels,
+} from "../WorkspaceContent/WorkspaceContent";
 import styles from "./WorkspaceLayout.module.css";
 
 interface Props {
@@ -8,13 +11,16 @@ interface Props {
   sidebarLabel: string;
   hideSidebarLabel: string;
   showSidebarLabel: string;
+  workspaceContentLabels: WorkspaceContentLabels;
 }
 
-const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.props;
+const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspaceContentLabels } =
+  Astro.props;
 ---
 
 <div class={styles.workspace} data-workspace>
   <aside id="workspace-sidebar" class={styles.sidebar} aria-label={sidebarLabel}>
+    <div id="workspace-sidebar-content"></div>
     <div class={styles.sidebarFooter}>
       <button
         class={styles.sidebarToggle}
@@ -50,15 +56,18 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
   >
     <FiMoreVertical className={styles.resizeIcon} aria-hidden="true" />
   </div>
-  <main class={styles.main}></main>
+  <main class={styles.main}>
+    <WorkspaceContent client:load labels={workspaceContentLabels} />
+  </main>
 </div>
 
 <script>
   const MIN_SIDEBAR_WIDTH = 180;
+  const MAX_SIDEBAR_WIDTH = 320;
   const COLLAPSED_SIDEBAR_WIDTH = 48;
   const MAIN_MIN_WIDTH = 160;
   const WORKSPACE_PADDING = 3;
-  const RESIZE_HANDLE_WIDTH = 3;
+  const RESIZE_HANDLE_WIDTH = 4;
   const STEP = 16;
   const SIDEBAR_STORAGE_KEY = "iridium.workspace.sidebar";
 
@@ -94,7 +103,7 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
     }
 
     let sidebarWidth = savedSidebarWidth;
-    let visibleSidebarWidth = 240;
+    let visibleSidebarWidth = savedCollapsedState ? COLLAPSED_SIDEBAR_WIDTH : sidebarWidth;
     let pointerStartX = 0;
     let pointerMoved = false;
 
@@ -109,13 +118,20 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
     };
 
     const setSidebarWidth = (width: number) => {
-      const maximumWidth = Math.max(
-        MIN_SIDEBAR_WIDTH,
-        workspace.clientWidth - WORKSPACE_PADDING * 2 - RESIZE_HANDLE_WIDTH - MAIN_MIN_WIDTH,
+      const maximumWidth = Math.min(
+        MAX_SIDEBAR_WIDTH,
+        Math.max(
+          MIN_SIDEBAR_WIDTH,
+          workspace.clientWidth - WORKSPACE_PADDING * 2 - RESIZE_HANDLE_WIDTH - MAIN_MIN_WIDTH,
+        ),
       );
       visibleSidebarWidth = Math.min(Math.max(width, COLLAPSED_SIDEBAR_WIDTH), maximumWidth);
       const collapsed = visibleSidebarWidth < MIN_SIDEBAR_WIDTH;
       workspace.style.setProperty("--sidebar-width", `${visibleSidebarWidth}px`);
+      workspace.toggleAttribute(
+        "data-sidebar-icon-only",
+        visibleSidebarWidth === COLLAPSED_SIDEBAR_WIDTH,
+      );
       if (!collapsed) sidebarWidth = visibleSidebarWidth;
 
       if (workspace.hasAttribute("data-sidebar-collapsed") !== collapsed) {
@@ -134,7 +150,7 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel } = Astro.
       handle.setAttribute("aria-valuemax", String(maximumWidth));
     };
 
-    setSidebarWidth(savedCollapsedState ? COLLAPSED_SIDEBAR_WIDTH : sidebarWidth);
+    setSidebarWidth(visibleSidebarWidth);
 
     collapseButton.addEventListener("click", () => {
       setSidebarWidth(

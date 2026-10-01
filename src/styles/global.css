@@ -4,7 +4,6 @@
   --color-text: #346739;
   --color-primary: var(--color-text);
   --color-accent-soft: #f2edc2;
-  --color-accent: #79ae6f;
   --color-border: #346739;
   --color-window-control: #346739;
   --color-window-control-hover: #346739;
@@ -16,7 +15,6 @@
   --color-text: #112d4e;
   --color-primary: var(--color-text);
   --color-accent-soft: #97b2d4;
-  --color-accent: #dbe2ef;
   --color-border: #1d426c;
   --color-window-control: #fff;
   --color-window-control-hover: #112d4e;
@@ -28,7 +26,6 @@
   --color-text: #4a352f;
   --color-primary: var(--color-text);
   --color-accent-soft: #fff0be;
-  --color-accent: #ffd6a6;
   --color-border: #a94f35;
   --color-window-control: #000;
   --color-window-control-hover: #4a352f;
@@ -40,7 +37,6 @@
   --color-text: #dfd0b8;
   --color-primary: var(--color-text);
   --color-accent-soft: #393e46;
-  --color-accent: #94979d;
   --color-border: #94979d;
   --color-window-control: #dfd0b8;
   --color-window-control-hover: #dfd0b8;
@@ -56,4 +52,12 @@ body {
   font-family: "Comic Relief", system-ui;
   font-weight: 400;
   font-style: normal;
+}
+
+:where(button:not(:disabled)):hover {
+  background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+:where(button) {
+  border-radius: 6px;
 }

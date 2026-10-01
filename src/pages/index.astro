@@ -12,5 +12,31 @@ const t = await createTranslator();
     resizeLabel={t("workspace.resizeSidebar")}
     hideSidebarLabel={t("workspace.hideSidebar")}
     showSidebarLabel={t("workspace.showSidebar")}
+    workspaceContentLabels={{
+      addTemplate: t("workspace.addTemplate"),
+      deleteTaskList: t("workspace.deleteTaskList"),
+      sidebarPages: t("workspace.pages"),
+      templateModalTitle: t("templates.modalTitle"),
+      templateModalDescription: t("templates.modalDescription"),
+      taskListTemplate: t("templates.taskList"),
+      closeModal: t("templates.closeModal"),
+      noTaskListTitle: t("workspace.emptyTitle"),
+      noTaskListDescription: t("workspace.emptyDescription"),
+      openTemplateModal: t("workspace.openTemplates"),
+      loading: t("workspace.loading"),
+      loadError: t("workspace.loadError"),
+      saveError: t("workspace.saveError"),
+      taskBoard: {
+        boardView: t("taskBoard.boardView"),
+        addTask: t("taskBoard.addTask"),
+        taskPlaceholder: t("taskBoard.taskPlaceholder"),
+        deleteTask: t("taskBoard.deleteTask"),
+        statusLabels: {
+          notStarted: t("taskBoard.status.notStarted"),
+          inProgress: t("taskBoard.status.inProgress"),
+          completed: t("taskBoard.status.completed"),
+        },
+      },
+    }}
   />
 </Layout>

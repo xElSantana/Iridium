@@ -3,7 +3,33 @@
     "resizeSidebar": "Cambiar ancho de la barra lateral",
     "sidebar": "Barra lateral",
     "hideSidebar": "Ocultar barra lateral",
-    "showSidebar": "Mostrar barra lateral"
+    "showSidebar": "Mostrar barra lateral",
+    "addTemplate": "Agregar plantilla",
+    "deleteTaskList": "Eliminar plantilla",
+    "pages": "Páginas",
+    "emptyTitle": "Tu espacio está vacío",
+    "emptyDescription": "Agrega una plantilla para empezar a organizar tus tareas.",
+    "openTemplates": "Ver plantillas",
+    "loading": "Cargando espacio de trabajo...",
+    "loadError": "No se pudieron cargar las plantillas guardadas. Los cambios están deshabilitados para proteger tus datos.",
+    "saveError": "No se pudieron guardar los cambios en este dispositivo."
+  },
+  "templates": {
+    "modalTitle": "Agregar una plantilla",
+    "modalDescription": "Elige una plantilla para agregarla a tu barra lateral.",
+    "taskList": "Lista de tareas",
+    "closeModal": "Cerrar"
+  },
+  "taskBoard": {
+    "boardView": "Tablero",
+    "addTask": "Nueva tarea",
+    "taskPlaceholder": "Nombre de la tarea",
+    "deleteTask": "Eliminar",
+    "status": {
+      "notStarted": "Sin Empezar",
+      "inProgress": "En Curso",
+      "completed": "Finalizada"
+    }
   },
   "window": {
     "controls": "Controles de ventana",
