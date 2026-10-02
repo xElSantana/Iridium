@@ -53,6 +53,7 @@ export default function TaskDetails({
   const [titleDraft, setTitleDraft] = useState(task.title);
   const [maximumPanelWidth, setMaximumPanelWidth] = useState<number>(0);
   const panelRef = useRef<HTMLElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const resizeStart = useRef<{
     pointerId: number;
     x: number;
@@ -120,6 +121,7 @@ export default function TaskDetails({
         <header className={styles.taskDetailsHeader}>
           <input
             className={styles.taskTitleInput}
+            ref={titleInputRef}
             value={titleDraft}
             maxLength={200}
             aria-label={titleLabel}
@@ -162,6 +164,9 @@ export default function TaskDetails({
           tabIndex={0}
           onPointerDown={(event) => {
             if (event.button !== 0 || !panelRef.current) return;
+
+            event.preventDefault();
+            titleInputRef.current?.blur();
 
             const panelWidth = panelRef.current.getBoundingClientRect().width;
             resizeStart.current = {
