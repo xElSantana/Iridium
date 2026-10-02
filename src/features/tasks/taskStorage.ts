@@ -1,3 +1,4 @@
+import type { PartialBlock } from "@blocknote/core";
 import { isTaskBackgroundId, type TaskBackgroundId } from "./taskBackgrounds";
 
 export const TASK_STATUSES = ["notStarted", "inProgress", "completed"] as const;
@@ -8,6 +9,7 @@ export interface Task {
   id: string;
   title: string;
   status: TaskStatus;
+  content?: PartialBlock[];
 }
 
 export interface TaskList {
@@ -40,6 +42,24 @@ function isTaskStatus(value: unknown): value is TaskStatus {
   return TASK_STATUSES.some((status) => status === value);
 }
 
+function isTaskContentBlock(value: unknown): value is PartialBlock {
+  if (typeof value !== "object" || value === null || !("type" in value)) return false;
+
+  return (
+    typeof value.type === "string" &&
+    (!("id" in value) || typeof value.id === "string") &&
+    (!("props" in value) ||
+      (typeof value.props === "object" && value.props !== null && !Array.isArray(value.props))) &&
+    (!("content" in value) || Array.isArray(value.content)) &&
+    (!("children" in value) ||
+      (Array.isArray(value.children) && value.children.every(isTaskContentBlock)))
+  );
+}
+
+function isTaskContent(value: unknown): value is PartialBlock[] {
+  return Array.isArray(value) && value.every(isTaskContentBlock);
+}
+
 function isTask(value: unknown): value is Task {
   if (typeof value !== "object" || value === null) return false;
 
@@ -51,7 +71,8 @@ function isTask(value: unknown): value is Task {
     typeof value.title === "string" &&
     value.title.trim().length > 0 &&
     "status" in value &&
-    isTaskStatus(value.status)
+    isTaskStatus(value.status) &&
+    (!("content" in value) || isTaskContent(value.content))
   );
 }
 

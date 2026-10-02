@@ -20,6 +20,8 @@
     "boardView": "Tablero",
     "addTask": "Nueva tarea",
     "taskPlaceholder": "Nombre de la tarea",
+    "closeTaskDetails": "Cerrar tarea",
+    "resizeTaskDetails": "Cambiar ancho del panel de tarea",
     "deleteTask": "Eliminar",
     "addBanner": "Agregar banner",
     "changeBanner": "Cambiar banner",

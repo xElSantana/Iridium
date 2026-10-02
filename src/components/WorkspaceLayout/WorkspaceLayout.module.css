@@ -9,6 +9,24 @@
   padding: 3px;
 }
 
+.workspace:has(> .taskDetailsHost > [data-task-details]) {
+  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(160px, 1fr) 4px max-content;
+}
+
+.workspace:has(> .taskDetailsHost > [data-task-details]) > .taskDetailsSeparator {
+  display: block;
+}
+
+.taskDetailsSeparator {
+  display: none;
+  position: relative;
+  z-index: 1;
+}
+
+.taskDetailsHost {
+  display: contents;
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -79,10 +97,6 @@
   touch-action: none;
 }
 
-.resizeHandle:hover {
-  background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
-}
-
 .resizeIcon {
   position: absolute;
   top: 50%;
@@ -100,11 +114,28 @@
 }
 
 .main {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
   overflow: auto;
   border: 1px solid var(--color-border);
   background-color: var(--color-accent-soft);
   border-radius: 6px;
+}
+
+.mainContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mainContent > astro-island {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .workspace[data-sidebar-ready]:not([data-resizing]) {

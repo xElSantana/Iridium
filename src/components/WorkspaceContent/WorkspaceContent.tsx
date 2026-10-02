@@ -44,7 +44,28 @@ export default function WorkspaceContent({ labels }: Props) {
   const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const skipNextSave = useRef(false);
+  const pendingWorkspaceSave = useRef<WorkspaceData | null>(null);
+  const saveTimer = useRef<number | null>(null);
   const loadError = storageStatus === "load-error";
+
+  const flushPendingSave = useCallback((notify = true) => {
+    if (saveTimer.current !== null) {
+      window.clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+
+    const pendingWorkspace = pendingWorkspaceSave.current;
+    if (!pendingWorkspace) return;
+
+    try {
+      saveWorkspace(pendingWorkspace);
+      pendingWorkspaceSave.current = null;
+      if (notify) setSaveError(false);
+    } catch (error) {
+      console.error("Could not save workspace templates.", error);
+      if (notify) setSaveError(true);
+    }
+  }, []);
 
   useEffect(() => {
     setSidebarTarget(document.getElementById("workspace-sidebar-content"));
@@ -76,14 +97,25 @@ export default function WorkspaceContent({ labels }: Props) {
       return;
     }
 
-    try {
-      saveWorkspace(workspace);
-      setSaveError(false);
-    } catch (error) {
-      console.error("Could not save workspace templates.", error);
-      setSaveError(true);
-    }
-  }, [storageStatus, workspace]);
+    pendingWorkspaceSave.current = workspace;
+    saveTimer.current = window.setTimeout(flushPendingSave, 300);
+
+    return () => {
+      if (saveTimer.current !== null) {
+        window.clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+    };
+  }, [flushPendingSave, storageStatus, workspace]);
+
+  useEffect(() => {
+    const flushBeforeExit = () => flushPendingSave(false);
+    window.addEventListener("pagehide", flushBeforeExit);
+    return () => {
+      window.removeEventListener("pagehide", flushBeforeExit);
+      flushPendingSave(false);
+    };
+  }, [flushPendingSave]);
 
   useEffect(() => {
     if (!isTemplateModalOpen) return;

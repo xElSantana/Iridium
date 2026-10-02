@@ -57,8 +57,12 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
     <FiMoreVertical className={styles.resizeIcon} aria-hidden="true" />
   </div>
   <main class={styles.main}>
-    <WorkspaceContent client:load labels={workspaceContentLabels} />
+    <div class={styles.mainContent}>
+      <WorkspaceContent client:load labels={workspaceContentLabels} />
+    </div>
   </main>
+  <div id="workspace-task-details-separator" class={styles.taskDetailsSeparator}></div>
+  <div id="workspace-task-details" class={styles.taskDetailsHost}></div>
 </div>
 
 <script>
