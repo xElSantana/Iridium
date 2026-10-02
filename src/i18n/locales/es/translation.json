@@ -21,6 +21,15 @@
     "addTask": "Nueva tarea",
     "taskPlaceholder": "Nombre de la tarea",
     "deleteTask": "Eliminar",
+    "addBanner": "Agregar banner",
+    "changeBanner": "Cambiar banner",
+    "removeBanner": "Quitar banner",
+    "selectBanner": "Selecciona un fondo",
+    "closeBannerPicker": "Cerrar selector",
+    "backgrounds": {
+      "meadowDay": "Pradera de día",
+      "meadowNight": "Pradera de noche"
+    },
     "status": {
       "notStarted": "Sin Empezar",
       "inProgress": "En Curso",

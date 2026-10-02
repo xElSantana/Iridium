@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState, type SyntheticEvent } from "react";
-import { LuKanban, LuListTodo, LuPlus } from "react-icons/lu";
+import { LuImagePlus, LuKanban, LuListTodo, LuPlus } from "react-icons/lu";
+import { TASK_BACKGROUNDS, type TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
 import { TASK_STATUSES, type Task, type TaskStatus } from "../../features/tasks/taskStorage";
 import { useContextMenu } from "../ContextMenu/useContextMenu";
 import styles from "./TaskBoard.module.css";
@@ -9,22 +10,39 @@ export interface TaskBoardLabels {
   addTask: string;
   taskPlaceholder: string;
   deleteTask: string;
+  addBanner: string;
+  changeBanner: string;
+  removeBanner: string;
+  selectBanner: string;
+  closeBannerPicker: string;
+  backgroundLabels: Record<TaskBackgroundId, string>;
   statusLabels: Record<TaskStatus, string>;
 }
 
 interface Props {
   title: string;
   tasks: Task[];
+  bannerId: TaskBackgroundId | null;
   labels: TaskBoardLabels;
   onTasksChange: (tasks: Task[]) => void;
+  onBannerChange: (bannerId: TaskBackgroundId | null) => void;
 }
 
-export default memo(function TaskBoard({ title, tasks, labels, onTasksChange }: Props) {
+export default memo(function TaskBoard({
+  title,
+  tasks,
+  bannerId,
+  labels,
+  onTasksChange,
+  onBannerChange,
+}: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskStatus | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
   const draftCommitted = useRef(false);
   const taskElements = useRef(new Map<string, HTMLElement>());
   const taskToRefocus = useRef<string | null>(null);
+  const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const { contextMenu, onContextMenu } = useContextMenu({
     label: labels.deleteTask,
     onSelect: (taskId: string) =>
@@ -73,6 +91,79 @@ export default memo(function TaskBoard({ title, tasks, labels, onTasksChange }: 
     <>
       <section className={styles.board} aria-labelledby="task-board-title">
         <header className={styles.header}>
+          {selectedBackground && (
+            <div
+              className={styles.banner}
+              style={{ backgroundImage: `url("${selectedBackground.src}")` }}
+            >
+              <div className={styles.bannerActions}>
+                <button
+                  className={styles.bannerAction}
+                  type="button"
+                  aria-expanded={isBannerPickerOpen}
+                  aria-controls={isBannerPickerOpen ? "task-banner-picker" : undefined}
+                  onClick={() => setIsBannerPickerOpen((open) => !open)}
+                >
+                  {labels.changeBanner}
+                </button>
+                <button
+                  className={styles.bannerAction}
+                  type="button"
+                  onClick={() => {
+                    onBannerChange(null);
+                    setIsBannerPickerOpen(false);
+                  }}
+                >
+                  {labels.removeBanner}
+                </button>
+              </div>
+            </div>
+          )}
+          {!selectedBackground && (
+            <div className={styles.bannerActions}>
+              <button
+                className={styles.bannerAction}
+                type="button"
+                aria-expanded={isBannerPickerOpen}
+                aria-controls={isBannerPickerOpen ? "task-banner-picker" : undefined}
+                onClick={() => setIsBannerPickerOpen((open) => !open)}
+              >
+                {!selectedBackground && <LuImagePlus aria-hidden="true" />}
+                {labels.addBanner}
+              </button>
+            </div>
+          )}
+          {isBannerPickerOpen && (
+            <div
+              className={styles.bannerPicker}
+              id="task-banner-picker"
+              role="group"
+              aria-label={labels.selectBanner}
+            >
+              {TASK_BACKGROUNDS.map((background) => (
+                <button
+                  className={styles.bannerOption}
+                  key={background.id}
+                  type="button"
+                  aria-pressed={background.id === bannerId}
+                  onClick={() => {
+                    onBannerChange(background.id);
+                    setIsBannerPickerOpen(false);
+                  }}
+                >
+                  <img src={background.src} alt="" />
+                  <span>{labels.backgroundLabels[background.id]}</span>
+                </button>
+              ))}
+              <button
+                className={styles.bannerAction}
+                type="button"
+                onClick={() => setIsBannerPickerOpen(false)}
+              >
+                {labels.closeBannerPicker}
+              </button>
+            </div>
+          )}
           <div className={styles.titleLine}>
             <LuListTodo aria-hidden="true" />
             <h1 id="task-board-title">{title}</h1>

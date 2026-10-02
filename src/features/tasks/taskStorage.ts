@@ -1,3 +1,5 @@
+import { isTaskBackgroundId, type TaskBackgroundId } from "./taskBackgrounds";
+
 export const TASK_STATUSES = ["notStarted", "inProgress", "completed"] as const;
 
 export type TaskStatus = (typeof TASK_STATUSES)[number];
@@ -12,6 +14,7 @@ export interface TaskList {
   id: string;
   title: string;
   tasks: Task[];
+  bannerId?: TaskBackgroundId | null;
 }
 
 export interface WorkspaceData {
@@ -64,7 +67,8 @@ function isTaskList(value: unknown): value is TaskList {
     value.title.trim().length > 0 &&
     "tasks" in value &&
     Array.isArray(value.tasks) &&
-    value.tasks.every(isTask)
+    value.tasks.every(isTask) &&
+    (!("bannerId" in value) || value.bannerId === null || isTaskBackgroundId(value.bannerId))
   );
 }
 

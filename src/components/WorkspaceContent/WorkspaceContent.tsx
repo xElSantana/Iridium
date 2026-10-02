@@ -4,6 +4,7 @@ import { FiX } from "react-icons/fi";
 import { LuListTodo, LuPlus } from "react-icons/lu";
 import { useContextMenu } from "../ContextMenu/useContextMenu";
 import TaskBoard, { type TaskBoardLabels } from "../TaskBoard/TaskBoard";
+import type { TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
 import {
   loadWorkspace,
   saveWorkspace,
@@ -130,6 +131,20 @@ export default function WorkspaceContent({ labels }: Props) {
     [selectedTaskListId],
   );
 
+  const handleBannerChange = useCallback(
+    (bannerId: TaskBackgroundId | null) => {
+      if (selectedTaskListId === undefined) return;
+
+      setWorkspace((current) => ({
+        ...current,
+        taskLists: current.taskLists.map((taskList) =>
+          taskList.id === selectedTaskListId ? { ...taskList, bannerId } : taskList,
+        ),
+      }));
+    },
+    [selectedTaskListId],
+  );
+
   const selectTaskList = (id: string) => {
     setWorkspace((current) =>
       current.selectedTaskListId === id ? current : { ...current, selectedTaskListId: id },
@@ -230,8 +245,10 @@ export default function WorkspaceContent({ labels }: Props) {
               key={selectedTaskList.id}
               title={selectedTaskList.title}
               tasks={selectedTaskList.tasks}
+              bannerId={selectedTaskList.bannerId ?? null}
               labels={labels.taskBoard}
               onTasksChange={handleTasksChange}
+              onBannerChange={handleBannerChange}
             />
           ) : null}
         </>
