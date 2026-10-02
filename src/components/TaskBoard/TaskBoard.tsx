@@ -1,4 +1,12 @@
-import { memo, useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type SyntheticEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { LuImagePlus, LuKanban, LuListTodo, LuPlus } from "react-icons/lu";
 import { TASK_BACKGROUNDS, type TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
@@ -29,9 +37,79 @@ interface Props {
   tasks: Task[];
   bannerId: TaskBackgroundId | null;
   labels: TaskBoardLabels;
-  onTasksChange: (tasks: Task[]) => void;
+  onTasksChange: (updateTasks: (tasks: Task[]) => Task[]) => void;
   onBannerChange: (bannerId: TaskBackgroundId | null) => void;
 }
+
+interface TaskCardProps {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  statusLabel: string;
+  isSelected: boolean;
+  registerTaskElement: (taskId: string, element: HTMLElement | null) => void;
+  onContextMenu: (event: MouseEvent<HTMLElement>, taskId: string) => void;
+  onSelect: (taskId: string) => void;
+  onMove: (taskId: string, status: TaskStatus) => void;
+  onPrepareRefocus: (taskId: string) => void;
+}
+
+const TaskCard = memo(function TaskCard({
+  id,
+  title,
+  status,
+  statusLabel,
+  isSelected,
+  registerTaskElement,
+  onContextMenu,
+  onSelect,
+  onMove,
+  onPrepareRefocus,
+}: TaskCardProps) {
+  const setTaskElement = useCallback(
+    (element: HTMLElement | null) => registerTaskElement(id, element),
+    [id, registerTaskElement],
+  );
+
+  return (
+    <article
+      className={styles.task}
+      ref={setTaskElement}
+      draggable
+      tabIndex={0}
+      role="button"
+      aria-expanded={isSelected}
+      aria-label={`${title}, ${statusLabel}`}
+      aria-keyshortcuts="Enter Space ArrowLeft ArrowRight"
+      onContextMenu={(event) => onContextMenu(event, id)}
+      onClick={() => onSelect(id)}
+      onDragStart={(event) => {
+        event.dataTransfer.setData("text/plain", id);
+        event.dataTransfer.effectAllowed = "move";
+      }}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(id);
+          return;
+        }
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+
+        const statusIndex = TASK_STATUSES.indexOf(status);
+        const nextIndex = statusIndex + (event.key === "ArrowRight" ? 1 : -1);
+        const nextStatus = TASK_STATUSES[nextIndex];
+        if (!nextStatus) return;
+
+        event.preventDefault();
+        onPrepareRefocus(id);
+        onMove(id, nextStatus);
+      }}
+    >
+      <p>{title}</p>
+    </article>
+  );
+});
 
 export default memo(function TaskBoard({
   title,
@@ -70,13 +148,39 @@ export default memo(function TaskBoard({
   const { contextMenu, onContextMenu } = useContextMenu({
     label: labels.deleteTask,
     onSelect: (taskId: string) => {
-      onTasksChange(tasks.filter((currentTask) => currentTask.id !== taskId));
+      onTasksChange((currentTasks) =>
+        currentTasks.filter((currentTask) => currentTask.id !== taskId),
+      );
       if (selectedTaskId === taskId) {
         setSelectedTaskId(null);
         setTaskDetailsWidth(null);
       }
     },
   });
+  const registerTaskElement = useCallback((taskId: string, element: HTMLElement | null) => {
+    if (element) {
+      taskElements.current.set(taskId, element);
+    } else {
+      taskElements.current.delete(taskId);
+    }
+  }, []);
+  const selectTask = useCallback((taskId: string) => setSelectedTaskId(taskId), []);
+  const prepareTaskRefocus = useCallback((taskId: string) => {
+    taskToRefocus.current = taskId;
+  }, []);
+  const moveTask = useCallback(
+    (taskId: string, status: TaskStatus) => {
+      onTasksChange((currentTasks) => {
+        const task = currentTasks.find((currentTask) => currentTask.id === taskId);
+        if (!task || task.status === status) return currentTasks;
+
+        return currentTasks.map((currentTask) =>
+          currentTask.id === taskId ? { ...currentTask, status } : currentTask,
+        );
+      });
+    },
+    [onTasksChange],
+  );
 
   useEffect(() => {
     setTaskDetailsTarget(document.getElementById("workspace-task-details"));
@@ -90,23 +194,13 @@ export default memo(function TaskBoard({
     taskToRefocus.current = null;
   }, [tasks]);
 
-  const moveTask = (taskId: string, status: TaskStatus) => {
-    const task = tasks.find((currentTask) => currentTask.id === taskId);
-    if (!task || task.status === status) return;
-
-    onTasksChange(
-      tasks.map((currentTask) =>
-        currentTask.id === taskId ? { ...currentTask, status } : currentTask,
-      ),
-    );
-  };
-
   const commitDraft = (title: string, status: TaskStatus) => {
     const taskTitle = title.trim();
     if (!taskTitle || draftCommitted.current) return;
 
     draftCommitted.current = true;
-    onTasksChange([...tasks, { id: crypto.randomUUID(), title: taskTitle, status }]);
+    const newTask = { id: crypto.randomUUID(), title: taskTitle, status };
+    onTasksChange((currentTasks) => [...currentTasks, newTask]);
     setActiveColumn(null);
   };
 
@@ -252,49 +346,19 @@ export default memo(function TaskBoard({
                   {columnTasks.length > 0 && (
                     <div className={styles.taskList}>
                       {columnTasks.map((task) => (
-                        <article
-                          className={styles.task}
+                        <TaskCard
                           key={task.id}
-                          ref={(element) => {
-                            if (element) {
-                              taskElements.current.set(task.id, element);
-                            } else {
-                              taskElements.current.delete(task.id);
-                            }
-                          }}
-                          draggable
-                          tabIndex={0}
-                          role="button"
-                          aria-expanded={selectedTaskId === task.id}
-                          aria-label={`${task.title}, ${labels.statusLabels[status]}`}
-                          aria-keyshortcuts="Enter Space ArrowLeft ArrowRight"
-                          onContextMenu={(event) => onContextMenu(event, task.id)}
-                          onClick={() => setSelectedTaskId(task.id)}
-                          onDragStart={(event) => {
-                            event.dataTransfer.setData("text/plain", task.id);
-                            event.dataTransfer.effectAllowed = "move";
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.target !== event.currentTarget) return;
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              setSelectedTaskId(task.id);
-                              return;
-                            }
-                            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-
-                            const statusIndex = TASK_STATUSES.indexOf(status);
-                            const nextIndex = statusIndex + (event.key === "ArrowRight" ? 1 : -1);
-                            const nextStatus = TASK_STATUSES[nextIndex];
-                            if (!nextStatus) return;
-
-                            event.preventDefault();
-                            taskToRefocus.current = task.id;
-                            moveTask(task.id, nextStatus);
-                          }}
-                        >
-                          <p>{task.title}</p>
-                        </article>
+                          id={task.id}
+                          title={task.title}
+                          status={status}
+                          statusLabel={labels.statusLabels[status]}
+                          isSelected={selectedTaskId === task.id}
+                          registerTaskElement={registerTaskElement}
+                          onContextMenu={onContextMenu}
+                          onSelect={selectTask}
+                          onMove={moveTask}
+                          onPrepareRefocus={prepareTaskRefocus}
+                        />
                       ))}
                     </div>
                   )}
@@ -370,8 +434,8 @@ export default memo(function TaskBoard({
               onClose={closeTaskDetails}
               onResize={setTaskDetailsWidth}
               onTaskChange={(taskId, changes) =>
-                onTasksChange(
-                  tasks.map((task) => (task.id === taskId ? { ...task, ...changes } : task)),
+                onTasksChange((currentTasks) =>
+                  currentTasks.map((task) => (task.id === taskId ? { ...task, ...changes } : task)),
                 )
               }
             />,

@@ -39,7 +39,7 @@ const blockNoteTheme = {
     sideMenu: "var(--color-text)",
   },
   borderRadius: 6,
-  fontFamily: '"Comic Relief", system-ui',
+  fontFamily: "var(--font-family)",
 } satisfies Theme;
 
 const getMaximumPanelWidth = (panel: HTMLElement | null) => {

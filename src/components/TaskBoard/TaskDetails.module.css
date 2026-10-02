@@ -95,14 +95,20 @@
   outline-offset: -2px;
 }
 
-.editor {
+.editor.editor {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  --mantine-font-family: var(--font-family);
+  --mantine-font-family-headings: var(--font-family);
 }
 
 .editor :global(.bn-editor) {
   flex: 1;
   min-height: 0;
+}
+
+.editor :global(.bn-default-styles) {
+  font-family: var(--font-family);
 }

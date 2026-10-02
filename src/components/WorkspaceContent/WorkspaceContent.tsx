@@ -150,13 +150,15 @@ export default function WorkspaceContent({ labels }: Props) {
   const selectedTaskListId = selectedTaskList?.id;
 
   const handleTasksChange = useCallback(
-    (tasks: TaskList["tasks"]) => {
+    (updateTasks: (tasks: TaskList["tasks"]) => TaskList["tasks"]) => {
       if (selectedTaskListId === undefined) return;
 
       setWorkspace((current) => ({
         ...current,
         taskLists: current.taskLists.map((taskList) =>
-          taskList.id === selectedTaskListId ? { ...taskList, tasks } : taskList,
+          taskList.id === selectedTaskListId
+            ? { ...taskList, tasks: updateTasks(taskList.tasks) }
+            : taskList,
         ),
       }));
     },

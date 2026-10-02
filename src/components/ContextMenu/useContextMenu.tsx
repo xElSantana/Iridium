@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ContextMenu.module.css";
 
@@ -45,23 +45,26 @@ export function useContextMenu<T>({ label, disabled = false, onSelect }: Context
     };
   }, [menu]);
 
-  const onContextMenu = (event: MouseEvent<HTMLElement>, target: T) => {
-    if (disabled) return;
+  const onContextMenu = useCallback(
+    (event: MouseEvent<HTMLElement>, target: T) => {
+      if (disabled) return;
 
-    event.preventDefault();
-    triggerRef.current = event.currentTarget;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX || bounds.left;
-    const y = event.clientY || bounds.bottom;
+      event.preventDefault();
+      triggerRef.current = event.currentTarget;
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX || bounds.left;
+      const y = event.clientY || bounds.bottom;
 
-    setMenu({
-      target,
-      position: {
-        x: Math.max(8, Math.min(x, window.innerWidth - 160)),
-        y: Math.max(8, Math.min(y, window.innerHeight - 48)),
-      },
-    });
-  };
+      setMenu({
+        target,
+        position: {
+          x: Math.max(8, Math.min(x, window.innerWidth - 160)),
+          y: Math.max(8, Math.min(y, window.innerHeight - 48)),
+        },
+      });
+    },
+    [disabled],
+  );
 
   const contextMenu =
     menu && typeof document !== "undefined"

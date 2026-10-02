@@ -1,3 +1,9 @@
+:root {
+  --font-family: "Comic Relief", system-ui;
+  --mantine-font-family: var(--font-family);
+  --mantine-font-family-headings: var(--font-family);
+}
+
 :root[data-theme="spring"] {
   color-scheme: light;
   --color-background: #9fcb98;
@@ -49,7 +55,7 @@ body {
   overflow: hidden;
   margin: 0;
   color: var(--color-text);
-  font-family: "Comic Relief", system-ui;
+  font-family: var(--font-family);
   font-weight: 400;
   font-style: normal;
 }
