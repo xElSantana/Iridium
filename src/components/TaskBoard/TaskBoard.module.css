@@ -222,11 +222,12 @@
   transform: translateX(var(--custom-scrollbar-thumb-left, 0px));
   border-radius: 6px;
   background-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+  cursor: grab;
+  touch-action: none;
 }
 
-.customScrollbarThumb:hover,
 .columnsScroller[data-custom-scrollbar-dragging] .customScrollbarThumb {
-  background-color: color-mix(in srgb, var(--color-text) 65%, transparent);
+  cursor: grabbing;
 }
 
 .columns {
