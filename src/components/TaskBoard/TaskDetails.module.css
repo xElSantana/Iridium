@@ -96,5 +96,13 @@
 }
 
 .editor {
-  min-height: 240px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.editor :global(.bn-editor) {
+  flex: 1;
+  min-height: 0;
 }

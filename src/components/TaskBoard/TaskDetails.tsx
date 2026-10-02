@@ -1,12 +1,46 @@
 import "@blocknote/mantine/style.css";
 import { es } from "@blocknote/core/locales";
-import { BlockNoteView } from "@blocknote/mantine";
+import { BlockNoteView, type Theme } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { FiMoreVertical, FiX } from "react-icons/fi";
 import type { Task } from "../../features/tasks/taskStorage";
 import styles from "./TaskDetails.module.css";
+
+const blockNoteTheme = {
+  colors: {
+    editor: {
+      text: "var(--color-text)",
+      background: "var(--color-accent-soft)",
+    },
+    menu: {
+      text: "var(--color-text)",
+      background: "var(--color-accent-soft)",
+    },
+    tooltip: {
+      text: "var(--color-text)",
+      background: "var(--color-background)",
+    },
+    hovered: {
+      text: "var(--color-text)",
+      background: "color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft))",
+    },
+    selected: {
+      text: "var(--color-text)",
+      background: "color-mix(in srgb, var(--color-text) 16%, var(--color-accent-soft))",
+    },
+    disabled: {
+      text: "color-mix(in srgb, var(--color-text) 45%, var(--color-accent-soft))",
+      background: "var(--color-accent-soft)",
+    },
+    shadow: "var(--color-border)",
+    border: "var(--color-border)",
+    sideMenu: "var(--color-text)",
+  },
+  borderRadius: 6,
+  fontFamily: '"Comic Relief", system-ui',
+} satisfies Theme;
 
 const getMaximumPanelWidth = (panel: HTMLElement | null) => {
   const workspace = panel?.closest<HTMLElement>("[data-workspace]");
@@ -149,6 +183,7 @@ export default function TaskDetails({
         <BlockNoteView
           className={styles.editor}
           editor={editor}
+          theme={blockNoteTheme}
           onChange={() => onTaskChange(task.id, { content: editor.document })}
         />
       </aside>
