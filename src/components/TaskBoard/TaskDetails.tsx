@@ -3,10 +3,14 @@ import { es } from "@blocknote/core/locales";
 import { BlockNoteView, type Theme } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
 import { createPortal } from "react-dom";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { FiMoreVertical, FiX } from "react-icons/fi";
 import type { Task } from "../../features/tasks/taskStorage";
 import styles from "./TaskDetails.module.css";
+
+const MIN_PANEL_WIDTH = 400;
+const MAX_PANEL_WIDTH = 1200;
+const DEFAULT_PANEL_WIDTH = 400;
 
 const blockNoteTheme = {
   colors: {
@@ -46,19 +50,17 @@ const getMaximumPanelWidth = (panel: HTMLElement | null) => {
   const workspace = panel?.closest<HTMLElement>("[data-workspace]");
   const sidebar = workspace?.querySelector<HTMLElement>("#workspace-sidebar");
   const workspaceResizeHandle = workspace?.querySelector<HTMLElement>("[data-resize-handle]");
-  if (!workspace || !sidebar || !workspaceResizeHandle) {
-    return panel?.parentElement?.clientWidth ?? 0;
-  }
+  const availableWidth =
+    workspace && sidebar && workspaceResizeHandle
+      ? workspace.clientWidth -
+        6 -
+        sidebar.getBoundingClientRect().width -
+        workspaceResizeHandle.getBoundingClientRect().width -
+        160 -
+        4
+      : (panel?.parentElement?.clientWidth ?? 0);
 
-  return Math.max(
-    0,
-    workspace.clientWidth -
-      6 -
-      sidebar.getBoundingClientRect().width -
-      workspaceResizeHandle.getBoundingClientRect().width -
-      160 -
-      4,
-  );
+  return Math.max(MIN_PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, availableWidth));
 };
 
 interface TaskDetailsProps {
@@ -73,7 +75,7 @@ interface TaskDetailsProps {
   onTaskChange: (taskId: string, changes: Partial<Pick<Task, "title" | "content">>) => void;
 }
 
-export default function TaskDetails({
+function TaskDetails({
   task,
   titleLabel,
   closeLabel,
@@ -85,7 +87,7 @@ export default function TaskDetails({
   onTaskChange,
 }: TaskDetailsProps) {
   const [titleDraft, setTitleDraft] = useState(task.title);
-  const [maximumPanelWidth, setMaximumPanelWidth] = useState<number>(0);
+  const [maximumPanelWidth, setMaximumPanelWidth] = useState(MAX_PANEL_WIDTH);
   const panelRef = useRef<HTMLElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const resizeStart = useRef<{
@@ -120,27 +122,23 @@ export default function TaskDetails({
 
       const panelWidth = panelRef.current?.getBoundingClientRect().width;
       if (panelWidth !== undefined && panelWidth > maxWidth) {
-        if (maxWidth <= 120) {
-          onClose();
-        } else {
-          onResize(maxWidth);
-        }
+        onResize(maxWidth);
       }
     };
 
     updateBounds();
-    window.addEventListener("resize", updateBounds);
-    return () => window.removeEventListener("resize", updateBounds);
-  }, [onClose, onResize]);
+    const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
+    const sidebar = workspace?.querySelector<HTMLElement>("#workspace-sidebar");
+    const resizeObserver = new ResizeObserver(updateBounds);
+    if (workspace) resizeObserver.observe(workspace);
+    if (sidebar) resizeObserver.observe(sidebar);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [onResize]);
 
   const resizePanel = (nextWidth: number) => {
-    if (nextWidth <= 120) {
-      onClose();
-      return;
-    }
-
-    const containerWidth = maximumPanelWidth || getMaximumPanelWidth(panelRef.current) || nextWidth;
-    onResize(Math.min(nextWidth, containerWidth));
+    onResize(Math.min(Math.max(nextWidth, MIN_PANEL_WIDTH), maximumPanelWidth));
   };
 
   return (
@@ -150,7 +148,7 @@ export default function TaskDetails({
         data-task-details
         ref={panelRef}
         aria-label={task.title}
-        style={{ width: width ?? 240 }}
+        style={{ width: width ?? DEFAULT_PANEL_WIDTH }}
       >
         <header className={styles.taskDetailsHeader}>
           <input
@@ -193,8 +191,8 @@ export default function TaskDetails({
           role="separator"
           aria-label={resizeLabel}
           aria-orientation="vertical"
-          aria-valuemin={120}
-          aria-valuenow={width ?? 240}
+          aria-valuemin={MIN_PANEL_WIDTH}
+          aria-valuenow={width ?? DEFAULT_PANEL_WIDTH}
           aria-valuemax={Math.round(maximumPanelWidth)}
           tabIndex={0}
           onPointerDown={(event) => {
@@ -219,16 +217,12 @@ export default function TaskDetails({
             const start = resizeStart.current;
             if (!start || start.pointerId !== event.pointerId || !panelRef.current) return;
 
-            const containerWidth =
-              maximumPanelWidth || getMaximumPanelWidth(panelRef.current) || start.width;
             const nextWidth = Math.min(
-              containerWidth,
-              Math.max(0, start.width - (event.clientX - start.x)),
+              maximumPanelWidth,
+              Math.max(MIN_PANEL_WIDTH, start.width - (event.clientX - start.x)),
             );
             start.currentWidth = nextWidth;
 
-            // Coalesce a un ancho por frame: escribir style.width en cada pointermove
-            // obliga al editor (BlockNote) a relayoutear por evento, causando lag.
             const handle = event.currentTarget;
             if (resizeFrame.current === null) {
               resizeFrame.current = window.requestAnimationFrame(() => {
@@ -238,7 +232,7 @@ export default function TaskDetails({
                   panelRef.current.style.width = `${panelWidth}px`;
                 }
                 handle.setAttribute("aria-valuenow", String(Math.round(panelWidth)));
-                handle.setAttribute("aria-valuemax", String(Math.round(containerWidth)));
+                handle.setAttribute("aria-valuemax", String(Math.round(maximumPanelWidth)));
               });
             }
           }}
@@ -281,3 +275,18 @@ export default function TaskDetails({
     </>
   );
 }
+
+export default memo(
+  TaskDetails,
+  (previous, next) =>
+    previous.task.id === next.task.id &&
+    previous.task.title === next.task.title &&
+    previous.titleLabel === next.titleLabel &&
+    previous.closeLabel === next.closeLabel &&
+    previous.resizeLabel === next.resizeLabel &&
+    previous.width === next.width &&
+    previous.resizeTarget === next.resizeTarget &&
+    previous.onClose === next.onClose &&
+    previous.onResize === next.onResize &&
+    previous.onTaskChange === next.onTaskChange,
+);

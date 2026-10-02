@@ -145,6 +145,14 @@ export default memo(function TaskBoard({
     setSelectedTaskId(null);
     setTaskDetailsWidth(null);
   }, []);
+  const updateTaskDetails = useCallback(
+    (taskId: string, changes: Partial<Pick<Task, "title" | "content">>) => {
+      onTasksChange((currentTasks) =>
+        currentTasks.map((task) => (task.id === taskId ? { ...task, ...changes } : task)),
+      );
+    },
+    [onTasksChange],
+  );
   const { contextMenu, onContextMenu } = useContextMenu({
     label: labels.deleteTask,
     onSelect: (taskId: string) => {
@@ -433,11 +441,7 @@ export default memo(function TaskBoard({
               resizeTarget={taskDetailsSeparator}
               onClose={closeTaskDetails}
               onResize={setTaskDetailsWidth}
-              onTaskChange={(taskId, changes) =>
-                onTasksChange((currentTasks) =>
-                  currentTasks.map((task) => (task.id === taskId ? { ...task, ...changes } : task)),
-                )
-              }
+              onTaskChange={updateTaskDetails}
             />,
             taskDetailsTarget,
           )
