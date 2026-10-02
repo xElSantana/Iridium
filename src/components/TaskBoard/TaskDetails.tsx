@@ -3,8 +3,8 @@ import { es } from "@blocknote/core/locales";
 import { BlockNoteView, type Theme } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
 import { createPortal } from "react-dom";
-import { memo, useEffect, useRef, useState } from "react";
-import { FiMoreVertical, FiX } from "react-icons/fi";
+import { memo, useEffect, useRef, useState, type ComponentProps } from "react";
+import { FiChevronsRight, FiMoreVertical } from "react-icons/fi";
 import type { Task } from "../../features/tasks/taskStorage";
 import styles from "./TaskDetails.module.css";
 
@@ -75,6 +75,25 @@ interface TaskDetailsProps {
   onTaskChange: (taskId: string, changes: Partial<Pick<Task, "title" | "content">>) => void;
 }
 
+const TaskContent = memo(function TaskContent({
+  editor,
+  taskId,
+  onTaskChange,
+}: {
+  editor: ComponentProps<typeof BlockNoteView>["editor"];
+  taskId: string;
+  onTaskChange: TaskDetailsProps["onTaskChange"];
+}) {
+  return (
+    <BlockNoteView
+      className={styles.editor}
+      editor={editor}
+      theme={blockNoteTheme}
+      onChange={() => onTaskChange(taskId, { content: editor.document })}
+    />
+  );
+});
+
 function TaskDetails({
   task,
   titleLabel,
@@ -89,7 +108,7 @@ function TaskDetails({
   const [titleDraft, setTitleDraft] = useState(task.title);
   const [maximumPanelWidth, setMaximumPanelWidth] = useState(MAX_PANEL_WIDTH);
   const panelRef = useRef<HTMLElement>(null);
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const resizeStart = useRef<{
     pointerId: number;
     x: number;
@@ -104,6 +123,14 @@ function TaskDetails({
   );
 
   useEffect(() => setTitleDraft(task.title), [task.title]);
+
+  useEffect(() => {
+    const titleInput = titleInputRef.current;
+    if (!titleInput) return;
+
+    titleInput.style.height = "auto";
+    titleInput.style.height = `${titleInput.scrollHeight}px`;
+  }, [titleDraft]);
 
   const finishResize = () => {
     if (resizeFrame.current !== null) {
@@ -151,10 +178,21 @@ function TaskDetails({
         style={{ width: width ?? DEFAULT_PANEL_WIDTH }}
       >
         <header className={styles.taskDetailsHeader}>
-          <input
+          <button
+            className={styles.closeButton}
+            type="button"
+            aria-label={closeLabel}
+            title={closeLabel}
+            onClick={onClose}
+          >
+            <FiChevronsRight aria-hidden="true" />
+          </button>
+          <textarea
             className={styles.taskTitleInput}
             ref={titleInputRef}
             value={titleDraft}
+            rows={1}
+            wrap="soft"
             maxLength={200}
             aria-label={titleLabel}
             onChange={(event) => setTitleDraft(event.currentTarget.value)}
@@ -168,22 +206,8 @@ function TaskDetails({
               }
             }}
           />
-          <button
-            className={styles.closeButton}
-            type="button"
-            aria-label={closeLabel}
-            title={closeLabel}
-            onClick={onClose}
-          >
-            <FiX aria-hidden="true" />
-          </button>
         </header>
-        <BlockNoteView
-          className={styles.editor}
-          editor={editor}
-          theme={blockNoteTheme}
-          onChange={() => onTaskChange(task.id, { content: editor.document })}
-        />
+        <TaskContent editor={editor} taskId={task.id} onTaskChange={onTaskChange} />
       </aside>
       {createPortal(
         <div

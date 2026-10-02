@@ -10,7 +10,7 @@
   overflow: auto;
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  padding: 6px;
+  padding: 12px;
   background-color: var(--color-accent-soft);
 }
 
@@ -46,35 +46,52 @@
 
 .taskDetailsHeader {
   display: flex;
+  position: relative;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-inline-end: 10px;
+  --editor-content-offset: 54px;
+}
+
+.taskDetailsHeader::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: var(--editor-content-offset);
+  border-bottom: 1px solid var(--color-border);
+  content: "";
 }
 
 .taskTitleInput {
   box-sizing: border-box;
-  flex: 1;
+  width: calc(100% - var(--editor-content-offset));
   min-width: 0;
   border: 0;
-  padding: 0;
+  padding: 4px 0 12px;
+  margin-left: var(--editor-content-offset);
   color: inherit;
   background: transparent;
   font: inherit;
   font-size: 1.6rem;
   font-weight: 700;
+  text-align: left;
+  overflow-wrap: anywhere;
+  resize: none;
+  overflow: hidden;
 }
 
 .taskTitleInput:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .closeButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  align-self: flex-start;
   border: 0;
-  padding: 4px;
+  padding: 8px;
   color: inherit;
   background: transparent;
   cursor: pointer;
@@ -85,8 +102,8 @@
 }
 
 .closeButton svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .closeButton:focus-visible {
@@ -99,13 +116,17 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  padding-top: 12px;
   --mantine-font-family: var(--font-family);
   --mantine-font-family-headings: var(--font-family);
 }
 
 .editor :global(.bn-editor) {
+  box-sizing: border-box;
   flex: 1;
   min-height: 0;
+  padding-inline-end: 10px;
+  padding-block-end: 24px;
 }
 
 .editor :global(.bn-default-styles) {
