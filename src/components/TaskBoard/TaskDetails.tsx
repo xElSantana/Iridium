@@ -53,19 +53,30 @@ export default function TaskDetails({
   const [titleDraft, setTitleDraft] = useState(task.title);
   const [maximumPanelWidth, setMaximumPanelWidth] = useState<number>(0);
   const panelRef = useRef<HTMLElement>(null);
-  const resizeHandleRef = useRef<HTMLDivElement>(null);
   const resizeStart = useRef<{
     pointerId: number;
     x: number;
     width: number;
     currentWidth: number;
   } | null>(null);
+  const resizeFrame = useRef<number | null>(null);
+  const resizeWorkspace = useRef<HTMLElement | null>(null);
   const editor = useCreateBlockNote(
     { initialContent: task.content?.length ? task.content : undefined, dictionary: es },
     [task.id],
   );
 
   useEffect(() => setTitleDraft(task.title), [task.title]);
+
+  const finishResize = () => {
+    if (resizeFrame.current !== null) {
+      window.cancelAnimationFrame(resizeFrame.current);
+      resizeFrame.current = null;
+    }
+    resizeWorkspace.current?.removeAttribute("data-task-details-resizing");
+  };
+
+  useEffect(() => finishResize, []);
 
   useEffect(() => {
     const updateBounds = () => {
@@ -142,7 +153,6 @@ export default function TaskDetails({
       {createPortal(
         <div
           className={styles.taskDetailsResizeHandle}
-          ref={resizeHandleRef}
           role="separator"
           aria-label={resizeLabel}
           aria-orientation="vertical"
@@ -160,6 +170,9 @@ export default function TaskDetails({
               width: panelWidth,
               currentWidth: panelWidth,
             };
+            resizeWorkspace.current =
+              panelRef.current.closest<HTMLElement>("[data-workspace]") ?? null;
+            resizeWorkspace.current?.toggleAttribute("data-task-details-resizing", true);
             event.currentTarget.setPointerCapture(event.pointerId);
           }}
           onPointerMove={(event) => {
@@ -173,9 +186,21 @@ export default function TaskDetails({
               Math.max(0, start.width - (event.clientX - start.x)),
             );
             start.currentWidth = nextWidth;
-            panelRef.current.style.width = `${nextWidth}px`;
-            event.currentTarget.setAttribute("aria-valuenow", String(Math.round(nextWidth)));
-            event.currentTarget.setAttribute("aria-valuemax", String(Math.round(containerWidth)));
+
+            // Coalesce a un ancho por frame: escribir style.width en cada pointermove
+            // obliga al editor (BlockNote) a relayoutear por evento, causando lag.
+            const handle = event.currentTarget;
+            if (resizeFrame.current === null) {
+              resizeFrame.current = window.requestAnimationFrame(() => {
+                resizeFrame.current = null;
+                const panelWidth = start.currentWidth;
+                if (panelRef.current) {
+                  panelRef.current.style.width = `${panelWidth}px`;
+                }
+                handle.setAttribute("aria-valuenow", String(Math.round(panelWidth)));
+                handle.setAttribute("aria-valuemax", String(Math.round(containerWidth)));
+              });
+            }
           }}
           onPointerUp={(event) => {
             const start = resizeStart.current;
@@ -184,6 +209,7 @@ export default function TaskDetails({
             if (event.currentTarget.hasPointerCapture(event.pointerId)) {
               event.currentTarget.releasePointerCapture(event.pointerId);
             }
+            finishResize();
             resizeStart.current = null;
             resizePanel(start.currentWidth);
           }}
@@ -194,6 +220,7 @@ export default function TaskDetails({
             if (event.currentTarget.hasPointerCapture(event.pointerId)) {
               event.currentTarget.releasePointerCapture(event.pointerId);
             }
+            finishResize();
             panelRef.current.style.width = `${start.width}px`;
             event.currentTarget.setAttribute("aria-valuenow", String(Math.round(start.width)));
             resizeStart.current = null;

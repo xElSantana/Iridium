@@ -40,6 +40,11 @@
   pointer-events: none;
 }
 
+:global([data-workspace][data-task-details-resizing]) {
+  cursor: col-resize;
+  user-select: none;
+}
+
 .taskDetailsHeader {
   display: flex;
   align-items: center;
