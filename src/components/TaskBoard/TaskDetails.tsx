@@ -261,7 +261,7 @@ function TaskDetails({
     resizeWorkspace.current?.removeAttribute("data-task-details-resizing");
   };
 
-  useEffect(() => finishResize, []);
+  useEffect(() => () => finishResize(), []);
 
   useLayoutEffect(() => {
     const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
@@ -417,9 +417,8 @@ function TaskDetails({
             if (!scrollContent || !scrollbar) return;
 
             const trackHeight = scrollbar.clientHeight;
-            const thumbHeight = Number.parseFloat(
-              scrollbar.style.getPropertyValue("--scrollbar-thumb-height"),
-            );
+            const thumbHeight =
+              Number.parseFloat(scrollbar.style.getPropertyValue("--scrollbar-thumb-height")) || 0;
             const maxScroll = scrollContent.scrollHeight - scrollContent.clientHeight;
             const maxThumbTop = trackHeight - thumbHeight;
             if (maxScroll <= 0 || maxThumbTop <= 0) return;
@@ -463,9 +462,8 @@ function TaskDetails({
               if (!scrollbar || !scrollContentRef.current) return;
 
               event.preventDefault();
-              const thumbTop = Number.parseFloat(
-                scrollbar.style.getPropertyValue("--scrollbar-thumb-top"),
-              );
+              const thumbTop =
+                Number.parseFloat(scrollbar.style.getPropertyValue("--scrollbar-thumb-top")) || 0;
               scrollbarDrag.current = { pointerId: event.pointerId, y: event.clientY, thumbTop };
               event.currentTarget.setPointerCapture(event.pointerId);
             }}
@@ -484,9 +482,9 @@ function TaskDetails({
               }
 
               event.preventDefault();
-              const thumbHeight = Number.parseFloat(
-                scrollbar.style.getPropertyValue("--scrollbar-thumb-height"),
-              );
+              const thumbHeight =
+                Number.parseFloat(scrollbar.style.getPropertyValue("--scrollbar-thumb-height")) ||
+                0;
               const maxThumbTop = scrollbar.clientHeight - thumbHeight;
               const maxScroll = scrollContent.scrollHeight - scrollContent.clientHeight;
               if (maxThumbTop <= 0 || maxScroll <= 0) return;

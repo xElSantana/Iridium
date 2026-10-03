@@ -10,13 +10,13 @@ export function useTaskDetailsPreference(taskListId: string, tasks: Task[]) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [panelWidth, setPanelWidth] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const preferenceRead = useRef(false);
+  const lastReadTaskListId = useRef<string | null>(null);
   const tasksRef = useRef(tasks);
   tasksRef.current = tasks;
 
   useEffect(() => {
-    if (preferenceRead.current) return;
-    preferenceRead.current = true;
+    if (lastReadTaskListId.current === taskListId) return;
+    lastReadTaskListId.current = taskListId;
 
     try {
       const savedPreference = localStorage.getItem(`${STORAGE_KEY}.${taskListId}`);
@@ -54,6 +54,14 @@ export function useTaskDetailsPreference(taskListId: string, tasks: Task[]) {
       setIsLoaded(true);
     }
   }, [taskListId]);
+
+  useEffect(() => {
+    if (!isLoaded || selectedTaskId === null) return;
+
+    if (!tasks.some((task) => task.id === selectedTaskId)) {
+      setSelectedTaskId(null);
+    }
+  }, [isLoaded, selectedTaskId, tasks]);
 
   useEffect(() => {
     if (!isLoaded) return;

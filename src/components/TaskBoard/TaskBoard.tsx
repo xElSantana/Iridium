@@ -131,8 +131,14 @@ export default memo(function TaskBoard({
     panelWidth: taskDetailsWidth,
     setPanelWidth: setTaskDetailsWidth,
   } = useTaskDetailsPreference(taskListId, tasks);
-  const [taskDetailsTarget, setTaskDetailsTarget] = useState<HTMLElement | null>(null);
-  const [taskDetailsSeparator, setTaskDetailsSeparator] = useState<HTMLElement | null>(null);
+  const [taskDetailsTarget] = useState<HTMLElement | null>(() =>
+    typeof document !== "undefined" ? document.getElementById("workspace-task-details") : null,
+  );
+  const [taskDetailsSeparator] = useState<HTMLElement | null>(() =>
+    typeof document !== "undefined"
+      ? document.getElementById("workspace-task-details-separator")
+      : null,
+  );
   const draftCommitted = useRef(false);
   const taskElements = useRef(new Map<string, HTMLElement>());
   const taskToRefocus = useRef<string | null>(null);
@@ -144,7 +150,6 @@ export default memo(function TaskBoard({
     onThumbPointerDown: handleScrollbarThumbPointerDown,
     onThumbPointerMove: handleScrollbarThumbPointerMove,
     onThumbPointerUp: stopThumbDragging,
-    onThumbPointerCancel: stopThumbDraggingCancel,
   } = useCustomScrollbar();
   const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
@@ -183,22 +188,18 @@ export default memo(function TaskBoard({
   }, []);
   const moveTask = useCallback(
     (taskId: string, status: TaskStatus) => {
-      onTasksChange((currentTasks) => {
-        const task = currentTasks.find((currentTask) => currentTask.id === taskId);
-        if (!task || task.status === status) return currentTasks;
+      const task = tasks.find((currentTask) => currentTask.id === taskId);
+      if (!task || task.status === status) return;
 
-        return currentTasks.map((currentTask) =>
-          currentTask.id === taskId ? { ...currentTask, status } : currentTask,
-        );
+      onTasksChange((currentTasks) => {
+        const currentTask = currentTasks.find((item) => item.id === taskId);
+        if (!currentTask || currentTask.status === status) return currentTasks;
+
+        return currentTasks.map((item) => (item.id === taskId ? { ...item, status } : item));
       });
     },
-    [onTasksChange],
+    [onTasksChange, tasks],
   );
-
-  useEffect(() => {
-    setTaskDetailsTarget(document.getElementById("workspace-task-details"));
-    setTaskDetailsSeparator(document.getElementById("workspace-task-details-separator"));
-  }, []);
 
   useEffect(() => {
     if (taskToRefocus.current === null) return;
@@ -401,6 +402,7 @@ export default memo(function TaskBoard({
                           if (event.key !== "Escape") return;
 
                           event.preventDefault();
+                          draftCommitted.current = true;
                           setActiveColumn(null);
                         }}
                       />
@@ -429,7 +431,7 @@ export default memo(function TaskBoard({
               onPointerDown={handleScrollbarThumbPointerDown}
               onPointerMove={handleScrollbarThumbPointerMove}
               onPointerUp={stopThumbDragging}
-              onPointerCancel={stopThumbDraggingCancel}
+              onPointerCancel={stopThumbDragging}
             />
           </div>
         </div>
