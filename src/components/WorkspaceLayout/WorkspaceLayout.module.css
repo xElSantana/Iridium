@@ -2,7 +2,7 @@
   box-sizing: border-box;
   display: grid;
   flex: 1;
-  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(0, 1fr) 0px 0px;
   min-height: 0;
   width: 100%;
   overflow: hidden;
@@ -10,17 +10,23 @@
 }
 
 .workspace:has(> .taskDetailsHost > [data-task-details]) {
-  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(160px, 1fr) 4px max-content;
+  grid-template-columns:
+    var(--sidebar-width, 240px) 4px minmax(160px, 1fr) 4px
+    var(--task-details-width, 400px);
 }
 
-.workspace:has(> .taskDetailsHost > [data-task-details]) > .taskDetailsSeparator {
-  display: block;
+.workspace:has(> .taskDetailsHost > [data-task-details-closing]) {
+  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(0, 1fr) 0px 0px;
 }
 
 .taskDetailsSeparator {
-  display: none;
+  display: block;
   position: relative;
   z-index: 1;
+}
+
+.workspace:has(> .taskDetailsHost > [data-task-details-closing]) > .taskDetailsSeparator {
+  pointer-events: none;
 }
 
 .taskDetailsHost {
@@ -138,11 +144,17 @@
   min-height: 0;
 }
 
-.workspace[data-sidebar-ready]:not([data-resizing]) {
-  transition: grid-template-columns 240ms ease;
+.workspace[data-sidebar-ready]:not([data-resizing]):not([data-task-details-resizing]) {
+  transition: grid-template-columns 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .workspace[data-resizing] {
   cursor: col-resize;
   user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace[data-sidebar-ready]:not([data-resizing]):not([data-task-details-resizing]) {
+    transition: none;
+  }
 }

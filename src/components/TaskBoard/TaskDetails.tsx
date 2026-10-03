@@ -3,7 +3,7 @@ import { es } from "@blocknote/core/locales";
 import { BlockNoteView, type Theme } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
 import { createPortal } from "react-dom";
-import { memo, useEffect, useId, useRef, useState, type ComponentProps } from "react";
+import { memo, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { FiChevronsRight, FiMoreVertical } from "react-icons/fi";
 import type { Task } from "../../features/tasks/taskStorage";
 import styles from "./TaskDetails.module.css";
@@ -13,6 +13,7 @@ const MAX_PANEL_WIDTH = 1200;
 const DEFAULT_PANEL_WIDTH = 400;
 const MIN_SCROLLBAR_THUMB_SIZE = 24;
 const SCROLLBAR_ACTIVE_TIMEOUT = 900;
+const CLOSE_TRANSITION_FALLBACK = 320;
 
 const blockNoteTheme = {
   colors: {
@@ -77,12 +78,14 @@ interface TaskDetailsProps {
   onTaskChange: (taskId: string, changes: Partial<Pick<Task, "title" | "content">>) => void;
 }
 
+type TaskEditor = ReturnType<typeof useCreateBlockNote>;
+
 const TaskContent = memo(function TaskContent({
   editor,
   taskId,
   onTaskChange,
 }: {
-  editor: ComponentProps<typeof BlockNoteView>["editor"];
+  editor: TaskEditor;
   taskId: string;
   onTaskChange: TaskDetailsProps["onTaskChange"];
 }) {
@@ -108,14 +111,16 @@ function TaskDetails({
   onTaskChange,
 }: TaskDetailsProps) {
   const [titleDraft, setTitleDraft] = useState(task.title);
-  const [maximumPanelWidth, setMaximumPanelWidth] = useState(MAX_PANEL_WIDTH);
+  const [isClosing, setIsClosing] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
   const scrollbarRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
+  const resizeHandleRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const scrollbarDrag = useRef<{ pointerId: number; y: number; thumbTop: number } | null>(null);
   const scrollbarActiveTimer = useRef<number | null>(null);
+  const maximumPanelWidth = useRef(MAX_PANEL_WIDTH);
   const resizeStart = useRef<{
     pointerId: number;
     x: number;
@@ -131,12 +136,16 @@ function TaskDetails({
 
   useEffect(() => setTitleDraft(task.title), [task.title]);
 
-  useEffect(() => {
+  const adjustTitleHeight = () => {
     const titleInput = titleInputRef.current;
     if (!titleInput) return;
 
     titleInput.style.height = "auto";
     titleInput.style.height = `${titleInput.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    adjustTitleHeight();
   }, [titleDraft]);
 
   useEffect(() => {
@@ -185,22 +194,56 @@ function TaskDetails({
     };
 
     scrollContent.addEventListener("scroll", onScroll, { passive: true });
-    const resizeObserver = new ResizeObserver(updateScrollbar);
+
+    const onResizeEntry = () => {
+      if (panel.hasAttribute("data-task-details-closing")) return;
+      adjustTitleHeight();
+      updateScrollbar();
+    };
+
+    const resizeObserver = new ResizeObserver(onResizeEntry);
     resizeObserver.observe(panel);
     resizeObserver.observe(scrollContent);
-    if (titleInputRef.current) resizeObserver.observe(titleInputRef.current);
-    const editorContent = scrollContent.querySelector<HTMLElement>(".bn-editor");
-    if (editorContent) resizeObserver.observe(editorContent);
-    const mutationObserver = new MutationObserver(updateScrollbar);
+
+    let observedEditor: HTMLElement | null = null;
+    const tryObserveEditor = () => {
+      if (observedEditor) return;
+      const editorContent = scrollContent.querySelector<HTMLElement>(".bn-editor");
+      if (editorContent) {
+        observedEditor = editorContent;
+        resizeObserver.observe(editorContent);
+      }
+    };
+    tryObserveEditor();
+
+    const mutationObserver = new MutationObserver(() => {
+      tryObserveEditor();
+      updateScrollbar();
+    });
     mutationObserver.observe(scrollContent, {
       childList: true,
       characterData: true,
       subtree: true,
     });
+
+    const workspace = panel.closest<HTMLElement>("[data-workspace]");
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (
+        event.target === workspace &&
+        event.propertyName === "grid-template-columns" &&
+        !panel.hasAttribute("data-task-details-closing")
+      ) {
+        adjustTitleHeight();
+        updateScrollbar();
+      }
+    };
+    workspace?.addEventListener("transitionend", onTransitionEnd);
+
     updateScrollbar();
 
     return () => {
       scrollContent.removeEventListener("scroll", onScroll);
+      workspace?.removeEventListener("transitionend", onTransitionEnd);
       resizeObserver.disconnect();
       mutationObserver.disconnect();
       if (scrollbarActiveTimer.current !== null) {
@@ -220,19 +263,71 @@ function TaskDetails({
 
   useEffect(() => finishResize, []);
 
+  useLayoutEffect(() => {
+    const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
+    workspace?.style.setProperty("--task-details-width", `${width ?? DEFAULT_PANEL_WIDTH}px`);
+  }, [width]);
+
   useEffect(() => {
+    const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
+    return () => {
+      queueMicrotask(() => {
+        if (!workspace?.querySelector("[data-task-details]")) {
+          workspace?.style.removeProperty("--task-details-width");
+        }
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isClosing) return;
+
+    const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
+    if (!workspace) return;
+
+    const finishClosing = () => onClose();
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finishClosing();
+      return;
+    }
+
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.target === workspace && event.propertyName === "grid-template-columns") {
+        finishClosing();
+      }
+    };
+
+    workspace.addEventListener("transitionend", onTransitionEnd);
+    const fallbackTimer = window.setTimeout(finishClosing, CLOSE_TRANSITION_FALLBACK);
+    return () => {
+      workspace.removeEventListener("transitionend", onTransitionEnd);
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [isClosing, onClose]);
+
+  const currentWidthRef = useRef(width ?? DEFAULT_PANEL_WIDTH);
+  currentWidthRef.current = width ?? DEFAULT_PANEL_WIDTH;
+
+  useEffect(() => {
+    const currentWidth = width ?? DEFAULT_PANEL_WIDTH;
+    if (currentWidth > maximumPanelWidth.current) {
+      onResize(maximumPanelWidth.current);
+    }
+  }, [width, onResize]);
+
+  useEffect(() => {
+    const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
     const updateBounds = () => {
       const maxWidth = getMaximumPanelWidth(panelRef.current);
-      setMaximumPanelWidth(maxWidth);
+      maximumPanelWidth.current = maxWidth;
+      resizeHandleRef.current?.setAttribute("aria-valuemax", String(Math.round(maxWidth)));
 
-      const panelWidth = panelRef.current?.getBoundingClientRect().width;
-      if (panelWidth !== undefined && panelWidth > maxWidth) {
+      if (currentWidthRef.current > maxWidth) {
         onResize(maxWidth);
       }
     };
 
     updateBounds();
-    const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
     const sidebar = workspace?.querySelector<HTMLElement>("#workspace-sidebar");
     const resizeObserver = new ResizeObserver(updateBounds);
     if (workspace) resizeObserver.observe(workspace);
@@ -240,10 +335,14 @@ function TaskDetails({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [onResize]);
+  }, [onResize, resizeTarget]);
 
   const resizePanel = (nextWidth: number) => {
-    onResize(Math.min(Math.max(nextWidth, MIN_PANEL_WIDTH), maximumPanelWidth));
+    const panelWidth = Math.min(Math.max(nextWidth, MIN_PANEL_WIDTH), maximumPanelWidth.current);
+    panelRef.current
+      ?.closest<HTMLElement>("[data-workspace]")
+      ?.style.setProperty("--task-details-width", `${panelWidth}px`);
+    onResize(panelWidth);
   };
 
   return (
@@ -251,9 +350,11 @@ function TaskDetails({
       <aside
         className={styles.taskDetails}
         data-task-details
+        data-task-details-closing={isClosing || undefined}
+        aria-hidden={isClosing}
+        inert={isClosing}
         ref={panelRef}
         aria-label={task.title}
-        style={{ width: width ?? DEFAULT_PANEL_WIDTH }}
       >
         <div className={styles.taskDetailsContent} ref={scrollContentRef} id={panelId}>
           <header className={styles.taskDetailsHeader}>
@@ -262,7 +363,10 @@ function TaskDetails({
               type="button"
               aria-label={closeLabel}
               title={closeLabel}
-              onClick={onClose}
+              onClick={(event) => {
+                event.currentTarget.blur();
+                setIsClosing(true);
+              }}
             >
               <FiChevronsRight aria-hidden="true" />
             </button>
@@ -275,6 +379,12 @@ function TaskDetails({
               maxLength={200}
               aria-label={titleLabel}
               onChange={(event) => setTitleDraft(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                }
+              }}
               onBlur={() => {
                 const title = titleDraft.trim();
                 if (title) {
@@ -405,12 +515,13 @@ function TaskDetails({
       {createPortal(
         <div
           className={styles.taskDetailsResizeHandle}
+          ref={resizeHandleRef}
           role="separator"
           aria-label={resizeLabel}
           aria-orientation="vertical"
           aria-valuemin={MIN_PANEL_WIDTH}
           aria-valuenow={width ?? DEFAULT_PANEL_WIDTH}
-          aria-valuemax={Math.round(maximumPanelWidth)}
+          aria-valuemax={Math.round(maximumPanelWidth.current)}
           tabIndex={0}
           onPointerDown={(event) => {
             if (event.button !== 0 || !panelRef.current) return;
@@ -435,7 +546,7 @@ function TaskDetails({
             if (!start || start.pointerId !== event.pointerId || !panelRef.current) return;
 
             const nextWidth = Math.min(
-              maximumPanelWidth,
+              maximumPanelWidth.current,
               Math.max(MIN_PANEL_WIDTH, start.width - (event.clientX - start.x)),
             );
             start.currentWidth = nextWidth;
@@ -445,11 +556,11 @@ function TaskDetails({
               resizeFrame.current = window.requestAnimationFrame(() => {
                 resizeFrame.current = null;
                 const panelWidth = start.currentWidth;
-                if (panelRef.current) {
-                  panelRef.current.style.width = `${panelWidth}px`;
-                }
+                panelRef.current
+                  ?.closest<HTMLElement>("[data-workspace]")
+                  ?.style.setProperty("--task-details-width", `${panelWidth}px`);
                 handle.setAttribute("aria-valuenow", String(Math.round(panelWidth)));
-                handle.setAttribute("aria-valuemax", String(Math.round(maximumPanelWidth)));
+                handle.setAttribute("aria-valuemax", String(Math.round(maximumPanelWidth.current)));
               });
             }
           }}
@@ -472,7 +583,9 @@ function TaskDetails({
               event.currentTarget.releasePointerCapture(event.pointerId);
             }
             finishResize();
-            panelRef.current.style.width = `${start.width}px`;
+            panelRef.current
+              .closest<HTMLElement>("[data-workspace]")
+              ?.style.setProperty("--task-details-width", `${start.width}px`);
             event.currentTarget.setAttribute("aria-valuenow", String(Math.round(start.width)));
             resizeStart.current = null;
           }}
@@ -498,6 +611,7 @@ export default memo(
   (previous, next) =>
     previous.task.id === next.task.id &&
     previous.task.title === next.task.title &&
+    previous.task.content === next.task.content &&
     previous.titleLabel === next.titleLabel &&
     previous.closeLabel === next.closeLabel &&
     previous.resizeLabel === next.resizeLabel &&
