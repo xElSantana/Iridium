@@ -270,103 +270,105 @@ export default memo(function TaskBoard({
                     clearDragOverTaskId();
                   }}
                 >
-                  <div className={styles.columnHeader}>
-                    <h2 className={styles.statusBadge}>
-                      <span className={styles.statusDot} aria-hidden="true" />
-                      {labels.statusLabels[status]}
-                    </h2>
-                    <div className={styles.columnActions}>
-                      <span>{columnTasks.length}</span>
+                  <div className={styles.columnContent}>
+                    <div className={styles.columnHeader}>
+                      <h2 className={styles.statusBadge}>
+                        <span className={styles.statusDot} aria-hidden="true" />
+                        {labels.statusLabels[status]}
+                      </h2>
+                      <div className={styles.columnActions}>
+                        <span>{columnTasks.length}</span>
+                        <button
+                          className={styles.iconButton}
+                          type="button"
+                          aria-label={`${labels.addTask}: ${labels.statusLabels[status]}`}
+                          title={`${labels.addTask}: ${labels.statusLabels[status]}`}
+                          onClick={() => openTaskForm(status)}
+                        >
+                          <LuPlus aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {columnTasks.length > 0 && (
+                      <div className={styles.taskList}>
+                        {columnTasks.map((task) => (
+                          <TaskCard
+                            key={task.id}
+                            id={task.id}
+                            title={task.title}
+                            status={status}
+                            statusLabel={labels.statusLabels[status]}
+                            isSelected={selectedTaskId === task.id}
+                            dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
+                            registerTaskElement={registerTaskElement}
+                            onContextMenu={onContextMenu}
+                            onSelect={selectTask}
+                            onMove={moveTask}
+                            onPrepareRefocus={prepareTaskRefocus}
+                            onDragStart={handleCardDragStart}
+                            onDragOver={handleCardDragOver}
+                            onDragLeave={handleCardDragLeave}
+                            onDrop={handleCardDrop}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {activeColumn === status ? (
+                      <form
+                        className={styles.createForm}
+                        onSubmit={(event) => handleCreateTask(event, status)}
+                      >
+                        <textarea
+                          className={styles.taskInput}
+                          autoFocus
+                          rows={1}
+                          value={draftTitle}
+                          maxLength={200}
+                          placeholder={labels.taskPlaceholder}
+                          aria-label={labels.taskPlaceholder}
+                          onChange={(event) => {
+                            const input = event.currentTarget;
+                            setDraftTitle(input.value);
+                            input.style.height = "auto";
+                            input.style.height = `${input.scrollHeight}px`;
+                          }}
+                          onBlur={(event) => {
+                            const title = event.currentTarget.value;
+                            if (title.trim()) {
+                              commitDraft(title, status);
+                            } else {
+                              setActiveColumn(null);
+                            }
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" && !event.shiftKey) {
+                              if (event.nativeEvent.isComposing) return;
+                              event.preventDefault();
+                              event.currentTarget.form?.requestSubmit();
+                              return;
+                            }
+
+                            if (event.key !== "Escape") return;
+
+                            event.preventDefault();
+                            draftCommitted.current = true;
+                            setActiveColumn(null);
+                          }}
+                        />
+                      </form>
+                    ) : (
                       <button
-                        className={styles.iconButton}
+                        className={styles.addButton}
                         type="button"
-                        aria-label={`${labels.addTask}: ${labels.statusLabels[status]}`}
-                        title={`${labels.addTask}: ${labels.statusLabels[status]}`}
                         onClick={() => openTaskForm(status)}
                       >
                         <LuPlus aria-hidden="true" />
+                        {labels.addTask}
                       </button>
-                    </div>
+                    )}
                   </div>
-
-                  {columnTasks.length > 0 && (
-                    <div className={styles.taskList}>
-                      {columnTasks.map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          id={task.id}
-                          title={task.title}
-                          status={status}
-                          statusLabel={labels.statusLabels[status]}
-                          isSelected={selectedTaskId === task.id}
-                          dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
-                          registerTaskElement={registerTaskElement}
-                          onContextMenu={onContextMenu}
-                          onSelect={selectTask}
-                          onMove={moveTask}
-                          onPrepareRefocus={prepareTaskRefocus}
-                          onDragStart={handleCardDragStart}
-                          onDragOver={handleCardDragOver}
-                          onDragLeave={handleCardDragLeave}
-                          onDrop={handleCardDrop}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {activeColumn === status ? (
-                    <form
-                      className={styles.createForm}
-                      onSubmit={(event) => handleCreateTask(event, status)}
-                    >
-                      <textarea
-                        className={styles.taskInput}
-                        autoFocus
-                        rows={1}
-                        value={draftTitle}
-                        maxLength={200}
-                        placeholder={labels.taskPlaceholder}
-                        aria-label={labels.taskPlaceholder}
-                        onChange={(event) => {
-                          const input = event.currentTarget;
-                          setDraftTitle(input.value);
-                          input.style.height = "auto";
-                          input.style.height = `${input.scrollHeight}px`;
-                        }}
-                        onBlur={(event) => {
-                          const title = event.currentTarget.value;
-                          if (title.trim()) {
-                            commitDraft(title, status);
-                          } else {
-                            setActiveColumn(null);
-                          }
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" && !event.shiftKey) {
-                            if (event.nativeEvent.isComposing) return;
-                            event.preventDefault();
-                            event.currentTarget.form?.requestSubmit();
-                            return;
-                          }
-
-                          if (event.key !== "Escape") return;
-
-                          event.preventDefault();
-                          draftCommitted.current = true;
-                          setActiveColumn(null);
-                        }}
-                      />
-                    </form>
-                  ) : (
-                    <button
-                      className={styles.addButton}
-                      type="button"
-                      onClick={() => openTaskForm(status)}
-                    >
-                      <LuPlus aria-hidden="true" />
-                      {labels.addTask}
-                    </button>
-                  )}
                 </section>
               );
             })}
