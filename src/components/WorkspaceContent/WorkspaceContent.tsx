@@ -296,7 +296,7 @@ export default function WorkspaceContent({ labels }: Props) {
         aria-labelledby="template-dialog-title"
         onClose={() => {
           setIsTemplateModalOpen(false);
-          if (!closedByActionRef.current && document.activeElement instanceof HTMLElement) {
+          if (closedByActionRef.current && document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
           }
           closedByActionRef.current = false;

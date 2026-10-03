@@ -117,8 +117,7 @@
 }
 
 .titleLine h1,
-.columnHeader h2,
-.task p {
+.columnHeader h2 {
   margin: 0;
 }
 
@@ -313,23 +312,6 @@
   gap: 6px;
 }
 
-.task {
-  display: grid;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid color-mix(in srgb, var(--color-border) 26%, transparent);
-  border-radius: 6px;
-  background-color: var(--color-accent-soft);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.task:hover {
-  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
-}
-
 .createForm {
   min-width: 0;
 }
@@ -352,8 +334,7 @@
 }
 
 .addButton:focus-visible,
-.iconButton:focus-visible,
-.task:focus-visible {
+.iconButton:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }

@@ -1,19 +1,13 @@
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type MouseEvent,
-  type SyntheticEvent,
-} from "react";
+import { memo, useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 import { LuImagePlus, LuKanban, LuListTodo, LuPlus } from "react-icons/lu";
 import { TASK_BACKGROUNDS, type TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
 import { TASK_STATUSES, type Task, type TaskStatus } from "../../features/tasks/taskStorage";
 import { useContextMenu } from "../ContextMenu/useContextMenu";
+import TaskCard from "./TaskCard";
 import TaskDetails from "./TaskDetails";
 import { useCustomScrollbar } from "./useCustomScrollbar";
+import { useDragReorder } from "./useDragReorder";
 import { useTaskDetailsPreference } from "./useTaskDetailsPreference";
 import styles from "./TaskBoard.module.css";
 
@@ -43,76 +37,6 @@ interface Props {
   onBannerChange: (bannerId: TaskBackgroundId | null) => void;
 }
 
-interface TaskCardProps {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  statusLabel: string;
-  isSelected: boolean;
-  registerTaskElement: (taskId: string, element: HTMLElement | null) => void;
-  onContextMenu: (event: MouseEvent<HTMLElement>, taskId: string) => void;
-  onSelect: (taskId: string) => void;
-  onMove: (taskId: string, status: TaskStatus) => void;
-  onPrepareRefocus: (taskId: string) => void;
-}
-
-const TaskCard = memo(function TaskCard({
-  id,
-  title,
-  status,
-  statusLabel,
-  isSelected,
-  registerTaskElement,
-  onContextMenu,
-  onSelect,
-  onMove,
-  onPrepareRefocus,
-}: TaskCardProps) {
-  const setTaskElement = useCallback(
-    (element: HTMLElement | null) => registerTaskElement(id, element),
-    [id, registerTaskElement],
-  );
-
-  return (
-    <article
-      className={styles.task}
-      ref={setTaskElement}
-      draggable
-      tabIndex={0}
-      role="button"
-      aria-expanded={isSelected}
-      aria-label={`${title}, ${statusLabel}`}
-      aria-keyshortcuts="Enter Space ArrowLeft ArrowRight"
-      onContextMenu={(event) => onContextMenu(event, id)}
-      onClick={() => onSelect(id)}
-      onDragStart={(event) => {
-        event.dataTransfer.setData("text/plain", id);
-        event.dataTransfer.effectAllowed = "move";
-      }}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect(id);
-          return;
-        }
-        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-
-        const statusIndex = TASK_STATUSES.indexOf(status);
-        const nextIndex = statusIndex + (event.key === "ArrowRight" ? 1 : -1);
-        const nextStatus = TASK_STATUSES[nextIndex];
-        if (!nextStatus) return;
-
-        event.preventDefault();
-        onPrepareRefocus(id);
-        onMove(id, nextStatus);
-      }}
-    >
-      <p>{title}</p>
-    </article>
-  );
-});
-
 export default memo(function TaskBoard({
   taskListId,
   title,
@@ -125,6 +49,15 @@ export default memo(function TaskBoard({
   const [activeColumn, setActiveColumn] = useState<TaskStatus | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
+  const {
+    dragOverTaskId,
+    dropPosition,
+    clearDragOverTaskId,
+    handleCardDragStart,
+    handleCardDragOver,
+    handleCardDragLeave,
+    handleCardDrop,
+  } = useDragReorder(onTasksChange);
   const {
     selectedTaskId,
     setSelectedTaskId,
@@ -188,9 +121,6 @@ export default memo(function TaskBoard({
   }, []);
   const moveTask = useCallback(
     (taskId: string, status: TaskStatus) => {
-      const task = tasks.find((currentTask) => currentTask.id === taskId);
-      if (!task || task.status === status) return;
-
       onTasksChange((currentTasks) => {
         const currentTask = currentTasks.find((item) => item.id === taskId);
         if (!currentTask || currentTask.status === status) return currentTasks;
@@ -198,7 +128,7 @@ export default memo(function TaskBoard({
         return currentTasks.map((item) => (item.id === taskId ? { ...item, status } : item));
       });
     },
-    [onTasksChange, tasks],
+    [onTasksChange],
   );
 
   useEffect(() => {
@@ -335,7 +265,9 @@ export default memo(function TaskBoard({
                   onDrop={(event) => {
                     event.preventDefault();
                     const taskId = event.dataTransfer.getData("text/plain");
-                    if (taskId) moveTask(taskId, status);
+
+                    if (taskId && dragOverTaskId === null) moveTask(taskId, status);
+                    clearDragOverTaskId();
                   }}
                 >
                   <div className={styles.columnHeader}>
@@ -367,11 +299,16 @@ export default memo(function TaskBoard({
                           status={status}
                           statusLabel={labels.statusLabels[status]}
                           isSelected={selectedTaskId === task.id}
+                          dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
                           registerTaskElement={registerTaskElement}
                           onContextMenu={onContextMenu}
                           onSelect={selectTask}
                           onMove={moveTask}
                           onPrepareRefocus={prepareTaskRefocus}
+                          onDragStart={handleCardDragStart}
+                          onDragOver={handleCardDragOver}
+                          onDragLeave={handleCardDragLeave}
+                          onDrop={handleCardDrop}
                         />
                       ))}
                     </div>

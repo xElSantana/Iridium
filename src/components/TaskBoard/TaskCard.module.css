@@ -1,0 +1,56 @@
+.task {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 26%, transparent);
+  border-radius: 6px;
+  background-color: var(--color-accent-soft);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.task p {
+  margin: 0;
+}
+
+.task::before,
+.task::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  border-radius: 3px;
+  background-color: var(--color-primary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 80ms ease;
+}
+
+.task::before {
+  top: -5px;
+}
+
+.task::after {
+  bottom: -5px;
+}
+
+.dropBefore::before {
+  opacity: 1;
+}
+
+.dropAfter::after {
+  opacity: 1;
+}
+
+.task:hover {
+  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
+}
+
+.task:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
