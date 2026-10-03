@@ -3,9 +3,9 @@
   display: grid;
   gap: 6px;
   padding: 8px;
-  border: 1px solid color-mix(in srgb, var(--color-border) 26%, transparent);
+  border: 1px solid transparent;
   border-radius: 6px;
-  background-color: var(--color-accent-soft);
+  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
   color: inherit;
   font: inherit;
   text-align: left;
@@ -14,6 +14,8 @@
 
 .task p {
   margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .task::before,
@@ -47,7 +49,7 @@
 }
 
 .task:hover {
-  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
+  border-color: var(--color-border);
 }
 
 .task:focus-visible {

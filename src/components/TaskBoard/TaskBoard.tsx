@@ -319,14 +319,20 @@ export default memo(function TaskBoard({
                       className={styles.createForm}
                       onSubmit={(event) => handleCreateTask(event, status)}
                     >
-                      <input
+                      <textarea
                         className={styles.taskInput}
                         autoFocus
+                        rows={1}
                         value={draftTitle}
                         maxLength={200}
                         placeholder={labels.taskPlaceholder}
                         aria-label={labels.taskPlaceholder}
-                        onChange={(event) => setDraftTitle(event.currentTarget.value)}
+                        onChange={(event) => {
+                          const input = event.currentTarget;
+                          setDraftTitle(input.value);
+                          input.style.height = "auto";
+                          input.style.height = `${input.scrollHeight}px`;
+                        }}
                         onBlur={(event) => {
                           const title = event.currentTarget.value;
                           if (title.trim()) {
@@ -336,6 +342,13 @@ export default memo(function TaskBoard({
                           }
                         }}
                         onKeyDown={(event) => {
+                          if (event.key === "Enter" && !event.shiftKey) {
+                            if (event.nativeEvent.isComposing) return;
+                            event.preventDefault();
+                            event.currentTarget.form?.requestSubmit();
+                            return;
+                          }
+
                           if (event.key !== "Escape") return;
 
                           event.preventDefault();
@@ -358,19 +371,19 @@ export default memo(function TaskBoard({
               );
             })}
           </div>
+        </div>
+        <div
+          className={styles.customScrollbar}
+          ref={scrollbarTrackRef}
+          onPointerDown={handleScrollbarTrackPointerDown}
+        >
           <div
-            className={styles.customScrollbar}
-            ref={scrollbarTrackRef}
-            onPointerDown={handleScrollbarTrackPointerDown}
-          >
-            <div
-              className={styles.customScrollbarThumb}
-              onPointerDown={handleScrollbarThumbPointerDown}
-              onPointerMove={handleScrollbarThumbPointerMove}
-              onPointerUp={stopThumbDragging}
-              onPointerCancel={stopThumbDragging}
-            />
-          </div>
+            className={styles.customScrollbarThumb}
+            onPointerDown={handleScrollbarThumbPointerDown}
+            onPointerMove={handleScrollbarThumbPointerMove}
+            onPointerUp={stopThumbDragging}
+            onPointerCancel={stopThumbDragging}
+          />
         </div>
       </section>
       {selectedTask && taskDetailsTarget && taskDetailsSeparator

@@ -124,7 +124,7 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--color-border);
   background-color: var(--color-accent-soft);
   border-radius: 6px;

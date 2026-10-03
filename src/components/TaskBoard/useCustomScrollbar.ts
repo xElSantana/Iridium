@@ -22,7 +22,7 @@ export function useCustomScrollbar() {
 
     const maxScrollLeft = scroller.scrollWidth - scroller.clientWidth;
     const trackRect = track.getBoundingClientRect();
-    const usableTrackWidth = Math.max(0, trackRect.width);
+    const usableTrackWidth = Math.max(0, Math.min(trackRect.width, scroller.clientWidth));
 
     maxScroll.current = maxScrollLeft;
 
@@ -173,6 +173,5 @@ export function useCustomScrollbar() {
     onThumbPointerDown,
     onThumbPointerMove,
     onThumbPointerUp: stopThumbDragging,
-    onThumbPointerCancel: stopThumbDragging,
   };
 }
