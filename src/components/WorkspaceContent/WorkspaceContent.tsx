@@ -277,6 +277,7 @@ export default function WorkspaceContent({ labels }: Props) {
           {selectedTaskList ? (
             <TaskBoard
               key={selectedTaskList.id}
+              taskListId={selectedTaskList.id}
               title={selectedTaskList.title}
               tasks={selectedTaskList.tasks}
               bannerId={selectedTaskList.bannerId ?? null}

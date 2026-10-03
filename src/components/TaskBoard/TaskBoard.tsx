@@ -14,6 +14,7 @@ import { TASK_STATUSES, type Task, type TaskStatus } from "../../features/tasks/
 import { useContextMenu } from "../ContextMenu/useContextMenu";
 import TaskDetails from "./TaskDetails";
 import { useCustomScrollbar } from "./useCustomScrollbar";
+import { useTaskDetailsPreference } from "./useTaskDetailsPreference";
 import styles from "./TaskBoard.module.css";
 
 export interface TaskBoardLabels {
@@ -33,6 +34,7 @@ export interface TaskBoardLabels {
 }
 
 interface Props {
+  taskListId: string;
   title: string;
   tasks: Task[];
   bannerId: TaskBackgroundId | null;
@@ -112,6 +114,7 @@ const TaskCard = memo(function TaskCard({
 });
 
 export default memo(function TaskBoard({
+  taskListId,
   title,
   tasks,
   bannerId,
@@ -122,8 +125,12 @@ export default memo(function TaskBoard({
   const [activeColumn, setActiveColumn] = useState<TaskStatus | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [taskDetailsWidth, setTaskDetailsWidth] = useState<number | null>(null);
+  const {
+    selectedTaskId,
+    setSelectedTaskId,
+    panelWidth: taskDetailsWidth,
+    setPanelWidth: setTaskDetailsWidth,
+  } = useTaskDetailsPreference(taskListId, tasks);
   const [taskDetailsTarget, setTaskDetailsTarget] = useState<HTMLElement | null>(null);
   const [taskDetailsSeparator, setTaskDetailsSeparator] = useState<HTMLElement | null>(null);
   const draftCommitted = useRef(false);
@@ -143,7 +150,6 @@ export default memo(function TaskBoard({
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const closeTaskDetails = useCallback(() => {
     setSelectedTaskId(null);
-    setTaskDetailsWidth(null);
   }, []);
   const updateTaskDetails = useCallback(
     (taskId: string, changes: Partial<Pick<Task, "title" | "content">>) => {
@@ -161,7 +167,6 @@ export default memo(function TaskBoard({
       );
       if (selectedTaskId === taskId) {
         setSelectedTaskId(null);
-        setTaskDetailsWidth(null);
       }
     },
   });
