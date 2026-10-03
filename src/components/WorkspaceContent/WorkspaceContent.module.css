@@ -77,9 +77,6 @@
 
 .error {
   padding: 6px;
-}
-
-.error {
   font-weight: 700;
 }
 
@@ -142,10 +139,6 @@
 .templateDialog .dialogCloseButton:focus-visible {
   outline: none;
   filter: brightness(0.8);
-}
-
-.dialogCloseButton:hover {
-  background: transparent;
 }
 
 .templateOption {

@@ -41,11 +41,11 @@ export default function WorkspaceContent({ labels }: Props) {
   const [storageStatus, setStorageStatus] = useState<"loading" | "ready" | "load-error">("loading");
   const [saveError, setSaveError] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const skipNextSave = useRef(false);
   const pendingWorkspaceSave = useRef<WorkspaceData | null>(null);
   const saveTimer = useRef<number | null>(null);
+  const closedByActionRef = useRef(false);
   const loadError = storageStatus === "load-error";
 
   const flushPendingSave = useCallback((notify = true) => {
@@ -68,8 +68,6 @@ export default function WorkspaceContent({ labels }: Props) {
   }, []);
 
   useEffect(() => {
-    setSidebarTarget(document.getElementById("workspace-sidebar-content"));
-
     try {
       const loaded = loadWorkspace(labels.taskListTemplate);
       setWorkspace(loaded.workspace);
@@ -145,13 +143,15 @@ export default function WorkspaceContent({ labels }: Props) {
     };
   }, [isTemplateModalOpen]);
 
+  const sidebarTarget =
+    typeof document !== "undefined" ? document.getElementById("workspace-sidebar-content") : null;
   const selectedTaskList =
     workspace.taskLists.find((taskList) => taskList.id === workspace.selectedTaskListId) ?? null;
-  const selectedTaskListId = selectedTaskList?.id;
+  const selectedTaskListId = selectedTaskList?.id ?? null;
 
   const handleTasksChange = useCallback(
     (updateTasks: (tasks: TaskList["tasks"]) => TaskList["tasks"]) => {
-      if (selectedTaskListId === undefined) return;
+      if (selectedTaskListId === null) return;
 
       setWorkspace((current) => ({
         ...current,
@@ -167,7 +167,7 @@ export default function WorkspaceContent({ labels }: Props) {
 
   const handleBannerChange = useCallback(
     (bannerId: TaskBackgroundId | null) => {
-      if (selectedTaskListId === undefined) return;
+      if (selectedTaskListId === null) return;
 
       setWorkspace((current) => ({
         ...current,
@@ -202,6 +202,7 @@ export default function WorkspaceContent({ labels }: Props) {
   });
 
   const addTaskList = () => {
+    closedByActionRef.current = true;
     setIsTemplateModalOpen(false);
     setWorkspace((current) => {
       const baseTitle = labels.taskListTemplate;
@@ -295,9 +296,10 @@ export default function WorkspaceContent({ labels }: Props) {
         aria-labelledby="template-dialog-title"
         onClose={() => {
           setIsTemplateModalOpen(false);
-          if (document.activeElement instanceof HTMLElement) {
+          if (!closedByActionRef.current && document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
           }
+          closedByActionRef.current = false;
         }}
         onClick={(event) => {
           if (event.target === event.currentTarget) setIsTemplateModalOpen(false);
