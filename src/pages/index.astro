@@ -13,8 +13,10 @@ const t = await createTranslator();
     hideSidebarLabel={t("workspace.hideSidebar")}
     showSidebarLabel={t("workspace.showSidebar")}
     workspaceContentLabels={{
+      actionsLabel: t("common.actions"),
       addTemplate: t("workspace.addTemplate"),
       deleteTaskList: t("workspace.deleteTaskList"),
+      editTaskList: t("workspace.editTaskList"),
       sidebarPages: t("workspace.pages"),
       templateModalTitle: t("templates.modalTitle"),
       templateModalDescription: t("templates.modalDescription"),
@@ -23,6 +25,7 @@ const t = await createTranslator();
       loadError: t("workspace.loadError"),
       saveError: t("workspace.saveError"),
       taskBoard: {
+        actionsLabel: t("common.actions"),
         boardView: t("taskBoard.boardView"),
         titleLabel: t("taskBoard.titleLabel"),
         addTask: t("taskBoard.addTask"),
@@ -31,6 +34,7 @@ const t = await createTranslator();
         resizeTaskDetails: t("taskBoard.resizeTaskDetails"),
         taskScrollbar: t("taskBoard.taskScrollbar"),
         deleteTask: t("taskBoard.deleteTask"),
+        editTask: t("taskBoard.editTask"),
         addBanner: t("taskBoard.addBanner"),
         changeBanner: t("taskBoard.changeBanner"),
         removeBanner: t("taskBoard.removeBanner"),

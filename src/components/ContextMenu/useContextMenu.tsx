@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
+import { LuPencil, LuTrash2 } from "react-icons/lu";
 import styles from "./ContextMenu.module.css";
 
 interface Position {
@@ -8,12 +9,22 @@ interface Position {
 }
 
 interface ContextMenuOptions<T> {
+  actionsLabel: string;
+  editLabel: string;
   label: string;
   disabled?: boolean;
+  onEdit: (target: T) => void;
   onSelect: (target: T) => void;
 }
 
-export function useContextMenu<T>({ label, disabled = false, onSelect }: ContextMenuOptions<T>) {
+export function useContextMenu<T>({
+  actionsLabel,
+  editLabel,
+  label,
+  disabled = false,
+  onEdit,
+  onSelect,
+}: ContextMenuOptions<T>) {
   const [menu, setMenu] = useState<{ position: Position; target: T } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -59,7 +70,7 @@ export function useContextMenu<T>({ label, disabled = false, onSelect }: Context
         target,
         position: {
           x: Math.max(8, Math.min(x, window.innerWidth - 160)),
-          y: Math.max(8, Math.min(y, window.innerHeight - 48)),
+          y: Math.max(8, Math.min(y, window.innerHeight - 72)),
         },
       });
     },
@@ -73,9 +84,21 @@ export function useContextMenu<T>({ label, disabled = false, onSelect }: Context
             className={styles.menu}
             ref={menuRef}
             role="menu"
-            aria-label={label}
+            aria-label={actionsLabel}
             style={{ left: menu.position.x, top: menu.position.y }}
           >
+            <button
+              className={styles.menuItem}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onEdit(menu.target);
+                setMenu(null);
+              }}
+            >
+              <LuPencil className={styles.menuItemIcon} aria-hidden="true" />
+              {editLabel}
+            </button>
             <button
               className={styles.menuItem}
               type="button"
@@ -85,6 +108,7 @@ export function useContextMenu<T>({ label, disabled = false, onSelect }: Context
                 setMenu(null);
               }}
             >
+              <LuTrash2 className={styles.menuItemIcon} aria-hidden="true" />
               {label}
             </button>
           </div>,

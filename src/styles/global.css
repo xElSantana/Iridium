@@ -70,6 +70,7 @@ body {
   height: 100vh;
   overflow: hidden;
   margin: 0;
+  background-color: var(--color-background);
   color: var(--color-text);
   font-family: var(--font-family);
   font-weight: 400;

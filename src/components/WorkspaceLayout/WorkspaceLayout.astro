@@ -19,6 +19,34 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
 ---
 
 <div class={styles.workspace} data-workspace data-task-details-restoring>
+  <script is:inline>
+    (() => {
+      try {
+        const workspace = document.currentScript?.parentElement;
+        if (!workspace) return;
+
+        const sidebarRaw = localStorage.getItem("iridium.workspace.sidebar");
+        if (sidebarRaw) {
+          const sidebar = JSON.parse(sidebarRaw);
+          if (sidebar && typeof sidebar === "object") {
+            const MIN = 180;
+            const MAX = 320;
+            const COLLAPSED = 48;
+            if (sidebar.collapsed) {
+              workspace.style.setProperty("--sidebar-width", `${COLLAPSED}px`);
+              workspace.setAttribute("data-sidebar-collapsed", "");
+              workspace.setAttribute("data-sidebar-icon-only", "");
+            } else if (typeof sidebar.width === "number" && Number.isFinite(sidebar.width)) {
+              const width = Math.min(MAX, Math.max(MIN, sidebar.width));
+              workspace.style.setProperty("--sidebar-width", `${width}px`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Could not restore workspace layout settings.", error);
+      }
+    })();
+  </script>
   <aside id="workspace-sidebar" class={styles.sidebar} aria-label={sidebarLabel}>
     <div id="workspace-sidebar-content"></div>
     <div class={styles.sidebarFooter}>
@@ -138,16 +166,14 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
       );
       if (!collapsed) sidebarWidth = visibleSidebarWidth;
 
-      if (workspace.hasAttribute("data-sidebar-collapsed") !== collapsed) {
-        workspace.toggleAttribute("data-sidebar-collapsed", collapsed);
-        const label = collapsed
-          ? collapseButton.dataset.expandLabel
-          : collapseButton.dataset.collapseLabel;
-        if (!label) throw new Error("Sidebar toggle labels are missing.");
-        collapseButton.setAttribute("aria-label", label);
-        collapseButton.setAttribute("title", label);
-        collapseButton.setAttribute("aria-expanded", String(!collapsed));
-      }
+      workspace.toggleAttribute("data-sidebar-collapsed", collapsed);
+      const label = collapsed
+        ? collapseButton.dataset.expandLabel
+        : collapseButton.dataset.collapseLabel;
+      if (!label) throw new Error("Sidebar toggle labels are missing.");
+      collapseButton.setAttribute("aria-label", label);
+      collapseButton.setAttribute("title", label);
+      collapseButton.setAttribute("aria-expanded", String(!collapsed));
 
       handle.setAttribute("aria-valuemin", String(COLLAPSED_SIDEBAR_WIDTH));
       handle.setAttribute("aria-valuenow", String(visibleSidebarWidth));

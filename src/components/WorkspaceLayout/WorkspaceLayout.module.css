@@ -12,7 +12,7 @@
 .workspace:has(> .taskDetailsHost > [data-task-details]) {
   grid-template-columns:
     var(--sidebar-width, 240px) 4px minmax(160px, 1fr) 4px
-    var(--task-details-width, 400px);
+    min(var(--task-details-width, 400px), calc(100% - var(--sidebar-width, 240px) - 168px));
 }
 
 .workspace:has(> .taskDetailsHost > [data-task-details-closing]) {

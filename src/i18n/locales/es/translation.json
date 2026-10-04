@@ -1,4 +1,7 @@
 {
+  "common": {
+    "actions": "Acciones"
+  },
   "workspace": {
     "resizeSidebar": "Cambiar ancho de la barra lateral",
     "sidebar": "Barra lateral",
@@ -6,6 +9,7 @@
     "showSidebar": "Mostrar barra lateral",
     "addTemplate": "Agregar plantilla",
     "deleteTaskList": "Eliminar plantilla",
+    "editTaskList": "Editar nombre",
     "pages": "Páginas",
     "loadError": "No se pudieron cargar las plantillas guardadas. Los cambios están deshabilitados para proteger tus datos.",
     "saveError": "No se pudieron guardar los cambios en este dispositivo."
@@ -25,6 +29,7 @@
     "resizeTaskDetails": "Cambiar ancho del panel de tarea",
     "taskScrollbar": "Desplazamiento vertical de tareas",
     "deleteTask": "Eliminar",
+    "editTask": "Editar título",
     "addBanner": "Agregar banner",
     "changeBanner": "Cambiar banner",
     "removeBanner": "Quitar banner",

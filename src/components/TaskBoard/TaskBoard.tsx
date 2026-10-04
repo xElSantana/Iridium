@@ -2,6 +2,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type DragEvent,
@@ -20,6 +21,7 @@ import { useTaskDetailsPreference } from "./useTaskDetailsPreference";
 import styles from "./TaskBoard.module.css";
 
 export interface TaskBoardLabels {
+  actionsLabel: string;
   boardView: string;
   titleLabel: string;
   addTask: string;
@@ -28,6 +30,7 @@ export interface TaskBoardLabels {
   resizeTaskDetails: string;
   taskScrollbar: string;
   deleteTask: string;
+  editTask: string;
   addBanner: string;
   changeBanner: string;
   removeBanner: string;
@@ -63,6 +66,7 @@ export default memo(function TaskBoard({
   const [titleDraft, setTitleDraft] = useState(title);
   const [draftPosition, setDraftPosition] = useState<"start" | "end">("end");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
+  const [taskTitleToFocus, setTaskTitleToFocus] = useState<string | null>(null);
   const {
     selectedTaskId,
     setSelectedTaskId,
@@ -111,6 +115,17 @@ export default memo(function TaskBoard({
   } = useDragReorder(onTasksChange, columnsBodyRef);
   const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
+  useLayoutEffect(() => {
+    if (taskTitleToFocus === null || selectedTaskId !== taskTitleToFocus) return;
+
+    const titleInput = taskDetailsTarget?.querySelector("textarea");
+    if (!titleInput) return;
+
+    titleInput.focus();
+    titleInput.select();
+    setTaskTitleToFocus(null);
+  }, [selectedTaskId, taskDetailsTarget, taskTitleToFocus]);
+
   const closeTaskDetails = useCallback(() => {
     setSelectedTaskId(null);
   }, []);
@@ -123,7 +138,13 @@ export default memo(function TaskBoard({
     [onTasksChange],
   );
   const { contextMenu, onContextMenu } = useContextMenu({
+    actionsLabel: labels.actionsLabel,
+    editLabel: labels.editTask,
     label: labels.deleteTask,
+    onEdit: (taskId: string) => {
+      setTaskTitleToFocus(taskId);
+      setSelectedTaskId(taskId);
+    },
     onSelect: (taskId: string) => {
       onTasksChange((currentTasks) =>
         currentTasks.filter((currentTask) => currentTask.id !== taskId),

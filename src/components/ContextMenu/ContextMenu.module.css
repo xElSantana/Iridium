@@ -6,14 +6,17 @@
   max-width: calc(100vw - 16px);
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  padding: 4px;
+  padding: 2px;
   color: var(--color-text);
   background-color: var(--color-accent-soft);
 }
 
 .menuItem {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
+  height: 30px;
   border: 0;
   border-radius: 4px;
   padding: 6px;
@@ -21,11 +24,18 @@
   background: transparent;
   cursor: pointer;
   font: inherit;
+  font-size: 14px;
   text-align: left;
 }
 
+.menuItemIcon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
 .menuItem:hover {
-  background-color: var(--color-background);
+  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
 }
 
 .menuItem:focus-visible {

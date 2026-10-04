@@ -16,8 +16,10 @@ import styles from "./WorkspaceContent.module.css";
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 export interface WorkspaceContentLabels {
+  actionsLabel: string;
   addTemplate: string;
   deleteTaskList: string;
+  editTaskList: string;
   sidebarPages: string;
   templateModalTitle: string;
   templateModalDescription: string;
@@ -43,6 +45,7 @@ export default function WorkspaceContent({ labels }: Props) {
   const [storageStatus, setStorageStatus] = useState<"loading" | "ready" | "load-error">("loading");
   const [saveError, setSaveError] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [taskListToRename, setTaskListToRename] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const skipNextSave = useRef(false);
   const pendingWorkspaceSave = useRef<WorkspaceData | null>(null);
@@ -145,11 +148,14 @@ export default function WorkspaceContent({ labels }: Props) {
     };
   }, [isTemplateModalOpen]);
 
-  const sidebarTarget =
-    typeof document !== "undefined" ? document.getElementById("workspace-sidebar-content") : null;
+  const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
   const selectedTaskList =
     workspace.taskLists.find((taskList) => taskList.id === workspace.selectedTaskListId) ?? null;
   const selectedTaskListId = selectedTaskList?.id ?? null;
+
+  useIsomorphicLayoutEffect(() => {
+    setSidebarTarget(document.getElementById("workspace-sidebar-content"));
+  }, []);
 
   useIsomorphicLayoutEffect(() => {
     if (storageStatus === "loading" || (storageStatus === "ready" && selectedTaskListId !== null)) {
@@ -206,6 +212,17 @@ export default function WorkspaceContent({ labels }: Props) {
     [selectedTaskListId],
   );
 
+  useIsomorphicLayoutEffect(() => {
+    if (taskListToRename === null || selectedTaskListId !== taskListToRename) return;
+
+    const titleInput = document.getElementById("task-board-title");
+    if (!(titleInput instanceof HTMLInputElement)) return;
+
+    titleInput.focus();
+    titleInput.select();
+    setTaskListToRename(null);
+  }, [selectedTaskListId, taskListToRename]);
+
   const selectTaskList = (id: string) => {
     setWorkspace((current) =>
       current.selectedTaskListId === id ? current : { ...current, selectedTaskListId: id },
@@ -223,8 +240,14 @@ export default function WorkspaceContent({ labels }: Props) {
   };
 
   const { contextMenu, onContextMenu } = useContextMenu({
+    actionsLabel: labels.actionsLabel,
+    editLabel: labels.editTaskList,
     label: labels.deleteTaskList,
     disabled: storageStatus !== "ready",
+    onEdit: (id: string) => {
+      setTaskListToRename(id);
+      selectTaskList(id);
+    },
     onSelect: deleteTaskList,
   });
 

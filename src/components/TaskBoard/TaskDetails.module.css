@@ -205,9 +205,27 @@
   font-family: var(--font-family);
 }
 
-:global(.bn-mantine .bn-suggestion-menu),
-:global(.bn-mantine .bn-suggestion-menu-item),
-:global(.bn-mantine .bn-menu-dropdown) {
+.taskDetails :global(.bn-mantine .bn-select .mantine-Menu-item),
+.taskDetails :global(.bn-mantine .bn-menu-dropdown .mantine-Menu-item),
+.taskDetails :global(.bn-mantine .bn-table-handle-menu .mantine-Menu-item) {
+  font-size: 14px;
+}
+
+.taskDetails :global(.bn-mantine .mantine-Menu-dropdown),
+.taskDetails :global(.bn-mantine .bn-menu-dropdown),
+.taskDetails :global(.bn-mantine .bn-toolbar),
+.taskDetails :global(.bn-mantine .bn-form-popover),
+.taskDetails :global(.bn-mantine .bn-suggestion-menu),
+.taskDetails :global(.bn-mantine .bn-grid-suggestion-menu),
+.taskDetails :global(.bn-mantine .bn-panel),
+.taskDetails :global(.bn-mantine .bn-table-handle),
+.taskDetails :global(.bn-mantine .bn-extend-button),
+.taskDetails :global(.bn-mantine .bn-table-cell-handle),
+.taskDetails :global(.bn-mantine .bn-tooltip),
+.taskDetails :global(.bn-mantine .bn-thread),
+.taskDetails :global(.bn-mantine .bn-threads-sidebar .bn-thread),
+.taskDetails :global(.bn-mantine .bn-combobox-input),
+.taskDetails :global(.bn-mantine .bn-combobox-items:not(:empty)) {
   box-shadow: none;
   filter: none;
   backdrop-filter: none;
