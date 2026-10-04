@@ -52,15 +52,6 @@ export default memo(function TaskBoard({
   const [draftPosition, setDraftPosition] = useState<"start" | "end">("end");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
   const {
-    dragOverTaskId,
-    dropPosition,
-    clearDragOverTaskId,
-    handleCardDragStart,
-    handleCardDragOver,
-    handleCardDragLeave,
-    handleCardDrop,
-  } = useDragReorder(onTasksChange);
-  const {
     selectedTaskId,
     setSelectedTaskId,
     panelWidth: taskDetailsWidth,
@@ -92,6 +83,18 @@ export default memo(function TaskBoard({
     onVerticalThumbPointerUp: stopVerticalScrollbarThumbDragging,
     onVerticalKeyDown: handleVerticalScrollbarKeyDown,
   } = useCustomScrollbar();
+  const {
+    dragOverTaskId,
+    dropPosition,
+    clearDragOverTaskId,
+    handleCardDragStart,
+    handleCardDragOver,
+    handleBoardDragOverCapture,
+    handleBoardDragLeaveCapture,
+    stopAutoScroll,
+    handleCardDragLeave,
+    handleCardDrop,
+  } = useDragReorder(onTasksChange, columnsScrollerRef);
   const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const closeTaskDetails = useCallback(() => {
@@ -344,7 +347,13 @@ export default memo(function TaskBoard({
         </div>
 
         <div className={styles.columnsViewport}>
-          <div className={styles.columnsScroller} ref={columnsScrollerRef}>
+          <div
+            className={styles.columnsScroller}
+            ref={columnsScrollerRef}
+            onDragOverCapture={handleBoardDragOverCapture}
+            onDragLeaveCapture={handleBoardDragLeaveCapture}
+            onDropCapture={stopAutoScroll}
+          >
             <div className={styles.columns} ref={columnsRef}>
               {TASK_STATUSES.map((status) => {
                 const columnTasks = tasksByStatus[status];
