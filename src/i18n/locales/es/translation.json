@@ -22,6 +22,7 @@
     "taskPlaceholder": "Nombre de la tarea",
     "closeTaskDetails": "Cerrar tarea",
     "resizeTaskDetails": "Cambiar ancho del panel de tarea",
+    "taskScrollbar": "Desplazamiento vertical de tareas",
     "deleteTask": "Eliminar",
     "addBanner": "Agregar banner",
     "changeBanner": "Cambiar banner",

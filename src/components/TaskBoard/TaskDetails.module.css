@@ -49,13 +49,13 @@
 
 .taskDetails:hover .taskDetailsScrollbar,
 .taskDetails:focus-within .taskDetailsScrollbar,
-.taskDetails[data-task-details-scrollbar-active] .taskDetailsScrollbar {
+.taskDetailsContent[data-custom-scrollbar-active] ~ .taskDetailsScrollbar {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
 }
 
-.taskDetails[data-task-details-scrollbar-hidden] .taskDetailsScrollbar,
+.taskDetailsContent[data-custom-vertical-scrollbar-hidden] ~ .taskDetailsScrollbar,
 .taskDetails[data-task-details-closing] .taskDetailsScrollbar {
   opacity: 0;
   visibility: hidden;
@@ -67,8 +67,8 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: var(--scrollbar-thumb-height, 0px);
-  transform: translateY(var(--scrollbar-thumb-top, 0px));
+  height: var(--custom-scrollbar-thumb-height, 0px);
+  transform: translateY(var(--custom-scrollbar-thumb-top, 0px));
   border-radius: 6px;
   background-color: color-mix(in srgb, var(--color-text) 45%, transparent);
   touch-action: none;

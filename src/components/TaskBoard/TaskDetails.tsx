@@ -6,13 +6,12 @@ import { createPortal } from "react-dom";
 import { memo, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { FiChevronsRight, FiMoreVertical } from "react-icons/fi";
 import type { Task } from "../../features/tasks/taskStorage";
+import { useCustomVerticalScrollbar } from "./useCustomVerticalScrollbar";
 import styles from "./TaskDetails.module.css";
 
 const MIN_PANEL_WIDTH = 400;
 const MAX_PANEL_WIDTH = 1200;
 const DEFAULT_PANEL_WIDTH = 400;
-const MIN_SCROLLBAR_THUMB_SIZE = 24;
-const SCROLLBAR_ACTIVE_TIMEOUT = 900;
 const CLOSE_TRANSITION_FALLBACK = 320;
 
 const blockNoteTheme = {
@@ -118,8 +117,14 @@ function TaskDetails({
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
-  const scrollbarDrag = useRef<{ pointerId: number; y: number; thumbTop: number } | null>(null);
-  const scrollbarActiveTimer = useRef<number | null>(null);
+  const {
+    updateScrollbar,
+    onTrackPointerDown: handleScrollbarTrackPointerDown,
+    onThumbPointerDown: handleScrollbarThumbPointerDown,
+    onThumbPointerMove: handleScrollbarThumbPointerMove,
+    onThumbPointerUp: handleScrollbarThumbPointerUp,
+    onKeyDown: handleScrollbarKeyDown,
+  } = useCustomVerticalScrollbar(scrollContentRef, scrollbarRef);
   const maximumPanelWidth = useRef(MAX_PANEL_WIDTH);
   const resizeStart = useRef<{
     pointerId: number;
@@ -151,49 +156,7 @@ function TaskDetails({
   useEffect(() => {
     const panel = panelRef.current;
     const scrollContent = scrollContentRef.current;
-    const scrollbar = scrollbarRef.current;
-    if (!panel || !scrollContent || !scrollbar) return;
-
-    const updateScrollbar = () => {
-      const trackHeight = scrollbar.clientHeight;
-      const maxScroll = scrollContent.scrollHeight - scrollContent.clientHeight;
-      const thumbHeight =
-        maxScroll > 0
-          ? Math.min(
-              trackHeight,
-              Math.max(
-                MIN_SCROLLBAR_THUMB_SIZE,
-                (scrollContent.clientHeight / scrollContent.scrollHeight) * trackHeight,
-              ),
-            )
-          : 0;
-      const maxThumbTop = Math.max(0, trackHeight - thumbHeight);
-      const thumbTop = maxScroll > 0 ? (scrollContent.scrollTop / maxScroll) * maxThumbTop : 0;
-
-      panel.toggleAttribute("data-task-details-scrollbar-hidden", maxScroll <= 0);
-      scrollbar.style.setProperty("--scrollbar-thumb-height", `${thumbHeight}px`);
-      scrollbar.style.setProperty("--scrollbar-thumb-top", `${thumbTop}px`);
-      scrollbar.setAttribute("aria-valuemax", String(Math.round(maxScroll)));
-      scrollbar.setAttribute("aria-valuenow", String(Math.round(scrollContent.scrollTop)));
-    };
-
-    const activateScrollbar = () => {
-      panel.setAttribute("data-task-details-scrollbar-active", "");
-      if (scrollbarActiveTimer.current !== null) {
-        window.clearTimeout(scrollbarActiveTimer.current);
-      }
-      scrollbarActiveTimer.current = window.setTimeout(() => {
-        panel.removeAttribute("data-task-details-scrollbar-active");
-        scrollbarActiveTimer.current = null;
-      }, SCROLLBAR_ACTIVE_TIMEOUT);
-    };
-
-    const onScroll = () => {
-      activateScrollbar();
-      updateScrollbar();
-    };
-
-    scrollContent.addEventListener("scroll", onScroll, { passive: true });
+    if (!panel || !scrollContent) return;
 
     const onResizeEntry = () => {
       if (panel.hasAttribute("data-task-details-closing")) return;
@@ -239,19 +202,12 @@ function TaskDetails({
     };
     workspace?.addEventListener("transitionend", onTransitionEnd);
 
-    updateScrollbar();
-
     return () => {
-      scrollContent.removeEventListener("scroll", onScroll);
       workspace?.removeEventListener("transitionend", onTransitionEnd);
       resizeObserver.disconnect();
       mutationObserver.disconnect();
-      if (scrollbarActiveTimer.current !== null) {
-        window.clearTimeout(scrollbarActiveTimer.current);
-        scrollbarActiveTimer.current = null;
-      }
     };
-  }, []);
+  }, [updateScrollbar]);
 
   const finishResize = () => {
     if (resizeFrame.current !== null) {
@@ -409,104 +365,15 @@ function TaskDetails({
           aria-valuemax={0}
           aria-valuenow={0}
           tabIndex={0}
-          onPointerDown={(event) => {
-            if (event.button !== 0 || event.target !== event.currentTarget) return;
-
-            const scrollContent = scrollContentRef.current;
-            const scrollbar = scrollbarRef.current;
-            if (!scrollContent || !scrollbar) return;
-
-            const trackHeight = scrollbar.clientHeight;
-            const thumbHeight =
-              Number.parseFloat(scrollbar.style.getPropertyValue("--scrollbar-thumb-height")) || 0;
-            const maxScroll = scrollContent.scrollHeight - scrollContent.clientHeight;
-            const maxThumbTop = trackHeight - thumbHeight;
-            if (maxScroll <= 0 || maxThumbTop <= 0) return;
-
-            const pointerTop =
-              event.clientY - scrollbar.getBoundingClientRect().top - thumbHeight / 2;
-            scrollContent.scrollTop =
-              (Math.min(Math.max(pointerTop, 0), maxThumbTop) / maxThumbTop) * maxScroll;
-          }}
-          onKeyDown={(event) => {
-            const scrollContent = scrollContentRef.current;
-            if (!scrollContent) return;
-
-            const pageStep = scrollContent.clientHeight * 0.8;
-            const steps: Record<string, number> = {
-              ArrowDown: 40,
-              ArrowUp: -40,
-              PageDown: pageStep,
-              PageUp: -pageStep,
-              End: scrollContent.scrollHeight,
-              Home: -scrollContent.scrollHeight,
-            };
-            const step = steps[event.key];
-            if (step === undefined) return;
-
-            event.preventDefault();
-            scrollContent.scrollTop =
-              event.key === "End"
-                ? scrollContent.scrollHeight
-                : event.key === "Home"
-                  ? 0
-                  : scrollContent.scrollTop + step;
-          }}
+          onPointerDown={handleScrollbarTrackPointerDown}
+          onKeyDown={handleScrollbarKeyDown}
         >
           <div
             className={styles.taskDetailsScrollbarThumb}
-            onPointerDown={(event) => {
-              if (event.button !== 0) return;
-
-              const scrollbar = scrollbarRef.current;
-              if (!scrollbar || !scrollContentRef.current) return;
-
-              event.preventDefault();
-              const thumbTop =
-                Number.parseFloat(scrollbar.style.getPropertyValue("--scrollbar-thumb-top")) || 0;
-              scrollbarDrag.current = { pointerId: event.pointerId, y: event.clientY, thumbTop };
-              event.currentTarget.setPointerCapture(event.pointerId);
-            }}
-            onPointerMove={(event) => {
-              const drag = scrollbarDrag.current;
-              const scrollbar = scrollbarRef.current;
-              const scrollContent = scrollContentRef.current;
-              if (
-                !drag ||
-                drag.pointerId !== event.pointerId ||
-                !scrollbar ||
-                !scrollContent ||
-                !event.currentTarget.hasPointerCapture(event.pointerId)
-              ) {
-                return;
-              }
-
-              event.preventDefault();
-              const thumbHeight =
-                Number.parseFloat(scrollbar.style.getPropertyValue("--scrollbar-thumb-height")) ||
-                0;
-              const maxThumbTop = scrollbar.clientHeight - thumbHeight;
-              const maxScroll = scrollContent.scrollHeight - scrollContent.clientHeight;
-              if (maxThumbTop <= 0 || maxScroll <= 0) return;
-
-              const nextThumbTop = Math.min(
-                Math.max(drag.thumbTop + event.clientY - drag.y, 0),
-                maxThumbTop,
-              );
-              scrollContent.scrollTop = (nextThumbTop / maxThumbTop) * maxScroll;
-            }}
-            onPointerUp={(event) => {
-              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              }
-              scrollbarDrag.current = null;
-            }}
-            onPointerCancel={(event) => {
-              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              }
-              scrollbarDrag.current = null;
-            }}
+            onPointerDown={handleScrollbarThumbPointerDown}
+            onPointerMove={handleScrollbarThumbPointerMove}
+            onPointerUp={handleScrollbarThumbPointerUp}
+            onPointerCancel={handleScrollbarThumbPointerUp}
           />
         </div>
       </aside>
@@ -609,7 +476,6 @@ export default memo(
   (previous, next) =>
     previous.task.id === next.task.id &&
     previous.task.title === next.task.title &&
-    previous.task.content === next.task.content &&
     previous.titleLabel === next.titleLabel &&
     previous.closeLabel === next.closeLabel &&
     previous.resizeLabel === next.resizeLabel &&

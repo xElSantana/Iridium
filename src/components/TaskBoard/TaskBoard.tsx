@@ -17,6 +17,7 @@ export interface TaskBoardLabels {
   taskPlaceholder: string;
   closeTaskDetails: string;
   resizeTaskDetails: string;
+  taskScrollbar: string;
   deleteTask: string;
   addBanner: string;
   changeBanner: string;
@@ -48,6 +49,7 @@ export default memo(function TaskBoard({
 }: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskStatus | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const [draftPosition, setDraftPosition] = useState<"start" | "end">("end");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
   const {
     dragOverTaskId,
@@ -79,10 +81,16 @@ export default memo(function TaskBoard({
     scrollerRef: columnsScrollerRef,
     columnsRef,
     trackRef: scrollbarTrackRef,
+    verticalTrackRef: verticalScrollbarTrackRef,
     onTrackPointerDown: handleScrollbarTrackPointerDown,
     onThumbPointerDown: handleScrollbarThumbPointerDown,
     onThumbPointerMove: handleScrollbarThumbPointerMove,
     onThumbPointerUp: stopThumbDragging,
+    onVerticalTrackPointerDown: handleVerticalScrollbarTrackPointerDown,
+    onVerticalThumbPointerDown: handleVerticalScrollbarThumbPointerDown,
+    onVerticalThumbPointerMove: handleVerticalScrollbarThumbPointerMove,
+    onVerticalThumbPointerUp: stopVerticalScrollbarThumbDragging,
+    onVerticalKeyDown: handleVerticalScrollbarKeyDown,
   } = useCustomScrollbar();
   const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
@@ -130,6 +138,34 @@ export default memo(function TaskBoard({
     },
     [onTasksChange],
   );
+  const moveTaskToEnd = useCallback(
+    (taskId: string, status: TaskStatus) => {
+      onTasksChange((currentTasks) => {
+        const currentTask = currentTasks.find((item) => item.id === taskId);
+        if (!currentTask) return currentTasks;
+
+        const lastTaskInStatus = currentTasks.reduce<Task | null>(
+          (lastTask, task) => (task.status === status ? task : lastTask),
+          null,
+        );
+        if (currentTask.status === status && lastTaskInStatus?.id === taskId) {
+          return currentTasks;
+        }
+
+        const movedTask = currentTask.status === status ? currentTask : { ...currentTask, status };
+        return [...currentTasks.filter((task) => task.id !== taskId), movedTask];
+      });
+    },
+    [onTasksChange],
+  );
+  const tasksByStatus: Record<TaskStatus, Task[]> = {
+    notStarted: [],
+    inProgress: [],
+    completed: [],
+  };
+  for (const task of tasks) {
+    tasksByStatus[task.status].push(task);
+  }
 
   useEffect(() => {
     if (taskToRefocus.current === null) return;
@@ -144,7 +180,16 @@ export default memo(function TaskBoard({
 
     draftCommitted.current = true;
     const newTask = { id: crypto.randomUUID(), title: taskTitle, status };
-    onTasksChange((currentTasks) => [...currentTasks, newTask]);
+    onTasksChange((currentTasks) => {
+      if (draftPosition === "end") return [...currentTasks, newTask];
+
+      const firstTaskIndex = currentTasks.findIndex((task) => task.status === status);
+      if (firstTaskIndex === -1) return [...currentTasks, newTask];
+
+      const updatedTasks = [...currentTasks];
+      updatedTasks.splice(firstTaskIndex, 0, newTask);
+      return updatedTasks;
+    });
     setActiveColumn(null);
   };
 
@@ -153,11 +198,58 @@ export default memo(function TaskBoard({
     commitDraft(draftTitle, status);
   };
 
-  const openTaskForm = (status: TaskStatus) => {
+  const openTaskForm = (status: TaskStatus, position: "start" | "end") => {
     setDraftTitle("");
     draftCommitted.current = false;
+    setDraftPosition(position);
     setActiveColumn(status);
   };
+
+  const taskCreationForm =
+    activeColumn === null ? null : (
+      <form
+        className={styles.createForm}
+        onSubmit={(event) => handleCreateTask(event, activeColumn)}
+      >
+        <textarea
+          className={styles.taskInput}
+          autoFocus
+          rows={1}
+          value={draftTitle}
+          maxLength={200}
+          placeholder={labels.taskPlaceholder}
+          aria-label={labels.taskPlaceholder}
+          onChange={(event) => {
+            const input = event.currentTarget;
+            setDraftTitle(input.value);
+            input.style.height = "auto";
+            input.style.height = `${input.scrollHeight}px`;
+          }}
+          onBlur={(event) => {
+            const title = event.currentTarget.value;
+            if (title.trim()) {
+              commitDraft(title, activeColumn);
+            } else {
+              setActiveColumn(null);
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              if (event.nativeEvent.isComposing) return;
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+              return;
+            }
+
+            if (event.key !== "Escape") return;
+
+            event.preventDefault();
+            draftCommitted.current = true;
+            setActiveColumn(null);
+          }}
+        />
+      </form>
+    );
 
   return (
     <div className={styles.workspace}>
@@ -251,127 +343,110 @@ export default memo(function TaskBoard({
           </div>
         </div>
 
-        <div className={styles.columnsScroller} ref={columnsScrollerRef}>
-          <div className={styles.columns} ref={columnsRef}>
-            {TASK_STATUSES.map((status) => {
-              const columnTasks = tasks.filter((task) => task.status === status);
+        <div className={styles.columnsViewport}>
+          <div className={styles.columnsScroller} ref={columnsScrollerRef}>
+            <div className={styles.columns} ref={columnsRef}>
+              {TASK_STATUSES.map((status) => {
+                const columnTasks = tasksByStatus[status];
 
-              return (
-                <section
-                  className={styles.column}
-                  key={status}
-                  aria-label={labels.statusLabels[status]}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const taskId = event.dataTransfer.getData("text/plain");
+                return (
+                  <section
+                    className={styles.column}
+                    key={status}
+                    aria-label={labels.statusLabels[status]}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const taskId = event.dataTransfer.getData("text/plain");
 
-                    if (taskId && dragOverTaskId === null) moveTask(taskId, status);
-                    clearDragOverTaskId();
-                  }}
-                >
-                  <div className={styles.columnContent}>
-                    <div className={styles.columnHeader}>
-                      <h2 className={styles.statusBadge}>
-                        <span className={styles.statusDot} aria-hidden="true" />
-                        {labels.statusLabels[status]}
-                      </h2>
-                      <div className={styles.columnActions}>
-                        <span>{columnTasks.length}</span>
+                      if (taskId && dragOverTaskId === null) moveTaskToEnd(taskId, status);
+                      clearDragOverTaskId();
+                    }}
+                  >
+                    <div className={styles.columnContent}>
+                      <div className={styles.columnHeader}>
+                        <h2 className={styles.statusBadge}>
+                          <span className={styles.statusDot} aria-hidden="true" />
+                          {labels.statusLabels[status]}
+                        </h2>
+                        <div className={styles.columnActions}>
+                          <span>{columnTasks.length}</span>
+                          <button
+                            className={styles.iconButton}
+                            type="button"
+                            aria-label={`${labels.addTask}: ${labels.statusLabels[status]}`}
+                            title={`${labels.addTask}: ${labels.statusLabels[status]}`}
+                            onClick={() => openTaskForm(status, "start")}
+                          >
+                            <LuPlus aria-hidden="true" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {activeColumn === status && draftPosition === "start" && taskCreationForm}
+
+                      {columnTasks.length > 0 && (
+                        <div className={styles.taskList}>
+                          {columnTasks.map((task) => (
+                            <TaskCard
+                              key={task.id}
+                              id={task.id}
+                              title={task.title}
+                              status={status}
+                              statusLabel={labels.statusLabels[status]}
+                              isSelected={selectedTaskId === task.id}
+                              dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
+                              registerTaskElement={registerTaskElement}
+                              onContextMenu={onContextMenu}
+                              onSelect={selectTask}
+                              onMove={moveTask}
+                              onPrepareRefocus={prepareTaskRefocus}
+                              onDragStart={handleCardDragStart}
+                              onDragOver={handleCardDragOver}
+                              onDragLeave={handleCardDragLeave}
+                              onDrop={handleCardDrop}
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {activeColumn === status && draftPosition === "end" && taskCreationForm}
+                      {activeColumn !== status && (
                         <button
-                          className={styles.iconButton}
+                          className={styles.addButton}
                           type="button"
-                          aria-label={`${labels.addTask}: ${labels.statusLabels[status]}`}
-                          title={`${labels.addTask}: ${labels.statusLabels[status]}`}
-                          onClick={() => openTaskForm(status)}
+                          onClick={() => openTaskForm(status, "end")}
                         >
                           <LuPlus aria-hidden="true" />
+                          {labels.addTask}
                         </button>
-                      </div>
+                      )}
                     </div>
-
-                    {columnTasks.length > 0 && (
-                      <div className={styles.taskList}>
-                        {columnTasks.map((task) => (
-                          <TaskCard
-                            key={task.id}
-                            id={task.id}
-                            title={task.title}
-                            status={status}
-                            statusLabel={labels.statusLabels[status]}
-                            isSelected={selectedTaskId === task.id}
-                            dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
-                            registerTaskElement={registerTaskElement}
-                            onContextMenu={onContextMenu}
-                            onSelect={selectTask}
-                            onMove={moveTask}
-                            onPrepareRefocus={prepareTaskRefocus}
-                            onDragStart={handleCardDragStart}
-                            onDragOver={handleCardDragOver}
-                            onDragLeave={handleCardDragLeave}
-                            onDrop={handleCardDrop}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    {activeColumn === status ? (
-                      <form
-                        className={styles.createForm}
-                        onSubmit={(event) => handleCreateTask(event, status)}
-                      >
-                        <textarea
-                          className={styles.taskInput}
-                          autoFocus
-                          rows={1}
-                          value={draftTitle}
-                          maxLength={200}
-                          placeholder={labels.taskPlaceholder}
-                          aria-label={labels.taskPlaceholder}
-                          onChange={(event) => {
-                            const input = event.currentTarget;
-                            setDraftTitle(input.value);
-                            input.style.height = "auto";
-                            input.style.height = `${input.scrollHeight}px`;
-                          }}
-                          onBlur={(event) => {
-                            const title = event.currentTarget.value;
-                            if (title.trim()) {
-                              commitDraft(title, status);
-                            } else {
-                              setActiveColumn(null);
-                            }
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" && !event.shiftKey) {
-                              if (event.nativeEvent.isComposing) return;
-                              event.preventDefault();
-                              event.currentTarget.form?.requestSubmit();
-                              return;
-                            }
-
-                            if (event.key !== "Escape") return;
-
-                            event.preventDefault();
-                            draftCommitted.current = true;
-                            setActiveColumn(null);
-                          }}
-                        />
-                      </form>
-                    ) : (
-                      <button
-                        className={styles.addButton}
-                        type="button"
-                        onClick={() => openTaskForm(status)}
-                      >
-                        <LuPlus aria-hidden="true" />
-                        {labels.addTask}
-                      </button>
-                    )}
-                  </div>
-                </section>
-              );
-            })}
+                  </section>
+                );
+              })}
+            </div>
+          </div>
+          <div
+            className={styles.verticalScrollbar}
+            ref={verticalScrollbarTrackRef}
+            role="scrollbar"
+            aria-label={labels.taskScrollbar}
+            aria-orientation="vertical"
+            aria-valuemin={0}
+            aria-valuemax={0}
+            aria-valuenow={0}
+            tabIndex={0}
+            onPointerDown={handleVerticalScrollbarTrackPointerDown}
+            onKeyDown={handleVerticalScrollbarKeyDown}
+          >
+            <div
+              className={styles.verticalScrollbarThumb}
+              onPointerDown={handleVerticalScrollbarThumbPointerDown}
+              onPointerMove={handleVerticalScrollbarThumbPointerMove}
+              onPointerUp={stopVerticalScrollbarThumbDragging}
+              onPointerCancel={stopVerticalScrollbarThumbDragging}
+            />
           </div>
         </div>
         <div
