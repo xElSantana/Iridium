@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FiX } from "react-icons/fi";
 import { LuListTodo, LuPlus } from "react-icons/lu";
@@ -12,6 +12,8 @@ import {
   type WorkspaceData,
 } from "../../features/tasks/taskStorage";
 import styles from "./WorkspaceContent.module.css";
+
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 export interface WorkspaceContentLabels {
   addTemplate: string;
@@ -67,7 +69,7 @@ export default function WorkspaceContent({ labels }: Props) {
     }
   }, []);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     try {
       const loaded = loadWorkspace(labels.taskListTemplate);
       setWorkspace(loaded.workspace);
@@ -148,6 +150,17 @@ export default function WorkspaceContent({ labels }: Props) {
   const selectedTaskList =
     workspace.taskLists.find((taskList) => taskList.id === workspace.selectedTaskListId) ?? null;
   const selectedTaskListId = selectedTaskList?.id ?? null;
+
+  useIsomorphicLayoutEffect(() => {
+    if (storageStatus === "loading" || (storageStatus === "ready" && selectedTaskListId !== null)) {
+      return;
+    }
+
+    document
+      .getElementById("workspace-task-details")
+      ?.closest<HTMLElement>("[data-workspace]")
+      ?.removeAttribute("data-task-details-restoring");
+  }, [selectedTaskListId, storageStatus]);
 
   const handleTasksChange = useCallback(
     (updateTasks: (tasks: TaskList["tasks"]) => TaskList["tasks"]) => {

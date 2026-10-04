@@ -264,14 +264,14 @@ function TaskDetails({
   const currentWidthRef = useRef(width ?? DEFAULT_PANEL_WIDTH);
   currentWidthRef.current = width ?? DEFAULT_PANEL_WIDTH;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const currentWidth = width ?? DEFAULT_PANEL_WIDTH;
     if (currentWidth > maximumPanelWidth.current) {
       onResize(maximumPanelWidth.current);
     }
   }, [width, onResize]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
     const updateBounds = () => {
       const maxWidth = getMaximumPanelWidth(panelRef.current);

@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Task } from "../../features/tasks/taskStorage";
+
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const STORAGE_KEY = "iridium.task-details.v1";
 const MIN_PANEL_WIDTH = 400;
@@ -10,13 +12,16 @@ export function useTaskDetailsPreference(taskListId: string, tasks: Task[]) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [panelWidth, setPanelWidth] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const lastReadTaskListId = useRef<string | null>(null);
   const tasksRef = useRef(tasks);
   tasksRef.current = tasks;
 
-  useEffect(() => {
-    if (lastReadTaskListId.current === taskListId) return;
-    lastReadTaskListId.current = taskListId;
+  useIsomorphicLayoutEffect(() => {
+    const workspace = document
+      .getElementById("workspace-task-details")
+      ?.closest<HTMLElement>("[data-workspace]");
+    workspace?.setAttribute("data-task-details-restoring", "");
+    let firstFrame = 0;
+    let secondFrame = 0;
 
     try {
       const savedPreference = localStorage.getItem(`${STORAGE_KEY}.${taskListId}`);
@@ -52,7 +57,17 @@ export function useTaskDetailsPreference(taskListId: string, tasks: Task[]) {
       console.error("Could not load task details preference.", error);
     } finally {
       setIsLoaded(true);
+      firstFrame = window.requestAnimationFrame(() => {
+        secondFrame = window.requestAnimationFrame(() => {
+          workspace?.removeAttribute("data-task-details-restoring");
+        });
+      });
     }
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
   }, [taskListId]);
 
   useEffect(() => {
