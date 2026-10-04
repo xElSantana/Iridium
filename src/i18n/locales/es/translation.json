@@ -18,6 +18,7 @@
   },
   "taskBoard": {
     "boardView": "Tablero",
+    "titleLabel": "Título de la lista de tareas",
     "addTask": "Nueva tarea",
     "taskPlaceholder": "Nombre de la tarea",
     "closeTaskDetails": "Cerrar tarea",

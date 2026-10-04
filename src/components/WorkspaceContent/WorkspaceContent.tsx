@@ -192,6 +192,20 @@ export default function WorkspaceContent({ labels }: Props) {
     [selectedTaskListId],
   );
 
+  const handleTitleChange = useCallback(
+    (title: string) => {
+      if (selectedTaskListId === null) return;
+
+      setWorkspace((current) => ({
+        ...current,
+        taskLists: current.taskLists.map((taskList) =>
+          taskList.id === selectedTaskListId ? { ...taskList, title } : taskList,
+        ),
+      }));
+    },
+    [selectedTaskListId],
+  );
+
   const selectTaskList = (id: string) => {
     setWorkspace((current) =>
       current.selectedTaskListId === id ? current : { ...current, selectedTaskListId: id },
@@ -297,6 +311,7 @@ export default function WorkspaceContent({ labels }: Props) {
               bannerId={selectedTaskList.bannerId ?? null}
               labels={labels.taskBoard}
               onTasksChange={handleTasksChange}
+              onTitleChange={handleTitleChange}
               onBannerChange={handleBannerChange}
             />
           ) : null}

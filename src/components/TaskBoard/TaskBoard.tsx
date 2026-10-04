@@ -21,6 +21,7 @@ import styles from "./TaskBoard.module.css";
 
 export interface TaskBoardLabels {
   boardView: string;
+  titleLabel: string;
   addTask: string;
   taskPlaceholder: string;
   closeTaskDetails: string;
@@ -43,6 +44,7 @@ interface Props {
   bannerId: TaskBackgroundId | null;
   labels: TaskBoardLabels;
   onTasksChange: (updateTasks: (tasks: Task[]) => Task[]) => void;
+  onTitleChange: (title: string) => void;
   onBannerChange: (bannerId: TaskBackgroundId | null) => void;
 }
 
@@ -53,10 +55,12 @@ export default memo(function TaskBoard({
   bannerId,
   labels,
   onTasksChange,
+  onTitleChange,
   onBannerChange,
 }: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskStatus | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const [titleDraft, setTitleDraft] = useState(title);
   const [draftPosition, setDraftPosition] = useState<"start" | "end">("end");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
   const {
@@ -74,6 +78,7 @@ export default memo(function TaskBoard({
       : null,
   );
   const draftCommitted = useRef(false);
+  const titleEditCancelled = useRef(false);
   const taskElements = useRef(new Map<string, HTMLElement>());
   const taskToRefocus = useRef<string | null>(null);
   const {
@@ -185,6 +190,8 @@ export default memo(function TaskBoard({
     inProgress: [],
     completed: [],
   };
+
+  useEffect(() => setTitleDraft(title), [title]);
   for (const task of tasks) {
     tasksByStatus[task.status].push(task);
   }
@@ -352,7 +359,39 @@ export default memo(function TaskBoard({
           )}
           <div className={styles.titleLine}>
             <LuListTodo aria-hidden="true" />
-            <h1 id="task-board-title">{title}</h1>
+            <div className={styles.titleInputWrapper}>
+              <input
+                id="task-board-title"
+                className={styles.titleInput}
+                type="text"
+                value={titleDraft}
+                maxLength={200}
+                aria-label={labels.titleLabel}
+                onChange={(event) => setTitleDraft(event.currentTarget.value)}
+                onBlur={(event) => {
+                  const nextTitle = event.currentTarget.value.trim();
+                  if (titleEditCancelled.current) {
+                    titleEditCancelled.current = false;
+                    setTitleDraft(title);
+                  } else if (nextTitle) {
+                    setTitleDraft(nextTitle);
+                    if (nextTitle !== title) onTitleChange(nextTitle);
+                  } else {
+                    setTitleDraft(title);
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                  } else if (event.key === "Escape") {
+                    event.preventDefault();
+                    titleEditCancelled.current = true;
+                    event.currentTarget.blur();
+                  }
+                }}
+              />
+            </div>
           </div>
         </header>
 

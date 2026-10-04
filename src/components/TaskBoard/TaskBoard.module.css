@@ -109,6 +109,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 1.8rem;
+  line-height: 1.2;
 }
 
 .titleLine svg {
@@ -117,14 +119,33 @@
   height: 24px;
 }
 
-.titleLine h1,
+.titleInputWrapper,
 .columnHeader h2 {
   margin: 0;
 }
 
-.titleLine h1 {
-  font-size: 1.8rem;
+.titleInputWrapper {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  font-size: inherit;
+}
+
+.titleInput {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  outline: none;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .viewToolbar {
