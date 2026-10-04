@@ -19,12 +19,14 @@ const t = await createTranslator();
     <link rel="icon" href="/resources/ui/icon.png" />
     <meta name="generator" content={Astro.generator} />
     <title>Iridium</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/ComicRelief-Regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
     />
+    <link rel="preload" href="/fonts/ComicRelief-Bold.ttf" as="font" type="font/ttf" crossorigin />
   </head>
   <body>
     <div class={styles.windowFrame}>

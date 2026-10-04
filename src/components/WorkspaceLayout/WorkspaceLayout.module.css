@@ -144,7 +144,9 @@
   min-height: 0;
 }
 
-.workspace[data-sidebar-ready]:not([data-resizing]):not([data-task-details-resizing]) {
+.workspace[data-sidebar-ready]:not([data-resizing]):not([data-task-details-resizing]):not(
+    [data-task-details-restoring]
+  ) {
   transition: grid-template-columns 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
@@ -154,7 +156,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .workspace[data-sidebar-ready]:not([data-resizing]):not([data-task-details-resizing]) {
+  .workspace[data-sidebar-ready]:not([data-resizing]):not([data-task-details-resizing]):not(
+      [data-task-details-restoring]
+    ) {
     transition: none;
   }
 }
