@@ -195,6 +195,12 @@
   overflow: visible;
 }
 
+.editor:not(:has(:global(.bn-editor:hover))):not(:has(:global(.bn-side-menu:hover)))
+  :global(.bn-side-menu) {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .editor :global(.bn-default-styles) {
   font-family: var(--font-family);
 }
