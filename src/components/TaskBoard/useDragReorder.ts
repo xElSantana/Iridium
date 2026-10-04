@@ -118,6 +118,10 @@ export function useDragReorder(
       if (!scroller) return;
 
       const { top, bottom } = scroller.getBoundingClientRect();
+      if (event.clientY < top || event.clientY > bottom) {
+        stopAutoScroll();
+        return;
+      }
       const distanceFromTop = event.clientY - top;
       const distanceFromBottom = bottom - event.clientY;
       const edgeDistance = Math.min(distanceFromTop, distanceFromBottom);
@@ -132,7 +136,7 @@ export function useDragReorder(
         animationFrame.current = requestAnimationFrame(runAutoScroll);
       }
     },
-    [runAutoScroll, scrollerRef],
+    [runAutoScroll, scrollerRef, stopAutoScroll],
   );
 
   const handleBoardDragLeaveCapture = useCallback(

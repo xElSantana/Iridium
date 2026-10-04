@@ -1,4 +1,12 @@
-import { memo, useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type SyntheticEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { LuImagePlus, LuKanban, LuListTodo, LuPlus } from "react-icons/lu";
 import { TASK_BACKGROUNDS, type TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
@@ -70,6 +78,7 @@ export default memo(function TaskBoard({
   const taskToRefocus = useRef<string | null>(null);
   const {
     scrollerRef: columnsScrollerRef,
+    verticalScrollerRef: columnsBodyRef,
     columnsRef,
     trackRef: scrollbarTrackRef,
     verticalTrackRef: verticalScrollbarTrackRef,
@@ -94,7 +103,7 @@ export default memo(function TaskBoard({
     stopAutoScroll,
     handleCardDragLeave,
     handleCardDrop,
-  } = useDragReorder(onTasksChange, columnsScrollerRef);
+  } = useDragReorder(onTasksChange, columnsBodyRef);
   const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const closeTaskDetails = useCallback(() => {
@@ -160,6 +169,16 @@ export default memo(function TaskBoard({
       });
     },
     [onTasksChange],
+  );
+  const handleColumnDrop = useCallback(
+    (event: DragEvent<HTMLElement>, status: TaskStatus) => {
+      event.preventDefault();
+      const taskId = event.dataTransfer.getData("text/plain");
+
+      if (taskId && dragOverTaskId === null) moveTaskToEnd(taskId, status);
+      clearDragOverTaskId();
+    },
+    [clearDragOverTaskId, dragOverTaskId, moveTaskToEnd],
   );
   const tasksByStatus: Record<TaskStatus, Task[]> = {
     notStarted: [],
@@ -354,86 +373,94 @@ export default memo(function TaskBoard({
             onDragLeaveCapture={handleBoardDragLeaveCapture}
             onDropCapture={stopAutoScroll}
           >
-            <div className={styles.columns} ref={columnsRef}>
+            <div className={styles.columns}>
               {TASK_STATUSES.map((status) => {
                 const columnTasks = tasksByStatus[status];
 
                 return (
-                  <section
-                    className={styles.column}
-                    key={status}
-                    aria-label={labels.statusLabels[status]}
+                  <div
+                    className={styles.columnHeader}
+                    key={`header-${status}`}
                     onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      const taskId = event.dataTransfer.getData("text/plain");
-
-                      if (taskId && dragOverTaskId === null) moveTaskToEnd(taskId, status);
-                      clearDragOverTaskId();
-                    }}
+                    onDrop={(event) => handleColumnDrop(event, status)}
                   >
-                    <div className={styles.columnContent}>
-                      <div className={styles.columnHeader}>
-                        <h2 className={styles.statusBadge}>
-                          <span className={styles.statusDot} aria-hidden="true" />
-                          {labels.statusLabels[status]}
-                        </h2>
-                        <div className={styles.columnActions}>
-                          <span>{columnTasks.length}</span>
-                          <button
-                            className={styles.iconButton}
-                            type="button"
-                            aria-label={`${labels.addTask}: ${labels.statusLabels[status]}`}
-                            title={`${labels.addTask}: ${labels.statusLabels[status]}`}
-                            onClick={() => openTaskForm(status, "start")}
-                          >
-                            <LuPlus aria-hidden="true" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {activeColumn === status && draftPosition === "start" && taskCreationForm}
-
-                      {columnTasks.length > 0 && (
-                        <div className={styles.taskList}>
-                          {columnTasks.map((task) => (
-                            <TaskCard
-                              key={task.id}
-                              id={task.id}
-                              title={task.title}
-                              status={status}
-                              statusLabel={labels.statusLabels[status]}
-                              isSelected={selectedTaskId === task.id}
-                              dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
-                              registerTaskElement={registerTaskElement}
-                              onContextMenu={onContextMenu}
-                              onSelect={selectTask}
-                              onMove={moveTask}
-                              onPrepareRefocus={prepareTaskRefocus}
-                              onDragStart={handleCardDragStart}
-                              onDragOver={handleCardDragOver}
-                              onDragLeave={handleCardDragLeave}
-                              onDrop={handleCardDrop}
-                            />
-                          ))}
-                        </div>
-                      )}
-
-                      {activeColumn === status && draftPosition === "end" && taskCreationForm}
-                      {activeColumn !== status && (
-                        <button
-                          className={styles.addButton}
-                          type="button"
-                          onClick={() => openTaskForm(status, "end")}
-                        >
-                          <LuPlus aria-hidden="true" />
-                          {labels.addTask}
-                        </button>
-                      )}
+                    <h2 className={styles.statusBadge}>
+                      <span className={styles.statusDot} aria-hidden="true" />
+                      {labels.statusLabels[status]}
+                    </h2>
+                    <div className={styles.columnActions}>
+                      <span>{columnTasks.length}</span>
+                      <button
+                        className={styles.iconButton}
+                        type="button"
+                        aria-label={`${labels.addTask}: ${labels.statusLabels[status]}`}
+                        title={`${labels.addTask}: ${labels.statusLabels[status]}`}
+                        onClick={() => openTaskForm(status, "start")}
+                      >
+                        <LuPlus aria-hidden="true" />
+                      </button>
                     </div>
-                  </section>
+                  </div>
                 );
               })}
+              <div className={styles.columnsBody} ref={columnsBodyRef}>
+                <div className={styles.columnsBodyContent} ref={columnsRef}>
+                  {TASK_STATUSES.map((status) => {
+                    const columnTasks = tasksByStatus[status];
+
+                    return (
+                      <section
+                        className={styles.column}
+                        key={`column-${status}`}
+                        aria-label={labels.statusLabels[status]}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => handleColumnDrop(event, status)}
+                      >
+                        <div className={styles.columnContent}>
+                          {activeColumn === status && draftPosition === "start" && taskCreationForm}
+
+                          {columnTasks.length > 0 && (
+                            <div className={styles.taskList}>
+                              {columnTasks.map((task) => (
+                                <TaskCard
+                                  key={task.id}
+                                  id={task.id}
+                                  title={task.title}
+                                  status={status}
+                                  statusLabel={labels.statusLabels[status]}
+                                  isSelected={selectedTaskId === task.id}
+                                  dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
+                                  registerTaskElement={registerTaskElement}
+                                  onContextMenu={onContextMenu}
+                                  onSelect={selectTask}
+                                  onMove={moveTask}
+                                  onPrepareRefocus={prepareTaskRefocus}
+                                  onDragStart={handleCardDragStart}
+                                  onDragOver={handleCardDragOver}
+                                  onDragLeave={handleCardDragLeave}
+                                  onDrop={handleCardDrop}
+                                />
+                              ))}
+                            </div>
+                          )}
+
+                          {activeColumn === status && draftPosition === "end" && taskCreationForm}
+                          {activeColumn !== status && (
+                            <button
+                              className={styles.addButton}
+                              type="button"
+                              onClick={() => openTaskForm(status, "end")}
+                            >
+                              <LuPlus aria-hidden="true" />
+                              {labels.addTask}
+                            </button>
+                          )}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
           <div

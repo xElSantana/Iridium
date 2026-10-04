@@ -5,6 +5,7 @@ const CUSTOM_SCROLLBAR_MIN_THUMB = 24;
 
 export function useCustomScrollbar() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const verticalScrollerRef = useRef<HTMLDivElement>(null);
   const columnsRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const verticalTrackRef = useRef<HTMLDivElement>(null);
@@ -22,7 +23,7 @@ export function useCustomScrollbar() {
     onThumbPointerMove: onVerticalThumbPointerMove,
     onThumbPointerUp: onVerticalThumbPointerUp,
     onKeyDown: onVerticalKeyDown,
-  } = useCustomVerticalScrollbar(scrollerRef, verticalTrackRef);
+  } = useCustomVerticalScrollbar(verticalScrollerRef, verticalTrackRef);
 
   const updateCustomScrollbar = useCallback(() => {
     const scroller = scrollerRef.current;
@@ -61,9 +62,10 @@ export function useCustomScrollbar() {
 
   useEffect(() => {
     const scroller = scrollerRef.current;
+    const verticalScroller = verticalScrollerRef.current;
     const columns = columnsRef.current;
     const verticalTrack = verticalTrackRef.current;
-    if (!scroller || !columns || !verticalTrack) return;
+    if (!scroller || !verticalScroller || !columns || !verticalTrack) return;
 
     const onScroll = () => updateCustomScrollbar();
     scroller.addEventListener("scroll", onScroll, { passive: true });
@@ -72,6 +74,7 @@ export function useCustomScrollbar() {
       updateVerticalScrollbar();
     });
     observer.observe(scroller);
+    observer.observe(verticalScroller);
     observer.observe(columns);
     observer.observe(verticalTrack);
     updateCustomScrollbar();
@@ -157,6 +160,7 @@ export function useCustomScrollbar() {
 
   return {
     scrollerRef,
+    verticalScrollerRef,
     columnsRef,
     trackRef,
     verticalTrackRef,
