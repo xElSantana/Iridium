@@ -138,7 +138,11 @@ function TaskDetails({
   const resizeFrame = useRef<number | null>(null);
   const resizeWorkspace = useRef<HTMLElement | null>(null);
   const editor = useCreateBlockNote(
-    { initialContent: task.content?.length ? task.content : undefined, dictionary: es },
+    {
+      initialContent: task.content?.length ? task.content : undefined,
+      dictionary: es,
+      dropCursor: { color: "var(--color-primary)" },
+    },
     [task.id],
   );
 
