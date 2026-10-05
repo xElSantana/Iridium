@@ -4,7 +4,7 @@ import { BlockNoteView, type Theme } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
 import { createPortal } from "react-dom";
 import { memo, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { FiChevronsRight, FiMoreVertical } from "react-icons/fi";
+import { FiChevronsRight, FiMaximize2, FiMinimize2, FiMoreVertical } from "react-icons/fi";
 import type { Task } from "../../features/tasks/taskStorage";
 import { useCustomVerticalScrollbar } from "./useCustomVerticalScrollbar";
 import styles from "./TaskDetails.module.css";
@@ -69,6 +69,7 @@ interface TaskDetailsProps {
   task: Task;
   titleLabel: string;
   closeLabel: string;
+  toggleWidthLabel: string;
   resizeLabel: string;
   width: number | null;
   resizeTarget: HTMLElement;
@@ -102,6 +103,7 @@ function TaskDetails({
   task,
   titleLabel,
   closeLabel,
+  toggleWidthLabel,
   resizeLabel,
   width,
   resizeTarget,
@@ -111,6 +113,7 @@ function TaskDetails({
 }: TaskDetailsProps) {
   const [titleDraft, setTitleDraft] = useState(task.title);
   const [isClosing, setIsClosing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const scrollContentRef = useRef<HTMLDivElement>(null);
   const scrollbarRef = useRef<HTMLDivElement>(null);
@@ -306,6 +309,7 @@ function TaskDetails({
       <aside
         className={styles.taskDetails}
         data-task-details
+        data-task-details-expanded={isExpanded || undefined}
         data-task-details-closing={isClosing || undefined}
         aria-hidden={isClosing}
         inert={isClosing}
@@ -314,18 +318,34 @@ function TaskDetails({
       >
         <div className={styles.taskDetailsContent} ref={scrollContentRef} id={panelId}>
           <header className={styles.taskDetailsHeader}>
-            <button
-              className={styles.closeButton}
-              type="button"
-              aria-label={closeLabel}
-              title={closeLabel}
-              onClick={(event) => {
-                event.currentTarget.blur();
-                setIsClosing(true);
-              }}
-            >
-              <FiChevronsRight aria-hidden="true" />
-            </button>
+            <div className={styles.taskDetailsActions}>
+              <button
+                className={styles.closeButton}
+                type="button"
+                aria-label={closeLabel}
+                title={closeLabel}
+                onClick={(event) => {
+                  event.currentTarget.blur();
+                  setIsClosing(true);
+                }}
+              >
+                <FiChevronsRight aria-hidden="true" />
+              </button>
+              <button
+                className={styles.closeButton}
+                type="button"
+                aria-label={toggleWidthLabel}
+                title={toggleWidthLabel}
+                aria-pressed={isExpanded}
+                onClick={() => setIsExpanded((expanded) => !expanded)}
+              >
+                {isExpanded ? (
+                  <FiMinimize2 aria-hidden="true" />
+                ) : (
+                  <FiMaximize2 aria-hidden="true" />
+                )}
+              </button>
+            </div>
             <textarea
               className={styles.taskTitleInput}
               ref={titleInputRef}
@@ -479,6 +499,7 @@ export default memo(
     previous.task.title === next.task.title &&
     previous.titleLabel === next.titleLabel &&
     previous.closeLabel === next.closeLabel &&
+    previous.toggleWidthLabel === next.toggleWidthLabel &&
     previous.resizeLabel === next.resizeLabel &&
     previous.width === next.width &&
     previous.resizeTarget === next.resizeTarget &&

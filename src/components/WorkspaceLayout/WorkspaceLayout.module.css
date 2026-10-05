@@ -2,21 +2,42 @@
   box-sizing: border-box;
   display: grid;
   flex: 1;
-  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(0, 1fr) 0px 0px;
+  grid-template-columns:
+    var(--sidebar-width, 240px) 4px
+    minmax(var(--task-details-main-min, 0px), 1fr)
+    var(--task-details-separator-width, 0px)
+    minmax(0px, var(--task-details-track-width, 0px));
   min-height: 0;
   width: 100%;
   overflow: hidden;
   padding: 3px;
 }
 
-.workspace:has(> .taskDetailsHost > [data-task-details]) {
-  grid-template-columns:
-    var(--sidebar-width, 240px) 4px minmax(160px, 1fr) 4px
-    min(var(--task-details-width, 400px), calc(100% - var(--sidebar-width, 240px) - 168px));
+.workspace:has(> .taskDetailsHost > [data-task-details]):not(
+    :has(> .taskDetailsHost > [data-task-details-closing])
+  ) {
+  --task-details-main-min: 160px;
+  --task-details-separator-width: 4px;
+  --task-details-track-width: min(
+    var(--task-details-width, 400px),
+    calc(100% - var(--sidebar-width, 240px) - 168px)
+  );
 }
 
-.workspace:has(> .taskDetailsHost > [data-task-details-closing]) {
-  grid-template-columns: var(--sidebar-width, 240px) 4px minmax(0, 1fr) 0px 0px;
+.workspace:has(> .taskDetailsHost > [data-task-details]):has(
+    > .taskDetailsHost > [data-task-details-expanded]
+  ):not(:has(> .taskDetailsHost > [data-task-details-closing])) {
+  --task-details-main-min: 0px;
+  --task-details-separator-width: 0px;
+  --task-details-track-width: calc(100% - var(--sidebar-width, 240px) - 4px);
+}
+
+.workspace:has(> .taskDetailsHost > [data-task-details-expanded]):not(
+    :has(> .taskDetailsHost > [data-task-details-closing])
+  )
+  > .main {
+  visibility: hidden;
+  transition: visibility 0s 260ms;
 }
 
 .taskDetailsSeparator {
@@ -25,8 +46,25 @@
   z-index: 1;
 }
 
+.taskDetailsSeparator > * {
+  transition: opacity 120ms ease;
+}
+
 .workspace:has(> .taskDetailsHost > [data-task-details-closing]) > .taskDetailsSeparator {
   pointer-events: none;
+}
+
+.workspace:has(> .taskDetailsHost > [data-task-details-expanded]) > .taskDetailsSeparator {
+  pointer-events: none;
+}
+
+.workspace:has(> .taskDetailsHost > [data-task-details-closing]) > .taskDetailsSeparator > *,
+.workspace:has(> .taskDetailsHost > [data-task-details-expanded]) > .taskDetailsSeparator > * {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 120ms ease,
+    visibility 0s 120ms;
 }
 
 .taskDetailsHost {
@@ -159,6 +197,18 @@
   .workspace[data-sidebar-ready]:not([data-resizing]):not([data-task-details-resizing]):not(
       [data-task-details-restoring]
     ) {
+    transition: none;
+  }
+
+  .workspace:has(> .taskDetailsHost > [data-task-details-expanded]):not(
+      :has(> .taskDetailsHost > [data-task-details-closing])
+    )
+    > .main {
+    transition: none;
+  }
+
+  .workspace:has(> .taskDetailsHost > [data-task-details-closing]) > .taskDetailsSeparator > *,
+  .workspace:has(> .taskDetailsHost > [data-task-details-expanded]) > .taskDetailsSeparator > * {
     transition: none;
   }
 }

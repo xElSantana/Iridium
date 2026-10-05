@@ -6,7 +6,6 @@
   flex: 0 0 auto;
   width: 100%;
   min-width: 0;
-  max-width: 1200px;
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -23,8 +22,8 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  width: var(--task-details-width, 400px);
-  min-width: var(--task-details-width, 400px);
+  width: 100%;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
   scrollbar-width: none;
@@ -128,6 +127,11 @@
   content: "";
 }
 
+.taskDetailsActions {
+  display: flex;
+  align-self: flex-start;
+}
+
 .taskTitleInput {
   box-sizing: border-box;
   width: calc(100% - var(--editor-content-offset));
@@ -154,7 +158,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: flex-start;
   border: 0;
   padding: 8px;
   color: inherit;

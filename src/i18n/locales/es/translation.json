@@ -26,6 +26,7 @@
     "addTask": "Nueva tarea",
     "taskPlaceholder": "Nombre de la tarea",
     "closeTaskDetails": "Cerrar tarea",
+    "toggleTaskDetailsWidth": "Alternar ancho completo del panel de tarea",
     "resizeTaskDetails": "Cambiar ancho del panel de tarea",
     "taskScrollbar": "Desplazamiento vertical de tareas",
     "deleteTask": "Eliminar",

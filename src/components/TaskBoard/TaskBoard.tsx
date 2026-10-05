@@ -26,6 +26,7 @@ export interface TaskBoardLabels {
   addTask: string;
   taskPlaceholder: string;
   closeTaskDetails: string;
+  toggleTaskDetailsWidth: string;
   resizeTaskDetails: string;
   taskScrollbar: string;
   deleteTask: string;
@@ -579,6 +580,7 @@ export default memo(function TaskBoard({
               task={selectedTask}
               titleLabel={labels.taskPlaceholder}
               closeLabel={labels.closeTaskDetails}
+              toggleWidthLabel={labels.toggleTaskDetailsWidth}
               resizeLabel={labels.resizeTaskDetails}
               width={taskDetailsWidth}
               resizeTarget={taskDetailsSeparator}
