@@ -287,6 +287,7 @@ export default function WorkspaceContent({ labels }: Props) {
                       autoFocus
                       type="text"
                       defaultValue={taskList.title}
+                      maxLength={200}
                       aria-label={labels.editTaskList}
                       onBlur={(event) => {
                         if (renameTaskListCancelRef.current) {

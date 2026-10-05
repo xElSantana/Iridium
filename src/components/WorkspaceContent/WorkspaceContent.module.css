@@ -20,6 +20,10 @@
   list-style: none;
 }
 
+.taskListNavigation li {
+  min-width: 0;
+}
+
 .taskListLink,
 .addTemplate {
   box-sizing: border-box;

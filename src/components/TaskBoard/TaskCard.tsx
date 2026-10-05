@@ -79,6 +79,7 @@ export default memo(function TaskCard({
           className={styles.taskInput}
           autoFocus
           value={draftTitle}
+          maxLength={200}
           aria-label={title}
           onChange={(event) => setDraftTitle(event.currentTarget.value)}
           onBlur={() => {
