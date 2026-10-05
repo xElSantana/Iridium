@@ -337,6 +337,7 @@ function TaskDetails({
               onChange={(event) => setTitleDraft(event.currentTarget.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
+                  if (event.nativeEvent.isComposing) return;
                   event.preventDefault();
                   event.currentTarget.blur();
                 }

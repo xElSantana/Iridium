@@ -91,7 +91,7 @@ export function useDragReorder(
     event.dataTransfer.setData("text/plain", taskId);
     event.dataTransfer.effectAllowed = "move";
 
-    const el = event.currentTarget as HTMLElement;
+    const el = event.currentTarget;
     const ghost = el.cloneNode(true) as HTMLElement;
     ghost.style.cssText = `opacity:0.5;position:absolute;top:-9999px;left:-9999px;width:${el.offsetWidth}px;pointer-events:none;`;
     document.body.appendChild(ghost);
@@ -103,7 +103,7 @@ export function useDragReorder(
     event.preventDefault();
     event.stopPropagation();
     event.dataTransfer.dropEffect = "move";
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
     const midY = rect.top + rect.height / 2;
     const position: DropPosition = event.clientY < midY ? "before" : "after";
     setDragOverTaskId(taskId);
@@ -148,15 +148,20 @@ export function useDragReorder(
   );
 
   useEffect(() => {
-    document.addEventListener("dragend", stopAutoScroll);
+    const handleDragEnd = () => {
+      stopAutoScroll();
+      setDragOverTaskId(null);
+    };
+
+    document.addEventListener("dragend", handleDragEnd);
     return () => {
-      document.removeEventListener("dragend", stopAutoScroll);
+      document.removeEventListener("dragend", handleDragEnd);
       stopAutoScroll();
     };
   }, [stopAutoScroll]);
 
   const handleCardDragLeave = useCallback((event: DragEvent<HTMLElement>) => {
-    if ((event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) return;
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
     setDragOverTaskId(null);
   }, []);
 
@@ -165,7 +170,7 @@ export function useDragReorder(
       event.preventDefault();
       event.stopPropagation();
       const draggedId = event.dataTransfer.getData("text/plain");
-      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      const rect = event.currentTarget.getBoundingClientRect();
       const position: DropPosition =
         event.clientY < rect.top + rect.height / 2 ? "before" : "after";
       setDragOverTaskId(null);

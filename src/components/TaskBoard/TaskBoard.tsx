@@ -2,7 +2,6 @@ import {
   memo,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type DragEvent,
@@ -66,7 +65,7 @@ export default memo(function TaskBoard({
   const [titleDraft, setTitleDraft] = useState(title);
   const [draftPosition, setDraftPosition] = useState<"start" | "end">("end");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
-  const [taskTitleToFocus, setTaskTitleToFocus] = useState<string | null>(null);
+  const [taskIdToRename, setTaskIdToRename] = useState<string | null>(null);
   const {
     selectedTaskId,
     setSelectedTaskId,
@@ -115,17 +114,6 @@ export default memo(function TaskBoard({
   } = useDragReorder(onTasksChange, columnsBodyRef);
   const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
-  useLayoutEffect(() => {
-    if (taskTitleToFocus === null || selectedTaskId !== taskTitleToFocus) return;
-
-    const titleInput = taskDetailsTarget?.querySelector("textarea");
-    if (!titleInput) return;
-
-    titleInput.focus();
-    titleInput.select();
-    setTaskTitleToFocus(null);
-  }, [selectedTaskId, taskDetailsTarget, taskTitleToFocus]);
-
   const closeTaskDetails = useCallback(() => {
     setSelectedTaskId(null);
   }, []);
@@ -142,8 +130,7 @@ export default memo(function TaskBoard({
     editLabel: labels.editTask,
     label: labels.deleteTask,
     onEdit: (taskId: string) => {
-      setTaskTitleToFocus(taskId);
-      setSelectedTaskId(taskId);
+      setTaskIdToRename(taskId);
     },
     onSelect: (taskId: string) => {
       onTasksChange((currentTasks) =>
@@ -162,6 +149,19 @@ export default memo(function TaskBoard({
     }
   }, []);
   const selectTask = useCallback((taskId: string) => setSelectedTaskId(taskId), []);
+  const cancelTaskRename = useCallback(() => setTaskIdToRename(null), []);
+  const renameTask = useCallback(
+    (taskId: string, nextTitle: string) => {
+      const title = nextTitle.trim();
+      if (!title) return;
+
+      onTasksChange((currentTasks) =>
+        currentTasks.map((task) => (task.id === taskId ? { ...task, title } : task)),
+      );
+      setTaskIdToRename(null);
+    },
+    [onTasksChange],
+  );
   const prepareTaskRefocus = useCallback((taskId: string) => {
     taskToRefocus.current = taskId;
   }, []);
@@ -403,6 +403,7 @@ export default memo(function TaskBoard({
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
+                    if (event.nativeEvent.isComposing) return;
                     event.preventDefault();
                     event.currentTarget.blur();
                   } else if (event.key === "Escape") {
@@ -489,10 +490,13 @@ export default memo(function TaskBoard({
                                   status={status}
                                   statusLabel={labels.statusLabels[status]}
                                   isSelected={selectedTaskId === task.id}
+                                  isEditing={taskIdToRename === task.id}
                                   dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
                                   registerTaskElement={registerTaskElement}
                                   onContextMenu={onContextMenu}
                                   onSelect={selectTask}
+                                  onRename={renameTask}
+                                  onCancel={cancelTaskRename}
                                   onMove={moveTask}
                                   onPrepareRefocus={prepareTaskRefocus}
                                   onDragStart={handleCardDragStart}

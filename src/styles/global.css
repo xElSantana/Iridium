@@ -56,12 +56,15 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --color-background: #222831;
-  --color-text: #dfd0b8;
+  --color-text: #e0dcd5;
+  /* --color-text: #dfd0b8; */
   --color-primary: var(--color-text);
-  --color-accent-soft: #393e46;
+  --color-accent-soft: #29303b;
+  /* --color-accent-soft: #393e46; */
   --color-border: #94979d;
-  --color-window-control: #dfd0b8;
-  --color-window-control-hover: #dfd0b8;
+  --color-window-control: #e0dcd5;
+  /* --color-window-control: #dfd0b8; */
+  --color-window-control-hover: #e0dcd5;
 }
 
 body {

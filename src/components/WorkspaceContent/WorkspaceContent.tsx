@@ -46,6 +46,8 @@ export default function WorkspaceContent({ labels }: Props) {
   const [saveError, setSaveError] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [taskListToRename, setTaskListToRename] = useState<string | null>(null);
+  const renameTaskListSubmitRef = useRef(false);
+  const renameTaskListCancelRef = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const skipNextSave = useRef(false);
   const pendingWorkspaceSave = useRef<WorkspaceData | null>(null);
@@ -212,17 +214,6 @@ export default function WorkspaceContent({ labels }: Props) {
     [selectedTaskListId],
   );
 
-  useIsomorphicLayoutEffect(() => {
-    if (taskListToRename === null || selectedTaskListId !== taskListToRename) return;
-
-    const titleInput = document.getElementById("task-board-title");
-    if (!(titleInput instanceof HTMLInputElement)) return;
-
-    titleInput.focus();
-    titleInput.select();
-    setTaskListToRename(null);
-  }, [selectedTaskListId, taskListToRename]);
-
   const selectTaskList = (id: string) => {
     setWorkspace((current) =>
       current.selectedTaskListId === id ? current : { ...current, selectedTaskListId: id },
@@ -239,6 +230,19 @@ export default function WorkspaceContent({ labels }: Props) {
     });
   };
 
+  const renameTaskList = useCallback((id: string, title: string) => {
+    const nextTitle = title.trim();
+    if (!nextTitle) return;
+
+    setWorkspace((current) => ({
+      ...current,
+      taskLists: current.taskLists.map((taskList) =>
+        taskList.id === id ? { ...taskList, title: nextTitle } : taskList,
+      ),
+    }));
+    setTaskListToRename(null);
+  }, []);
+
   const { contextMenu, onContextMenu } = useContextMenu({
     actionsLabel: labels.actionsLabel,
     editLabel: labels.editTaskList,
@@ -246,7 +250,6 @@ export default function WorkspaceContent({ labels }: Props) {
     disabled: storageStatus !== "ready",
     onEdit: (id: string) => {
       setTaskListToRename(id);
-      selectTaskList(id);
     },
     onSelect: deleteTaskList,
   });
@@ -278,18 +281,59 @@ export default function WorkspaceContent({ labels }: Props) {
             <ul className={styles.taskListNavigation}>
               {workspace.taskLists.map((taskList) => (
                 <li key={taskList.id}>
-                  <button
-                    className={styles.taskListLink}
-                    type="button"
-                    aria-label={taskList.title}
-                    title={taskList.title}
-                    aria-current={taskList.id === workspace.selectedTaskListId ? "page" : undefined}
-                    onClick={() => selectTaskList(taskList.id)}
-                    onContextMenu={(event) => onContextMenu(event, taskList.id)}
-                  >
-                    <LuListTodo aria-hidden="true" />
-                    <span data-sidebar-label>{taskList.title}</span>
-                  </button>
+                  {taskListToRename === taskList.id ? (
+                    <input
+                      className={styles.taskListInput}
+                      autoFocus
+                      type="text"
+                      defaultValue={taskList.title}
+                      aria-label={labels.editTaskList}
+                      onBlur={(event) => {
+                        if (renameTaskListCancelRef.current) {
+                          renameTaskListCancelRef.current = false;
+                          return;
+                        }
+
+                        if (renameTaskListSubmitRef.current) {
+                          renameTaskListSubmitRef.current = false;
+                        }
+
+                        const nextTitle = event.currentTarget.value.trim();
+                        if (nextTitle) renameTaskList(taskList.id, nextTitle);
+                        else setTaskListToRename(null);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          renameTaskListSubmitRef.current = true;
+                          event.currentTarget.blur();
+                          return;
+                        }
+
+                        if (event.key !== "Escape") return;
+
+                        event.preventDefault();
+                        renameTaskListCancelRef.current = true;
+                        setTaskListToRename(null);
+                        event.currentTarget.blur();
+                      }}
+                    />
+                  ) : (
+                    <button
+                      className={styles.taskListLink}
+                      type="button"
+                      aria-label={taskList.title}
+                      title={taskList.title}
+                      aria-current={
+                        taskList.id === workspace.selectedTaskListId ? "page" : undefined
+                      }
+                      onClick={() => selectTaskList(taskList.id)}
+                      onContextMenu={(event) => onContextMenu(event, taskList.id)}
+                    >
+                      <LuListTodo aria-hidden="true" />
+                      <span data-sidebar-label>{taskList.title}</span>
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
