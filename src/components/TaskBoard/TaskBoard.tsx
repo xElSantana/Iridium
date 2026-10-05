@@ -303,7 +303,16 @@ export default memo(function TaskBoard({
 
   return (
     <div className={styles.workspace}>
-      <section className={styles.board} aria-labelledby="task-board-title">
+      <section
+        className={styles.board}
+        aria-labelledby="task-board-title"
+        onWheel={(event) => {
+          const columnsBody = columnsBodyRef.current;
+          if (columnsBody && event.target instanceof Node && !columnsBody.contains(event.target)) {
+            columnsBody.scrollTop += event.deltaY;
+          }
+        }}
+      >
         <header className={styles.header}>
           {selectedBackground && (
             <div
