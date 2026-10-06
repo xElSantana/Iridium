@@ -11,6 +11,7 @@ import {
   type TaskList,
   type WorkspaceData,
 } from "../../features/tasks/taskStorage";
+import { removeUnreferencedTaskFiles } from "../../features/tasks/taskMediaStorage";
 import styles from "./WorkspaceContent.module.css";
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -55,24 +56,48 @@ export default function WorkspaceContent({ labels }: Props) {
   const closedByActionRef = useRef(false);
   const loadError = storageStatus === "load-error";
 
-  const flushPendingSave = useCallback((notify = true) => {
-    if (saveTimer.current !== null) {
-      window.clearTimeout(saveTimer.current);
-      saveTimer.current = null;
-    }
+  const cleanupTimer = useRef<number | null>(null);
 
-    const pendingWorkspace = pendingWorkspaceSave.current;
-    if (!pendingWorkspace) return;
-
-    try {
-      saveWorkspace(pendingWorkspace);
-      pendingWorkspaceSave.current = null;
-      if (notify) setSaveError(false);
-    } catch (error) {
-      console.error("Could not save workspace templates.", error);
-      if (notify) setSaveError(true);
-    }
+  const cleanupTaskFiles = useCallback((workspaceContent: WorkspaceData) => {
+    void removeUnreferencedTaskFiles(workspaceContent).catch((error) => {
+      console.error("Could not clean up unreferenced task files.", error);
+    });
   }, []);
+
+  const scheduleCleanupTaskFiles = useCallback((workspaceContent: WorkspaceData) => {
+    if (cleanupTimer.current !== null) {
+      window.clearTimeout(cleanupTimer.current);
+    }
+    cleanupTimer.current = window.setTimeout(() => {
+      cleanupTimer.current = null;
+      void removeUnreferencedTaskFiles(workspaceContent).catch((error) => {
+        console.error("Could not clean up unreferenced task files.", error);
+      });
+    }, 10000);
+  }, []);
+
+  const flushPendingSave = useCallback(
+    (notify = true) => {
+      if (saveTimer.current !== null) {
+        window.clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+
+      const pendingWorkspace = pendingWorkspaceSave.current;
+      if (!pendingWorkspace) return;
+
+      try {
+        saveWorkspace(pendingWorkspace);
+        pendingWorkspaceSave.current = null;
+        scheduleCleanupTaskFiles(pendingWorkspace);
+        if (notify) setSaveError(false);
+      } catch (error) {
+        console.error("Could not save workspace templates.", error);
+        if (notify) setSaveError(true);
+      }
+    },
+    [scheduleCleanupTaskFiles],
+  );
 
   useIsomorphicLayoutEffect(() => {
     try {
@@ -88,12 +113,13 @@ export default function WorkspaceContent({ labels }: Props) {
           setSaveError(true);
         }
       }
+      cleanupTaskFiles(loaded.workspace);
       setStorageStatus("ready");
     } catch (error) {
       console.error("Could not load saved workspace templates.", error);
       setStorageStatus("load-error");
     }
-  }, [labels.taskListTemplate]);
+  }, [cleanupTaskFiles, labels.taskListTemplate]);
 
   useEffect(() => {
     if (storageStatus !== "ready") return;
@@ -118,6 +144,10 @@ export default function WorkspaceContent({ labels }: Props) {
     window.addEventListener("pagehide", flushBeforeExit);
     return () => {
       window.removeEventListener("pagehide", flushBeforeExit);
+      if (cleanupTimer.current !== null) {
+        window.clearTimeout(cleanupTimer.current);
+        cleanupTimer.current = null;
+      }
       flushPendingSave(false);
     };
   }, [flushPendingSave]);

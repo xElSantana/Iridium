@@ -16,6 +16,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.10",
     "@astrojs/react": "^7.0.0",
     "@blocknote/core": "^0.55.0",
     "@blocknote/mantine": "^0.55.0",
@@ -38,12 +39,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tauri-apps/cli": "^2.12.0",
-    "eslint": "^10.11.0",
+    "@tauri-apps/cli": "^2.12.1",
+    "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-astro": "^3.2.1",
     "prettier": "^3.9.9",
     "prettier-plugin-astro": "^1.1.0",
+    "typescript": "~5.8.3",
     "typescript-eslint": "^8.71.0"
   }
 }

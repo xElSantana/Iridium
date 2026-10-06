@@ -3,9 +3,10 @@ import { es } from "@blocknote/core/locales";
 import { BlockNoteView, type Theme } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
 import { createPortal } from "react-dom";
-import { memo, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FiChevronsRight, FiMaximize2, FiMinimize2, FiMoreVertical } from "react-icons/fi";
 import type { Task } from "../../features/tasks/taskStorage";
+import { createTaskMediaStorage } from "../../features/tasks/taskMediaStorage";
 import { useCustomVerticalScrollbar } from "./useCustomVerticalScrollbar";
 import styles from "./TaskDetails.module.css";
 
@@ -84,17 +85,23 @@ const TaskContent = memo(function TaskContent({
   editor,
   taskId,
   onTaskChange,
+  mediaStorage,
 }: {
   editor: TaskEditor;
   taskId: string;
   onTaskChange: TaskDetailsProps["onTaskChange"];
+  mediaStorage: ReturnType<typeof createTaskMediaStorage>;
 }) {
   return (
     <BlockNoteView
       className={styles.editor}
       editor={editor}
       theme={blockNoteTheme}
-      onChange={() => onTaskChange(taskId, { content: editor.document })}
+      onChange={() => {
+        const content = editor.document;
+        mediaStorage.retainFiles(content);
+        onTaskChange(taskId, { content });
+      }}
     />
   );
 });
@@ -137,14 +144,22 @@ function TaskDetails({
   } | null>(null);
   const resizeFrame = useRef<number | null>(null);
   const resizeWorkspace = useRef<HTMLElement | null>(null);
+  const mediaStorage = useMemo(createTaskMediaStorage, [task.id]);
   const editor = useCreateBlockNote(
     {
       initialContent: task.content?.length ? task.content : undefined,
       dictionary: es,
       dropCursor: { color: "var(--color-primary)" },
+      uploadFile: mediaStorage.uploadFile,
+      resolveFileUrl: mediaStorage.resolveFileUrl,
     },
     [task.id],
   );
+
+  useLayoutEffect(() => {
+    mediaStorage.activate(task.content);
+    return () => mediaStorage.dispose();
+  }, [mediaStorage]);
 
   useEffect(() => setTitleDraft(task.title), [task.title]);
 
@@ -377,7 +392,12 @@ function TaskDetails({
               }}
             />
           </header>
-          <TaskContent editor={editor} taskId={task.id} onTaskChange={onTaskChange} />
+          <TaskContent
+            editor={editor}
+            taskId={task.id}
+            onTaskChange={onTaskChange}
+            mediaStorage={mediaStorage}
+          />
         </div>
         <div
           className={styles.taskDetailsScrollbar}

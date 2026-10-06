@@ -208,6 +208,46 @@
   font-family: var(--font-family);
 }
 
+.editor :global([data-file-block] .bn-add-file-button) {
+  color: var(--color-text);
+  background-color: var(--color-accent-soft);
+}
+
+.editor :global(.bn-editor[contenteditable="true"] [data-file-block] .bn-add-file-button:hover) {
+  color: var(--color-text);
+  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
+}
+
+.editor :global([data-file-block] .bn-visual-media-wrapper) {
+  background-color: var(--color-accent-soft);
+}
+
+.taskDetails :global(.bn-mantine .bn-panel) {
+  color: var(--color-text);
+  background-color: var(--color-accent-soft);
+  border-color: var(--color-border);
+}
+
+.taskDetails :global(.bn-mantine .bn-panel input) {
+  color: var(--color-text);
+  background-color: var(--color-accent-soft);
+  border-color: var(--color-border);
+}
+
+.taskDetails :global(.bn-mantine .bn-panel input::placeholder) {
+  color: color-mix(in srgb, var(--color-text) 65%, var(--color-accent-soft));
+}
+
+.taskDetails :global(.bn-mantine .bn-panel input:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.taskDetails :global(.bn-mantine .bn-panel button) {
+  color: var(--color-text);
+  background-color: color-mix(in srgb, var(--color-text) 10%, var(--color-accent-soft));
+}
+
 .taskDetails :global(.bn-mantine .bn-select .mantine-Menu-item),
 .taskDetails :global(.bn-mantine .bn-menu-dropdown .mantine-Menu-item),
 .taskDetails :global(.bn-mantine .bn-table-handle-menu .mantine-Menu-item) {
