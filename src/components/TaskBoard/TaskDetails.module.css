@@ -73,7 +73,7 @@
   height: var(--custom-scrollbar-thumb-height, 0px);
   transform: translateY(var(--custom-scrollbar-thumb-top, 0px));
   border-radius: 3px;
-  background-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+  background-color: color-mix(in srgb, var(--color-text) 25%, transparent);
   touch-action: none;
   cursor: grab;
 }
