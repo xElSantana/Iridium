@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent } from "react";
-import { useCustomVerticalScrollbar } from "../TaskBoard/useCustomVerticalScrollbar";
+import { useCustomVerticalScrollbar } from "../../hooks/useCustomVerticalScrollbar";
 import { createPortal } from "react-dom";
 import { LuFilePlus, LuListTodo } from "react-icons/lu";
 import { useContextMenu } from "../ContextMenu/useContextMenu";
-import TaskBoard, { type TaskBoardLabels } from "../TaskBoard/TaskBoard";
+import TaskBoard, { type TaskBoardLabels } from "../TaskBoard/components/TaskBoard";
 import type { TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
 import {
   loadWorkspace,

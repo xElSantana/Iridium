@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type DragEvent, type RefObject } from "react";
-import type { Task } from "../../features/tasks/taskStorage";
-import { useDragAutoScroll } from "../../hooks/useDragAutoScroll";
+import type { Task } from "../../../features/tasks/taskStorage";
+import { useDragAutoScroll } from "../../../hooks/useDragAutoScroll";
 
 export type DropPosition = "before" | "after";
 

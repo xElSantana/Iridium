@@ -7,8 +7,8 @@ import {
   type DragEvent,
   type MouseEvent,
 } from "react";
-import { TASK_STATUSES, type TaskStatus } from "../../features/tasks/taskStorage";
-import type { DropPosition } from "./useDragReorder";
+import { TASK_STATUSES, type TaskStatus } from "../../../features/tasks/taskStorage";
+import type { DropPosition } from "../hooks/useDragReorder";
 import styles from "./TaskCard.module.css";
 
 export interface TaskCardProps {

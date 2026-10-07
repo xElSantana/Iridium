@@ -5,9 +5,9 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { createPortal } from "react-dom";
 import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FiChevronsRight, FiMaximize2, FiMinimize2, FiMoreVertical } from "react-icons/fi";
-import type { Task } from "../../features/tasks/taskStorage";
-import { createTaskMediaStorage } from "../../features/tasks/taskMediaStorage";
-import { useCustomVerticalScrollbar } from "./useCustomVerticalScrollbar";
+import type { Task } from "../../../features/tasks/taskStorage";
+import { createTaskMediaStorage } from "../../../features/tasks/taskMediaStorage";
+import { useCustomVerticalScrollbar } from "../../../hooks/useCustomVerticalScrollbar";
 import styles from "./TaskDetails.module.css";
 
 const MIN_PANEL_WIDTH = 400;

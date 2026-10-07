@@ -10,14 +10,14 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { LuImagePlus, LuKanban, LuListTodo, LuPlus } from "react-icons/lu";
-import { TASK_BACKGROUNDS, type TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
-import { TASK_STATUSES, type Task, type TaskStatus } from "../../features/tasks/taskStorage";
-import { useContextMenu } from "../ContextMenu/useContextMenu";
+import { TASK_BACKGROUNDS, type TaskBackgroundId } from "../../../features/tasks/taskBackgrounds";
+import { TASK_STATUSES, type Task, type TaskStatus } from "../../../features/tasks/taskStorage";
+import { useContextMenu } from "../../ContextMenu/useContextMenu";
 import TaskCard from "./TaskCard";
 import TaskDetails from "./TaskDetails";
-import { useCustomScrollbar } from "./useCustomScrollbar";
-import { useDragReorder } from "./useDragReorder";
-import { useTaskDetailsPreference } from "./useTaskDetailsPreference";
+import { useCustomScrollbar } from "../hooks/useCustomScrollbar";
+import { useDragReorder } from "../hooks/useDragReorder";
+import { useTaskDetailsPreference } from "../hooks/useTaskDetailsPreference";
 import styles from "./TaskBoard.module.css";
 
 export interface TaskBoardLabels {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { useCustomVerticalScrollbar } from "./useCustomVerticalScrollbar";
+import { useCustomVerticalScrollbar } from "../../../hooks/useCustomVerticalScrollbar";
 
 const CUSTOM_SCROLLBAR_MIN_THUMB = 24;
 
