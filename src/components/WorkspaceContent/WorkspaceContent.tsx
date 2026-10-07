@@ -150,9 +150,7 @@ export default function WorkspaceContent({ labels }: Props) {
     };
   }, [flushPendingSave]);
 
-  const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(() =>
-    typeof document !== "undefined" ? document.getElementById("workspace-sidebar-content") : null,
-  );
+  const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
   const navRef = useRef<HTMLElement>(null);
   const scrollbarTrackRef = useRef<HTMLDivElement>(null);
   const {

@@ -78,6 +78,10 @@ const { labels } = Astro.props;
   const tauri = (window as Window & { __TAURI__?: TauriGlobal }).__TAURI__;
 
   if (tauri) {
+    document
+      .querySelector<HTMLElement>("[data-window-title-bar]")
+      ?.setAttribute("data-tauri-window", "");
+
     const appWindow = tauri.window.getCurrentWindow();
     const minimizeButton = document.querySelector<HTMLButtonElement>(
       '[data-window-action="minimize"]',
@@ -128,7 +132,5 @@ const { labels } = Astro.props;
     });
 
     void updateMaximizeButton();
-  } else {
-    document.querySelector<HTMLElement>("[data-window-title-bar]")?.setAttribute("hidden", "");
   }
 </script>

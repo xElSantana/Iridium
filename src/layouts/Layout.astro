@@ -20,8 +20,20 @@ const t = await createTranslator();
     <link rel="icon" href="/resources/ui/icon.png" />
     <meta name="generator" content={Astro.generator} />
     <title>Iridium</title>
-    <link rel="preload" href="/fonts/ComicRelief-Regular.ttf" as="font" type="font/ttf" />
-    <link rel="preload" href="/fonts/ComicRelief-Bold.ttf" as="font" type="font/ttf" />
+    <link
+      rel="preload"
+      href="/fonts/ComicRelief-Regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      href="/fonts/ComicRelief-Bold.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin="anonymous"
+    />
   </head>
   <body>
     <div class={styles.windowFrame}>
