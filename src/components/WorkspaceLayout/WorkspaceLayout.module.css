@@ -112,6 +112,7 @@
 
 .activityButton:hover {
   background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
+  border-radius: 0;
 }
 
 .activityButton:focus-visible {
@@ -149,8 +150,16 @@
   transition: visibility 0s 260ms;
 }
 
+.workspace[data-sidebar-collapsed] .activityBar {
+  transition: border-radius 0s 260ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .workspace[data-sidebar-collapsed] .sidebar {
+    transition: none;
+  }
+
+  .workspace[data-sidebar-collapsed] .activityBar {
     transition: none;
   }
 }
@@ -159,6 +168,7 @@
   border-right: 1px solid var(--color-border);
   border-radius: 6px;
 }
+
 .resizeHandle {
   position: relative;
   z-index: 1;

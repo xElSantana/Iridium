@@ -2,6 +2,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type DragEvent,
@@ -46,9 +47,12 @@ interface Props {
   tasks: Task[];
   bannerId: TaskBackgroundId | null;
   labels: TaskBoardLabels;
+  closeTaskDetailsRequest: boolean;
   onTasksChange: (updateTasks: (tasks: Task[]) => Task[]) => void;
   onTitleChange: (title: string) => void;
   onBannerChange: (bannerId: TaskBackgroundId | null) => void;
+  onTaskDetailsOpenChange: (isOpen: boolean) => void;
+  onTaskDetailsClosed: () => void;
 }
 
 export default memo(function TaskBoard({
@@ -57,9 +61,12 @@ export default memo(function TaskBoard({
   tasks,
   bannerId,
   labels,
+  closeTaskDetailsRequest,
   onTasksChange,
   onTitleChange,
   onBannerChange,
+  onTaskDetailsOpenChange,
+  onTaskDetailsClosed,
 }: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskStatus | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
@@ -117,7 +124,8 @@ export default memo(function TaskBoard({
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const closeTaskDetails = useCallback(() => {
     setSelectedTaskId(null);
-  }, []);
+    onTaskDetailsClosed();
+  }, [onTaskDetailsClosed, setSelectedTaskId]);
   const updateTaskDetails = useCallback(
     (taskId: string, changes: Partial<Pick<Task, "title" | "content">>) => {
       onTasksChange((currentTasks) =>
@@ -214,6 +222,9 @@ export default memo(function TaskBoard({
   };
 
   useEffect(() => setTitleDraft(title), [title]);
+  useLayoutEffect(() => {
+    onTaskDetailsOpenChange(selectedTaskId !== null);
+  }, [onTaskDetailsOpenChange, selectedTaskId]);
   for (const task of tasks) {
     tasksByStatus[task.status].push(task);
   }
@@ -584,6 +595,7 @@ export default memo(function TaskBoard({
               resizeLabel={labels.resizeTaskDetails}
               width={taskDetailsWidth}
               resizeTarget={taskDetailsSeparator}
+              closeRequested={closeTaskDetailsRequest}
               onClose={closeTaskDetails}
               onResize={setTaskDetailsWidth}
               onTaskChange={updateTaskDetails}

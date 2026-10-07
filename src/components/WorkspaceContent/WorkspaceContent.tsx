@@ -44,6 +44,9 @@ export default function WorkspaceContent({ labels }: Props) {
   const [storageStatus, setStorageStatus] = useState<"loading" | "ready" | "load-error">("loading");
   const [saveError, setSaveError] = useState(false);
   const [taskListToRename, setTaskListToRename] = useState<string | null>(null);
+  const [taskDetailsOpen, setTaskDetailsOpen] = useState(false);
+  const [pendingTaskListId, setPendingTaskListId] = useState<string | null>(null);
+  const [pendingTaskListToDelete, setPendingTaskListToDelete] = useState<string | null>(null);
   const renameTaskListSubmitRef = useRef(false);
   const renameTaskListCancelRef = useRef(false);
   const skipNextSave = useRef(false);
@@ -229,13 +232,62 @@ export default function WorkspaceContent({ labels }: Props) {
     [selectedTaskListId],
   );
 
-  const selectTaskList = (id: string) => {
-    setWorkspace((current) =>
-      current.selectedTaskListId === id ? current : { ...current, selectedTaskListId: id },
-    );
-  };
+  const selectTaskList = useCallback(
+    (id: string) => {
+      if (id === workspace.selectedTaskListId) {
+        setPendingTaskListId(null);
+        return;
+      }
+
+      if (taskDetailsOpen) {
+        setPendingTaskListId(id);
+        return;
+      }
+
+      setWorkspace((current) => ({ ...current, selectedTaskListId: id }));
+    },
+    [taskDetailsOpen, workspace.selectedTaskListId],
+  );
+
+  const finishTaskDetailsClose = useCallback(() => {
+    setTaskDetailsOpen(false);
+    if (pendingTaskListId === null && pendingTaskListToDelete === null) return;
+
+    setWorkspace((current) => {
+      const taskLists =
+        pendingTaskListToDelete === null
+          ? current.taskLists
+          : current.taskLists.filter((taskList) => taskList.id !== pendingTaskListToDelete);
+      const pendingTaskListExists = taskLists.some((taskList) => taskList.id === pendingTaskListId);
+      const selectedTaskListExists = taskLists.some(
+        (taskList) => taskList.id === current.selectedTaskListId,
+      );
+      let selectedTaskListId = current.selectedTaskListId;
+      if (pendingTaskListExists) {
+        selectedTaskListId = pendingTaskListId;
+      } else if (!selectedTaskListExists) {
+        selectedTaskListId = taskLists[0]?.id ?? null;
+      }
+
+      return {
+        ...current,
+        taskLists,
+        selectedTaskListId,
+      };
+    });
+    setPendingTaskListId(null);
+    setPendingTaskListToDelete(null);
+  }, [pendingTaskListId, pendingTaskListToDelete]);
 
   const deleteTaskList = (id: string) => {
+    if (id === workspace.selectedTaskListId && taskDetailsOpen) {
+      const replacementTaskListId =
+        workspace.taskLists.find((taskList) => taskList.id !== id)?.id ?? null;
+      setPendingTaskListId(replacementTaskListId);
+      setPendingTaskListToDelete(id);
+      return;
+    }
+
     setWorkspace((current) => {
       const taskLists = current.taskLists.filter((taskList) => taskList.id !== id);
       const selectedTaskListId =
@@ -272,6 +324,8 @@ export default function WorkspaceContent({ labels }: Props) {
   const createTaskList = () => {
     if (storageStatus !== "ready") return;
 
+    const taskListId = crypto.randomUUID();
+
     setWorkspace((current) => {
       const baseTitle = labels.newTaskList;
       const existingTitles = new Set(current.taskLists.map((taskList) => taskList.title));
@@ -281,14 +335,14 @@ export default function WorkspaceContent({ labels }: Props) {
         title = `${baseTitle} ${suffix}`;
         suffix += 1;
       }
-      const taskList: TaskList = { id: crypto.randomUUID(), title, tasks: [] };
+      const taskList: TaskList = { id: taskListId, title, tasks: [] };
 
       return {
         ...current,
         taskLists: [...current.taskLists, taskList],
-        selectedTaskListId: taskList.id,
       };
     });
+    selectTaskList(taskListId);
   };
 
   const sidebar = sidebarTarget
@@ -421,9 +475,14 @@ export default function WorkspaceContent({ labels }: Props) {
               tasks={selectedTaskList.tasks}
               bannerId={selectedTaskList.bannerId ?? null}
               labels={labels.taskBoard}
+              closeTaskDetailsRequest={
+                pendingTaskListId !== null || pendingTaskListToDelete !== null
+              }
               onTasksChange={handleTasksChange}
               onTitleChange={handleTitleChange}
               onBannerChange={handleBannerChange}
+              onTaskDetailsOpenChange={setTaskDetailsOpen}
+              onTaskDetailsClosed={finishTaskDetailsClose}
             />
           ) : null}
         </>

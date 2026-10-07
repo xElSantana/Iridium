@@ -74,6 +74,7 @@ interface TaskDetailsProps {
   resizeLabel: string;
   width: number | null;
   resizeTarget: HTMLElement;
+  closeRequested: boolean;
   onClose: () => void;
   onResize: (width: number) => void;
   onTaskChange: (taskId: string, changes: Partial<Pick<Task, "title" | "content">>) => void;
@@ -114,6 +115,7 @@ function TaskDetails({
   resizeLabel,
   width,
   resizeTarget,
+  closeRequested,
   onClose,
   onResize,
   onTaskChange,
@@ -144,6 +146,7 @@ function TaskDetails({
   } | null>(null);
   const resizeFrame = useRef<number | null>(null);
   const resizeWorkspace = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
   const mediaStorage = useMemo(createTaskMediaStorage, [task.id]);
   const editor = useCreateBlockNote(
     {
@@ -155,6 +158,14 @@ function TaskDetails({
     },
     [task.id],
   );
+
+  useLayoutEffect(() => {
+    setIsClosing(closeRequested);
+  }, [closeRequested]);
+
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useLayoutEffect(() => {
     mediaStorage.activate(task.content);
@@ -263,7 +274,7 @@ function TaskDetails({
     const workspace = panelRef.current?.closest<HTMLElement>("[data-workspace]");
     if (!workspace) return;
 
-    const finishClosing = () => onClose();
+    const finishClosing = () => onCloseRef.current();
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       finishClosing();
       return;
@@ -281,7 +292,7 @@ function TaskDetails({
       workspace.removeEventListener("transitionend", onTransitionEnd);
       window.clearTimeout(fallbackTimer);
     };
-  }, [isClosing, onClose]);
+  }, [isClosing]);
 
   const currentWidthRef = useRef(width ?? DEFAULT_PANEL_WIDTH);
   currentWidthRef.current = width ?? DEFAULT_PANEL_WIDTH;

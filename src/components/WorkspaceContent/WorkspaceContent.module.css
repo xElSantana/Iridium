@@ -148,8 +148,17 @@ nav[data-custom-vertical-scrollbar-hidden] ~ .sidebarScrollbar {
   border-radius: 6px;
 }
 
-.taskListLink[aria-current="page"] {
+.taskListLink:hover {
   background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.taskListLink[aria-current="page"]::after {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  content: "";
 }
 
 .taskListLink svg,
