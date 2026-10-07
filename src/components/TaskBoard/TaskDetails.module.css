@@ -27,7 +27,7 @@
   min-height: 0;
   overflow: auto;
   scrollbar-width: none;
-  padding: 12px 30px 12px 12px;
+  padding: 12px 24px 12px 12px;
 }
 
 .taskDetailsContent::-webkit-scrollbar {
@@ -40,10 +40,13 @@
   top: 12px;
   right: 6px;
   bottom: 12px;
-  width: 18px;
+  width: 12px;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  transition:
+    opacity 300ms ease,
+    visibility 0s 300ms;
 }
 
 .taskDetails:hover .taskDetailsScrollbar,
@@ -52,6 +55,7 @@
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+  transition: opacity 150ms ease;
 }
 
 .taskDetailsContent[data-custom-vertical-scrollbar-hidden] ~ .taskDetailsScrollbar,
@@ -68,7 +72,7 @@
   width: 100%;
   height: var(--custom-scrollbar-thumb-height, 0px);
   transform: translateY(var(--custom-scrollbar-thumb-top, 0px));
-  border-radius: 6px;
+  border-radius: 3px;
   background-color: color-mix(in srgb, var(--color-text) 45%, transparent);
   touch-action: none;
   cursor: grab;

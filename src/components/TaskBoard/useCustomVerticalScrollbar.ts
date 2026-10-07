@@ -11,7 +11,7 @@ const CUSTOM_SCROLLBAR_MIN_THUMB = 24;
 const CUSTOM_SCROLLBAR_ACTIVE_TIMEOUT = 900;
 
 export function useCustomVerticalScrollbar(
-  scrollerRef: RefObject<HTMLDivElement | null>,
+  scrollerRef: RefObject<HTMLElement | null>,
   trackRef: RefObject<HTMLDivElement | null>,
 ) {
   const activeTimer = useRef<number | null>(null);
@@ -21,8 +21,27 @@ export function useCustomVerticalScrollbar(
   const dragPointerId = useRef<number | null>(null);
   const dragStartY = useRef(0);
   const dragStartScrollTop = useRef(0);
+  const attachedScroller = useRef<HTMLElement | null>(null);
+
+  const scrollHandlerRef = useRef<() => void>(() => {});
+
+  const onScroll = useCallback(() => {
+    scrollHandlerRef.current();
+  }, []);
+
+  const attachScroller = useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (scroller && scroller !== attachedScroller.current) {
+      if (attachedScroller.current) {
+        attachedScroller.current.removeEventListener("scroll", onScroll);
+      }
+      scroller.addEventListener("scroll", onScroll, { passive: true });
+      attachedScroller.current = scroller;
+    }
+  }, [onScroll, scrollerRef]);
 
   const updateScrollbar = useCallback(() => {
+    attachScroller();
     const scroller = scrollerRef.current;
     const track = trackRef.current;
     if (!scroller || !track) return;
@@ -57,7 +76,7 @@ export function useCustomVerticalScrollbar(
     track.style.setProperty("--custom-scrollbar-thumb-top", `${newThumbTop}px`);
     track.setAttribute("aria-valuemax", String(Math.round(maxScrollTop)));
     track.setAttribute("aria-valuenow", String(Math.round(scroller.scrollTop)));
-  }, [scrollerRef, trackRef]);
+  }, [attachScroller, scrollerRef, trackRef]);
 
   const activateScrollbar = useCallback(() => {
     const scroller = scrollerRef.current;
@@ -73,25 +92,39 @@ export function useCustomVerticalScrollbar(
     }, CUSTOM_SCROLLBAR_ACTIVE_TIMEOUT);
   }, [scrollerRef]);
 
-  useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-
-    const onScroll = () => {
-      activateScrollbar();
-      updateScrollbar();
-    };
-
-    scroller.addEventListener("scroll", onScroll, { passive: true });
+  scrollHandlerRef.current = () => {
+    activateScrollbar();
     updateScrollbar();
+  };
+
+  useEffect(() => {
+    attachScroller();
+    updateScrollbar();
+
+    const scroller = scrollerRef.current;
+    const track = trackRef.current;
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        updateScrollbar();
+      });
+      if (scroller) resizeObserver.observe(scroller);
+      if (track) resizeObserver.observe(track);
+    }
+
     return () => {
-      scroller.removeEventListener("scroll", onScroll);
+      if (attachedScroller.current) {
+        attachedScroller.current.removeEventListener("scroll", onScroll);
+        attachedScroller.current = null;
+      }
+      resizeObserver?.disconnect();
       if (activeTimer.current !== null) {
         window.clearTimeout(activeTimer.current);
         activeTimer.current = null;
       }
     };
-  }, [activateScrollbar, scrollerRef, updateScrollbar]);
+  }, [attachScroller, onScroll, scrollerRef, trackRef, updateScrollbar]);
 
   const onTrackPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || event.target !== event.currentTarget) return;

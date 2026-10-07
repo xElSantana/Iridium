@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCustomVerticalScrollbar } from "../TaskBoard/useCustomVerticalScrollbar";
 import { createPortal } from "react-dom";
 import { LuFilePlus, LuListTodo } from "react-icons/lu";
 import { useContextMenu } from "../ContextMenu/useContextMenu";
@@ -146,14 +147,32 @@ export default function WorkspaceContent({ labels }: Props) {
     };
   }, [flushPendingSave]);
 
-  const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
+  const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(() =>
+    typeof document !== "undefined" ? document.getElementById("workspace-sidebar-content") : null,
+  );
+  const navRef = useRef<HTMLElement>(null);
+  const scrollbarTrackRef = useRef<HTMLDivElement>(null);
+  const {
+    updateScrollbar: updateSidebarScrollbar,
+    onTrackPointerDown: handleScrollbarTrackPointerDown,
+    onThumbPointerDown: handleScrollbarThumbPointerDown,
+    onThumbPointerMove: handleScrollbarThumbPointerMove,
+    onThumbPointerUp: handleScrollbarThumbPointerUp,
+    onKeyDown: handleScrollbarKeyDown,
+  } = useCustomVerticalScrollbar(navRef, scrollbarTrackRef);
   const selectedTaskList =
     workspace.taskLists.find((taskList) => taskList.id === workspace.selectedTaskListId) ?? null;
   const selectedTaskListId = selectedTaskList?.id ?? null;
 
   useIsomorphicLayoutEffect(() => {
-    setSidebarTarget(document.getElementById("workspace-sidebar-content"));
-  }, []);
+    if (!sidebarTarget) {
+      setSidebarTarget(document.getElementById("workspace-sidebar-content"));
+    }
+  }, [sidebarTarget]);
+
+  useIsomorphicLayoutEffect(() => {
+    updateSidebarScrollbar();
+  }, [sidebarTarget, updateSidebarScrollbar, workspace.taskLists]);
 
   useIsomorphicLayoutEffect(() => {
     if (storageStatus === "loading" || (storageStatus === "ready" && selectedTaskListId !== null)) {
@@ -288,68 +307,92 @@ export default function WorkspaceContent({ labels }: Props) {
               <LuFilePlus aria-hidden="true" />
             </button>
           </header>
-          <nav aria-label={labels.sidebarTaskLists}>
-            <ul className={styles.taskListNavigation}>
-              {workspace.taskLists.map((taskList) => (
-                <li key={taskList.id}>
-                  {taskListToRename === taskList.id ? (
-                    <input
-                      className={styles.taskListInput}
-                      autoFocus
-                      type="text"
-                      defaultValue={taskList.title}
-                      maxLength={200}
-                      aria-label={labels.editTaskList}
-                      onBlur={(event) => {
-                        if (renameTaskListCancelRef.current) {
-                          renameTaskListCancelRef.current = false;
-                          return;
-                        }
+          <div className={styles.sidebarNavWrapper}>
+            <nav ref={navRef} aria-label={labels.sidebarTaskLists}>
+              <ul className={styles.taskListNavigation}>
+                {workspace.taskLists.map((taskList) => (
+                  <li key={taskList.id}>
+                    {taskListToRename === taskList.id ? (
+                      <input
+                        className={styles.taskListInput}
+                        autoFocus
+                        type="text"
+                        defaultValue={taskList.title}
+                        maxLength={200}
+                        aria-label={labels.editTaskList}
+                        onBlur={(event) => {
+                          if (renameTaskListCancelRef.current) {
+                            renameTaskListCancelRef.current = false;
+                            return;
+                          }
 
-                        if (renameTaskListSubmitRef.current) {
-                          renameTaskListSubmitRef.current = false;
-                        }
+                          if (renameTaskListSubmitRef.current) {
+                            renameTaskListSubmitRef.current = false;
+                          }
 
-                        const nextTitle = event.currentTarget.value.trim();
-                        if (nextTitle) renameTaskList(taskList.id, nextTitle);
-                        else setTaskListToRename(null);
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
+                          const nextTitle = event.currentTarget.value.trim();
+                          if (nextTitle) renameTaskList(taskList.id, nextTitle);
+                          else setTaskListToRename(null);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            renameTaskListSubmitRef.current = true;
+                            event.currentTarget.blur();
+                            return;
+                          }
+
+                          if (event.key !== "Escape") return;
+
                           event.preventDefault();
-                          renameTaskListSubmitRef.current = true;
+                          renameTaskListCancelRef.current = true;
+                          setTaskListToRename(null);
                           event.currentTarget.blur();
-                          return;
+                        }}
+                      />
+                    ) : (
+                      <button
+                        className={styles.taskListLink}
+                        type="button"
+                        aria-label={taskList.title}
+                        title={taskList.title}
+                        aria-current={
+                          taskList.id === workspace.selectedTaskListId ? "page" : undefined
                         }
-
-                        if (event.key !== "Escape") return;
-
-                        event.preventDefault();
-                        renameTaskListCancelRef.current = true;
-                        setTaskListToRename(null);
-                        event.currentTarget.blur();
-                      }}
-                    />
-                  ) : (
-                    <button
-                      className={styles.taskListLink}
-                      type="button"
-                      aria-label={taskList.title}
-                      title={taskList.title}
-                      aria-current={
-                        taskList.id === workspace.selectedTaskListId ? "page" : undefined
-                      }
-                      onClick={() => selectTaskList(taskList.id)}
-                      onContextMenu={(event) => onContextMenu(event, taskList.id)}
-                    >
-                      <LuListTodo aria-hidden="true" />
-                      <span>{taskList.title}</span>
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </nav>
+                        onClick={() => selectTaskList(taskList.id)}
+                        onContextMenu={(event) => onContextMenu(event, taskList.id)}
+                      >
+                        <LuListTodo aria-hidden="true" />
+                        <span>{taskList.title}</span>
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <div
+              className={styles.sidebarScrollbar}
+              ref={scrollbarTrackRef}
+              role="scrollbar"
+              aria-label={labels.sidebarTaskLists}
+              aria-controls="workspace-sidebar-content"
+              aria-orientation="vertical"
+              aria-valuemin={0}
+              aria-valuemax={0}
+              aria-valuenow={0}
+              tabIndex={0}
+              onPointerDown={handleScrollbarTrackPointerDown}
+              onKeyDown={handleScrollbarKeyDown}
+            >
+              <div
+                className={styles.sidebarScrollbarThumb}
+                onPointerDown={handleScrollbarThumbPointerDown}
+                onPointerMove={handleScrollbarThumbPointerMove}
+                onPointerUp={handleScrollbarThumbPointerUp}
+                onPointerCancel={handleScrollbarThumbPointerUp}
+              />
+            </div>
+          </div>
         </div>,
         sidebarTarget,
       )

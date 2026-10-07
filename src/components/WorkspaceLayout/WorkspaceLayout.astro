@@ -57,7 +57,7 @@ const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.
     </button>
   </nav>
   <aside id="workspace-sidebar" class={styles.sidebar} aria-label={tasksLabel}>
-    <div id="workspace-sidebar-content"></div>
+    <div id="workspace-sidebar-content" class={styles.sidebarContentHost}></div>
   </aside>
   <div
     class={styles.resizeHandle}

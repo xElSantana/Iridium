@@ -1,10 +1,13 @@
 .sidebarContent {
   display: grid;
-  align-content: start;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 6px;
+  flex: 1;
   min-width: 0;
+  min-height: 0;
   padding: 6px;
+  background-color: var(--color-accent-soft);
 }
 
 .sidebarHeader {
@@ -24,14 +27,75 @@
   white-space: nowrap;
 }
 
+.sidebarNavWrapper {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .sidebarContent nav {
+  flex: 1;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.sidebarContent nav::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.sidebarScrollbar {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 12px;
+  padding-block: 4px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 300ms ease,
+    visibility 0s 300ms;
+}
+
+.sidebarContent:hover .sidebarScrollbar,
+.sidebarContent:focus-within .sidebarScrollbar,
+nav[data-custom-scrollbar-active] ~ .sidebarScrollbar {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 150ms ease;
+}
+
+nav[data-custom-vertical-scrollbar-hidden] ~ .sidebarScrollbar {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.sidebarScrollbarThumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--custom-scrollbar-thumb-height, 0px);
+  transform: translateY(var(--custom-scrollbar-thumb-top, 0px));
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+  touch-action: none;
+  cursor: grab;
+}
+
+.sidebarScrollbarThumb:active {
+  cursor: grabbing;
 }
 
 .taskListNavigation {
   display: grid;
   min-width: 0;
-  gap: 3px;
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -49,11 +113,12 @@
   min-width: 0;
   gap: 6px;
   border: 0;
-  padding: 6px;
+  padding: 4px 6px;
   color: var(--color-text);
   background: transparent;
   cursor: pointer;
   font: inherit;
+  font-weight: 400;
   text-align: left;
 }
 
@@ -83,9 +148,7 @@
   border-radius: 6px;
 }
 
-.taskListLink:hover,
-.taskListLink[aria-current="page"],
-.sidebarAction:not(:disabled):hover {
+.taskListLink[aria-current="page"] {
   background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
 }
 
