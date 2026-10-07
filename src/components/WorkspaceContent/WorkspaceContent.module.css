@@ -102,7 +102,35 @@ nav[data-custom-vertical-scrollbar-hidden] ~ .sidebarScrollbar {
 }
 
 .taskListNavigation li {
+  position: relative;
   min-width: 0;
+}
+
+.taskListNavigation li::before,
+.taskListNavigation li::after {
+  position: absolute;
+  z-index: 1;
+  right: 4px;
+  left: 4px;
+  height: 3px;
+  border-radius: 3px;
+  background-color: var(--color-primary);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
+.taskListNavigation li::before {
+  top: -2.5px;
+}
+
+.taskListNavigation li::after {
+  bottom: -2.5px;
+}
+
+.taskListNavigation li.dropBefore::before,
+.taskListNavigation li.dropAfter::after {
+  opacity: 1;
 }
 
 .taskListLink,

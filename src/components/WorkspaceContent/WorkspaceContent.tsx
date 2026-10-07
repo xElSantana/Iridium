@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent } from "react";
 import { useCustomVerticalScrollbar } from "../TaskBoard/useCustomVerticalScrollbar";
 import { createPortal } from "react-dom";
 import { LuFilePlus, LuListTodo } from "react-icons/lu";
@@ -12,6 +12,7 @@ import {
   type WorkspaceData,
 } from "../../features/tasks/taskStorage";
 import { removeUnreferencedTaskFiles } from "../../features/tasks/taskMediaStorage";
+import { useDragAutoScroll } from "../../hooks/useDragAutoScroll";
 import styles from "./WorkspaceContent.module.css";
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -39,11 +40,17 @@ const emptyWorkspace: WorkspaceData = {
   selectedTaskListId: null,
 };
 
+const TASK_LIST_DRAG_TYPE = "application/x-iridium-task-list";
+
 export default function WorkspaceContent({ labels }: Props) {
   const [workspace, setWorkspace] = useState(emptyWorkspace);
   const [storageStatus, setStorageStatus] = useState<"loading" | "ready" | "load-error">("loading");
   const [saveError, setSaveError] = useState(false);
   const [taskListToRename, setTaskListToRename] = useState<string | null>(null);
+  const [dragOverTaskList, setDragOverTaskList] = useState<{
+    id: string;
+    position: "before" | "after";
+  } | null>(null);
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false);
   const [pendingTaskListId, setPendingTaskListId] = useState<string | null>(null);
   const [pendingTaskListToDelete, setPendingTaskListToDelete] = useState<string | null>(null);
@@ -153,6 +160,7 @@ export default function WorkspaceContent({ labels }: Props) {
   const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
   const navRef = useRef<HTMLElement>(null);
   const scrollbarTrackRef = useRef<HTMLDivElement>(null);
+  const { updateAutoScroll, stopAutoScroll: stopSidebarAutoScroll } = useDragAutoScroll(navRef);
   const {
     updateScrollbar: updateSidebarScrollbar,
     onTrackPointerDown: handleScrollbarTrackPointerDown,
@@ -161,6 +169,16 @@ export default function WorkspaceContent({ labels }: Props) {
     onThumbPointerUp: handleScrollbarThumbPointerUp,
     onKeyDown: handleScrollbarKeyDown,
   } = useCustomVerticalScrollbar(navRef, scrollbarTrackRef);
+  const clearTaskListDrag = useCallback(() => {
+    stopSidebarAutoScroll();
+    setDragOverTaskList(null);
+  }, [stopSidebarAutoScroll]);
+
+  useEffect(() => {
+    document.addEventListener("dragend", clearTaskListDrag);
+    return () => document.removeEventListener("dragend", clearTaskListDrag);
+  }, [clearTaskListDrag]);
+
   const selectedTaskList =
     workspace.taskLists.find((taskList) => taskList.id === workspace.selectedTaskListId) ?? null;
   const selectedTaskListId = selectedTaskList?.id ?? null;
@@ -308,6 +326,53 @@ export default function WorkspaceContent({ labels }: Props) {
     setTaskListToRename(null);
   }, []);
 
+  const handleTaskListDragStart = (event: DragEvent<HTMLButtonElement>, id: string) => {
+    event.dataTransfer.setData(TASK_LIST_DRAG_TYPE, id);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleTaskListDragOver = (event: DragEvent<HTMLButtonElement>, id: string) => {
+    if (!event.dataTransfer.types.includes(TASK_LIST_DRAG_TYPE)) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const { top, height } = event.currentTarget.getBoundingClientRect();
+    const nextDragOverTaskList = {
+      id,
+      position: event.clientY < top + height / 2 ? "before" : "after",
+    } as const;
+    setDragOverTaskList((current) =>
+      current?.id === nextDragOverTaskList.id && current.position === nextDragOverTaskList.position
+        ? current
+        : nextDragOverTaskList,
+    );
+  };
+
+  const handleTaskListDrop = (event: DragEvent<HTMLButtonElement>, targetId: string) => {
+    if (!event.dataTransfer.types.includes(TASK_LIST_DRAG_TYPE)) return;
+
+    event.preventDefault();
+    const draggedId = event.dataTransfer.getData(TASK_LIST_DRAG_TYPE);
+    const { top, height } = event.currentTarget.getBoundingClientRect();
+    const position = event.clientY < top + height / 2 ? "before" : "after";
+    clearTaskListDrag();
+    if (!draggedId || draggedId === targetId) return;
+
+    setWorkspace((current) => {
+      const draggedIndex = current.taskLists.findIndex((taskList) => taskList.id === draggedId);
+      const targetIndex = current.taskLists.findIndex((taskList) => taskList.id === targetId);
+      if (draggedIndex === -1 || targetIndex === -1) return current;
+
+      const taskLists = [...current.taskLists];
+      const [draggedTaskList] = taskLists.splice(draggedIndex, 1);
+      if (!draggedTaskList) return current;
+      const adjustedTargetIndex = targetIndex > draggedIndex ? targetIndex - 1 : targetIndex;
+      const insertAt = position === "before" ? adjustedTargetIndex : adjustedTargetIndex + 1;
+      taskLists.splice(insertAt, 0, draggedTaskList);
+      return { ...current, taskLists };
+    });
+  };
+
   const { contextMenu, onContextMenu } = useContextMenu({
     actionsLabel: labels.actionsLabel,
     editLabel: labels.editTaskList,
@@ -360,10 +425,31 @@ export default function WorkspaceContent({ labels }: Props) {
             </button>
           </header>
           <div className={styles.sidebarNavWrapper}>
-            <nav ref={navRef} aria-label={labels.sidebarTaskLists}>
+            <nav
+              ref={navRef}
+              aria-label={labels.sidebarTaskLists}
+              onDragOverCapture={(event) => {
+                if (event.dataTransfer.types.includes(TASK_LIST_DRAG_TYPE)) {
+                  updateAutoScroll(event.clientY);
+                }
+              }}
+              onDragLeaveCapture={(event) => {
+                if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+                clearTaskListDrag();
+              }}
+            >
               <ul className={styles.taskListNavigation}>
                 {workspace.taskLists.map((taskList) => (
-                  <li key={taskList.id}>
+                  <li
+                    key={taskList.id}
+                    className={
+                      dragOverTaskList?.id === taskList.id
+                        ? dragOverTaskList.position === "before"
+                          ? styles.dropBefore
+                          : styles.dropAfter
+                        : undefined
+                    }
+                  >
                     {taskListToRename === taskList.id ? (
                       <input
                         className={styles.taskListInput}
@@ -406,6 +492,7 @@ export default function WorkspaceContent({ labels }: Props) {
                       <button
                         className={styles.taskListLink}
                         type="button"
+                        draggable={storageStatus === "ready"}
                         aria-label={taskList.title}
                         title={taskList.title}
                         aria-current={
@@ -413,6 +500,9 @@ export default function WorkspaceContent({ labels }: Props) {
                         }
                         onClick={() => selectTaskList(taskList.id)}
                         onContextMenu={(event) => onContextMenu(event, taskList.id)}
+                        onDragStart={(event) => handleTaskListDragStart(event, taskList.id)}
+                        onDragOver={(event) => handleTaskListDragOver(event, taskList.id)}
+                        onDrop={(event) => handleTaskListDrop(event, taskList.id)}
                       >
                         <LuListTodo aria-hidden="true" />
                         <span>{taskList.title}</span>

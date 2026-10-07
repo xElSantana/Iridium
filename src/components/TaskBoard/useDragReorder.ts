@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent, type RefObject } from "react";
+import { useCallback, useEffect, useState, type DragEvent, type RefObject } from "react";
 import type { Task } from "../../features/tasks/taskStorage";
+import { useDragAutoScroll } from "../../hooks/useDragAutoScroll";
 
 export type DropPosition = "before" | "after";
-
-const DRAG_SCROLL_EDGE_SIZE = 56;
-const DRAG_SCROLL_MAX_SPEED = 840;
-const DRAG_SCROLL_MAX_FRAME_TIME = 32;
 
 export function useDragReorder(
   onTasksChange: (updateTasks: (tasks: Task[]) => Task[]) => void,
@@ -13,56 +10,7 @@ export function useDragReorder(
 ) {
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<DropPosition>("after");
-  const dragPointerY = useRef<number | null>(null);
-  const animationFrame = useRef<number | null>(null);
-  const previousFrameTime = useRef<number | null>(null);
-
-  const stopAutoScroll = useCallback(() => {
-    dragPointerY.current = null;
-    previousFrameTime.current = null;
-    if (animationFrame.current !== null) {
-      cancelAnimationFrame(animationFrame.current);
-      animationFrame.current = null;
-    }
-  }, []);
-
-  const runAutoScroll = useCallback(
-    function scrollAtEdge(timestamp: number) {
-      animationFrame.current = null;
-      const scroller = scrollerRef.current;
-      const pointerY = dragPointerY.current;
-      if (!scroller || pointerY === null) return;
-
-      const { top, bottom } = scroller.getBoundingClientRect();
-      const distanceFromTop = pointerY - top;
-      const distanceFromBottom = bottom - pointerY;
-      const edgeDistance = Math.min(distanceFromTop, distanceFromBottom);
-      if (edgeDistance >= DRAG_SCROLL_EDGE_SIZE) {
-        previousFrameTime.current = null;
-        return;
-      }
-
-      const intensity = Math.min(1, 1 - Math.max(0, edgeDistance) / DRAG_SCROLL_EDGE_SIZE);
-      const direction = distanceFromTop < distanceFromBottom ? -1 : 1;
-      const maxScrollTop = scroller.scrollHeight - scroller.clientHeight;
-      if (
-        (direction < 0 && scroller.scrollTop <= 0) ||
-        (direction > 0 && scroller.scrollTop >= maxScrollTop)
-      ) {
-        previousFrameTime.current = null;
-        return;
-      }
-
-      const elapsed =
-        previousFrameTime.current === null
-          ? 16
-          : Math.min(timestamp - previousFrameTime.current, DRAG_SCROLL_MAX_FRAME_TIME);
-      previousFrameTime.current = timestamp;
-      scroller.scrollTop += direction * DRAG_SCROLL_MAX_SPEED * intensity * (elapsed / 1000);
-      animationFrame.current = requestAnimationFrame(scrollAtEdge);
-    },
-    [scrollerRef],
-  );
+  const { updateAutoScroll, stopAutoScroll } = useDragAutoScroll(scrollerRef);
 
   const clearDragOverTaskId = useCallback(() => {
     setDragOverTaskId(null);
@@ -114,29 +62,9 @@ export function useDragReorder(
     (event: DragEvent<HTMLDivElement>) => {
       if (!event.dataTransfer.types.includes("text/plain")) return;
 
-      const scroller = scrollerRef.current;
-      if (!scroller) return;
-
-      const { top, bottom } = scroller.getBoundingClientRect();
-      if (event.clientY < top || event.clientY > bottom) {
-        stopAutoScroll();
-        return;
-      }
-      const distanceFromTop = event.clientY - top;
-      const distanceFromBottom = bottom - event.clientY;
-      const edgeDistance = Math.min(distanceFromTop, distanceFromBottom);
-      dragPointerY.current = event.clientY;
-      if (edgeDistance >= DRAG_SCROLL_EDGE_SIZE) {
-        previousFrameTime.current = null;
-        return;
-      }
-
-      if (animationFrame.current === null) {
-        previousFrameTime.current = null;
-        animationFrame.current = requestAnimationFrame(runAutoScroll);
-      }
+      updateAutoScroll(event.clientY);
     },
-    [runAutoScroll, scrollerRef, stopAutoScroll],
+    [updateAutoScroll],
   );
 
   const handleBoardDragLeaveCapture = useCallback(
@@ -156,7 +84,6 @@ export function useDragReorder(
     document.addEventListener("dragend", handleDragEnd);
     return () => {
       document.removeEventListener("dragend", handleDragEnd);
-      stopAutoScroll();
     };
   }, [stopAutoScroll]);
 

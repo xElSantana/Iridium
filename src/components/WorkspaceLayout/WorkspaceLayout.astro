@@ -137,7 +137,7 @@ const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.
       );
     };
 
-    const setSidebarWidth = (width: number, allowBelowMinimum = false) => {
+    const setSidebarWidth = (width: number, collapseSidebar = false) => {
       const maximumWidth = Math.min(
         MAX_SIDEBAR_WIDTH,
         Math.max(
@@ -149,11 +149,9 @@ const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.
             MAIN_MIN_WIDTH,
         ),
       );
-      visibleSidebarWidth = allowBelowMinimum
-        ? Math.min(Math.max(width, 1), maximumWidth)
-        : width < MIN_SIDEBAR_WIDTH
-          ? 0
-          : Math.min(Math.max(width, MIN_SIDEBAR_WIDTH), maximumWidth);
+      visibleSidebarWidth = collapseSidebar
+        ? 0
+        : Math.min(Math.max(width, MIN_SIDEBAR_WIDTH), maximumWidth);
       const collapsed = visibleSidebarWidth === 0;
       workspace.style.setProperty("--sidebar-width", `${visibleSidebarWidth}px`);
       if (visibleSidebarWidth >= MIN_SIDEBAR_WIDTH) sidebarWidth = visibleSidebarWidth;
@@ -166,12 +164,13 @@ const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.
       handle.setAttribute("aria-valuemax", String(maximumWidth));
     };
 
-    setSidebarWidth(visibleSidebarWidth);
+    setSidebarWidth(visibleSidebarWidth, savedCollapsedState);
     void workspace.offsetWidth;
     workspace.setAttribute("data-sidebar-ready", "");
 
     activityButton.addEventListener("click", () => {
-      setSidebarWidth(workspace.hasAttribute("data-sidebar-collapsed") ? sidebarWidth : 0);
+      const collapsed = !workspace.hasAttribute("data-sidebar-collapsed");
+      setSidebarWidth(collapsed ? 0 : sidebarWidth, collapsed);
       persistSidebarState();
     });
 
@@ -202,7 +201,7 @@ const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.
         workspace.getBoundingClientRect().left -
         WORKSPACE_PADDING -
         ACTIVITY_BAR_WIDTH;
-      setSidebarWidth(requestedWidth, true);
+      setSidebarWidth(requestedWidth);
     });
 
     const stopResizing = (event: PointerEvent) => {
@@ -212,11 +211,8 @@ const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.
       workspace.removeAttribute("data-resizing");
       if (event.type === "pointercancel") {
         pointerMoved = false;
-        setSidebarWidth(pointerStartWidth);
+        setSidebarWidth(pointerStartWidth, pointerStartWidth === 0);
       } else {
-        if (visibleSidebarWidth > 0 && visibleSidebarWidth < MIN_SIDEBAR_WIDTH) {
-          setSidebarWidth(0);
-        }
         persistSidebarState();
       }
     };
@@ -239,7 +235,7 @@ const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.
         );
       } else if (event.key === "Home") {
         event.preventDefault();
-        setSidebarWidth(0);
+        setSidebarWidth(0, true);
       } else if (event.key === "End") {
         event.preventDefault();
         setSidebarWidth(Number(handle.getAttribute("aria-valuemax")));
@@ -249,6 +245,8 @@ const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.
       }
     });
 
-    window.addEventListener("resize", () => setSidebarWidth(visibleSidebarWidth));
+    window.addEventListener("resize", () =>
+      setSidebarWidth(visibleSidebarWidth, visibleSidebarWidth === 0),
+    );
   });
 </script>
