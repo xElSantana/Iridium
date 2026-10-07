@@ -1,6 +1,6 @@
 ---
 import { FiMoreVertical } from "react-icons/fi";
-import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
+import { LuListTodo } from "react-icons/lu";
 import WorkspaceContent, {
   type WorkspaceContentLabels,
 } from "../WorkspaceContent/WorkspaceContent";
@@ -9,13 +9,11 @@ import styles from "./WorkspaceLayout.module.css";
 interface Props {
   resizeLabel: string;
   sidebarLabel: string;
-  hideSidebarLabel: string;
-  showSidebarLabel: string;
+  tasksLabel: string;
   workspaceContentLabels: WorkspaceContentLabels;
 }
 
-const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspaceContentLabels } =
-  Astro.props;
+const { resizeLabel, sidebarLabel, tasksLabel, workspaceContentLabels } = Astro.props;
 ---
 
 <div class={styles.workspace} data-workspace data-task-details-restoring>
@@ -31,11 +29,9 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
           if (sidebar && typeof sidebar === "object") {
             const MIN = 180;
             const MAX = 320;
-            const COLLAPSED = 48;
             if (sidebar.collapsed) {
-              workspace.style.setProperty("--sidebar-width", `${COLLAPSED}px`);
+              workspace.style.setProperty("--sidebar-width", "0px");
               workspace.setAttribute("data-sidebar-collapsed", "");
-              workspace.setAttribute("data-sidebar-icon-only", "");
             } else if (typeof sidebar.width === "number" && Number.isFinite(sidebar.width)) {
               const width = Math.min(MAX, Math.max(MIN, sidebar.width));
               workspace.style.setProperty("--sidebar-width", `${width}px`);
@@ -47,37 +43,28 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
       }
     })();
   </script>
-  <aside id="workspace-sidebar" class={styles.sidebar} aria-label={sidebarLabel}>
+  <nav class={styles.activityBar} aria-label={sidebarLabel}>
+    <button
+      class={styles.activityButton}
+      type="button"
+      aria-label={tasksLabel}
+      title={tasksLabel}
+      aria-expanded="true"
+      aria-controls="workspace-sidebar"
+      data-sidebar-activity
+    >
+      <LuListTodo aria-hidden="true" />
+    </button>
+  </nav>
+  <aside id="workspace-sidebar" class={styles.sidebar} aria-label={tasksLabel}>
     <div id="workspace-sidebar-content"></div>
-    <div class={styles.sidebarFooter}>
-      <button
-        class={styles.sidebarToggle}
-        type="button"
-        aria-label={hideSidebarLabel}
-        title={hideSidebarLabel}
-        aria-expanded="true"
-        aria-controls="workspace-sidebar"
-        data-collapse-label={hideSidebarLabel}
-        data-expand-label={showSidebarLabel}
-        data-collapse-sidebar
-      >
-        <LuPanelLeftClose
-          className={`${styles.toggleIcon} ${styles.collapseIcon}`}
-          aria-hidden="true"
-        />
-        <LuPanelLeftOpen
-          className={`${styles.toggleIcon} ${styles.expandIcon}`}
-          aria-hidden="true"
-        />
-      </button>
-    </div>
   </aside>
   <div
     class={styles.resizeHandle}
     role="separator"
     aria-label={resizeLabel}
     aria-orientation="vertical"
-    aria-valuemin="48"
+    aria-valuemin="0"
     aria-valuenow="240"
     tabindex="0"
     data-resize-handle
@@ -96,7 +83,7 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
 <script>
   const MIN_SIDEBAR_WIDTH = 180;
   const MAX_SIDEBAR_WIDTH = 320;
-  const COLLAPSED_SIDEBAR_WIDTH = 48;
+  const ACTIVITY_BAR_WIDTH = 48;
   const MAIN_MIN_WIDTH = 160;
   const WORKSPACE_PADDING = 3;
   const RESIZE_HANDLE_WIDTH = 4;
@@ -105,8 +92,8 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
 
   document.querySelectorAll<HTMLElement>("[data-workspace]").forEach((workspace) => {
     const handle = workspace.querySelector<HTMLElement>("[data-resize-handle]");
-    const collapseButton = workspace.querySelector<HTMLButtonElement>("[data-collapse-sidebar]");
-    if (!handle || !collapseButton) return;
+    const activityButton = workspace.querySelector<HTMLButtonElement>("[data-sidebar-activity]");
+    if (!handle || !activityButton) return;
 
     let savedSidebarWidth = 240;
     let savedCollapsedState = false;
@@ -135,8 +122,9 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
     }
 
     let sidebarWidth = savedSidebarWidth;
-    let visibleSidebarWidth = savedCollapsedState ? COLLAPSED_SIDEBAR_WIDTH : sidebarWidth;
+    let visibleSidebarWidth = savedCollapsedState ? 0 : sidebarWidth;
     let pointerStartX = 0;
+    let pointerStartWidth = visibleSidebarWidth;
     let pointerMoved = false;
 
     const persistSidebarState = () => {
@@ -149,33 +137,31 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
       );
     };
 
-    const setSidebarWidth = (width: number) => {
+    const setSidebarWidth = (width: number, allowBelowMinimum = false) => {
       const maximumWidth = Math.min(
         MAX_SIDEBAR_WIDTH,
         Math.max(
           MIN_SIDEBAR_WIDTH,
-          workspace.clientWidth - WORKSPACE_PADDING * 2 - RESIZE_HANDLE_WIDTH - MAIN_MIN_WIDTH,
+          workspace.clientWidth -
+            WORKSPACE_PADDING * 2 -
+            ACTIVITY_BAR_WIDTH -
+            RESIZE_HANDLE_WIDTH -
+            MAIN_MIN_WIDTH,
         ),
       );
-      visibleSidebarWidth = Math.min(Math.max(width, COLLAPSED_SIDEBAR_WIDTH), maximumWidth);
-      const collapsed = visibleSidebarWidth < MIN_SIDEBAR_WIDTH;
+      visibleSidebarWidth = allowBelowMinimum
+        ? Math.min(Math.max(width, 1), maximumWidth)
+        : width < MIN_SIDEBAR_WIDTH
+          ? 0
+          : Math.min(Math.max(width, MIN_SIDEBAR_WIDTH), maximumWidth);
+      const collapsed = visibleSidebarWidth === 0;
       workspace.style.setProperty("--sidebar-width", `${visibleSidebarWidth}px`);
-      workspace.toggleAttribute(
-        "data-sidebar-icon-only",
-        visibleSidebarWidth === COLLAPSED_SIDEBAR_WIDTH,
-      );
-      if (!collapsed) sidebarWidth = visibleSidebarWidth;
+      if (visibleSidebarWidth >= MIN_SIDEBAR_WIDTH) sidebarWidth = visibleSidebarWidth;
 
       workspace.toggleAttribute("data-sidebar-collapsed", collapsed);
-      const label = collapsed
-        ? collapseButton.dataset.expandLabel
-        : collapseButton.dataset.collapseLabel;
-      if (!label) throw new Error("Sidebar toggle labels are missing.");
-      collapseButton.setAttribute("aria-label", label);
-      collapseButton.setAttribute("title", label);
-      collapseButton.setAttribute("aria-expanded", String(!collapsed));
+      activityButton.setAttribute("aria-expanded", String(!collapsed));
 
-      handle.setAttribute("aria-valuemin", String(COLLAPSED_SIDEBAR_WIDTH));
+      handle.setAttribute("aria-valuemin", "0");
       handle.setAttribute("aria-valuenow", String(visibleSidebarWidth));
       handle.setAttribute("aria-valuemax", String(maximumWidth));
     };
@@ -184,10 +170,8 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
     void workspace.offsetWidth;
     workspace.setAttribute("data-sidebar-ready", "");
 
-    collapseButton.addEventListener("click", () => {
-      setSidebarWidth(
-        workspace.hasAttribute("data-sidebar-collapsed") ? sidebarWidth : COLLAPSED_SIDEBAR_WIDTH,
-      );
+    activityButton.addEventListener("click", () => {
+      setSidebarWidth(workspace.hasAttribute("data-sidebar-collapsed") ? sidebarWidth : 0);
       persistSidebarState();
     });
 
@@ -204,6 +188,7 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
       if (event.button !== 0) return;
 
       pointerStartX = event.clientX;
+      pointerStartWidth = visibleSidebarWidth;
       pointerMoved = false;
       handle.setPointerCapture(event.pointerId);
       workspace.toggleAttribute("data-resizing", true);
@@ -213,17 +198,27 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
       if (!handle.hasPointerCapture(event.pointerId)) return;
       pointerMoved ||= Math.abs(event.clientX - pointerStartX) >= 4;
       const requestedWidth =
-        event.clientX - workspace.getBoundingClientRect().left - WORKSPACE_PADDING;
-      setSidebarWidth(requestedWidth);
+        event.clientX -
+        workspace.getBoundingClientRect().left -
+        WORKSPACE_PADDING -
+        ACTIVITY_BAR_WIDTH;
+      setSidebarWidth(requestedWidth, true);
     });
 
     const stopResizing = (event: PointerEvent) => {
       if (handle.hasPointerCapture(event.pointerId)) {
         handle.releasePointerCapture(event.pointerId);
       }
-      if (event.type === "pointercancel") pointerMoved = false;
       workspace.removeAttribute("data-resizing");
-      if (event.type === "pointerup") persistSidebarState();
+      if (event.type === "pointercancel") {
+        pointerMoved = false;
+        setSidebarWidth(pointerStartWidth);
+      } else {
+        if (visibleSidebarWidth > 0 && visibleSidebarWidth < MIN_SIDEBAR_WIDTH) {
+          setSidebarWidth(0);
+        }
+        persistSidebarState();
+      }
     };
 
     handle.addEventListener("pointerup", stopResizing);
@@ -237,10 +232,14 @@ const { resizeLabel, sidebarLabel, hideSidebarLabel, showSidebarLabel, workspace
         setSidebarWidth(visibleSidebarWidth - step);
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        setSidebarWidth(visibleSidebarWidth + step);
+        setSidebarWidth(
+          workspace.hasAttribute("data-sidebar-collapsed")
+            ? sidebarWidth
+            : visibleSidebarWidth + step,
+        );
       } else if (event.key === "Home") {
         event.preventDefault();
-        setSidebarWidth(COLLAPSED_SIDEBAR_WIDTH);
+        setSidebarWidth(0);
       } else if (event.key === "End") {
         event.preventDefault();
         setSidebarWidth(Number(handle.getAttribute("aria-valuemax")));

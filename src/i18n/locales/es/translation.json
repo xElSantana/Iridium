@@ -5,20 +5,14 @@
   "workspace": {
     "resizeSidebar": "Cambiar ancho de la barra lateral",
     "sidebar": "Barra lateral",
-    "hideSidebar": "Ocultar barra lateral",
-    "showSidebar": "Mostrar barra lateral",
-    "addTemplate": "Agregar plantilla",
-    "deleteTaskList": "Eliminar plantilla",
-    "editTaskList": "Editar nombre",
-    "pages": "Páginas",
-    "loadError": "No se pudieron cargar las plantillas guardadas. Los cambios están deshabilitados para proteger tus datos.",
+    "tasks": "Tareas",
+    "taskLists": "Listas de tareas",
+    "newTaskList": "Nueva lista de tareas",
+    "defaultTaskListTitle": "Lista de tareas",
+    "deleteTaskList": "Eliminar",
+    "editTaskList": "Editar",
+    "loadError": "No se pudieron cargar las listas de tareas guardadas. Los cambios están deshabilitados para proteger tus datos.",
     "saveError": "No se pudieron guardar los cambios en este dispositivo."
-  },
-  "templates": {
-    "modalTitle": "Agregar una plantilla",
-    "modalDescription": "Elige una plantilla para agregarla a tu barra lateral.",
-    "taskList": "Lista de tareas",
-    "closeModal": "Cerrar"
   },
   "taskBoard": {
     "boardView": "Tablero",

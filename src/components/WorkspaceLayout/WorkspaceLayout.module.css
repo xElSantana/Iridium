@@ -3,7 +3,8 @@
   display: grid;
   flex: 1;
   grid-template-columns:
-    var(--sidebar-width, 240px) 4px
+    var(--activity-bar-width, 48px) minmax(0px, var(--sidebar-width, 240px))
+    var(--sidebar-resize-width, 4px)
     minmax(var(--task-details-main-min, 0px), 1fr)
     var(--task-details-separator-width, 0px)
     minmax(0px, var(--task-details-track-width, 0px));
@@ -20,7 +21,10 @@
   --task-details-separator-width: 4px;
   --task-details-track-width: min(
     var(--task-details-width, 400px),
-    calc(100% - var(--sidebar-width, 240px) - 168px)
+    calc(
+      100% - var(--activity-bar-width, 48px) - var(--sidebar-width, 240px) -
+        var(--sidebar-resize-width, 4px) - 164px
+    )
   );
 }
 
@@ -29,7 +33,10 @@
   ):not(:has(> .taskDetailsHost > [data-task-details-closing])) {
   --task-details-main-min: 0px;
   --task-details-separator-width: 0px;
-  --task-details-track-width: calc(100% - var(--sidebar-width, 240px) - 4px);
+  --task-details-track-width: calc(
+    100% - var(--activity-bar-width, 48px) - var(--sidebar-width, 240px) -
+      var(--sidebar-resize-width, 4px)
+  );
 }
 
 .workspace:has(> .taskDetailsHost > [data-task-details-expanded]):not(
@@ -71,69 +78,79 @@
   display: contents;
 }
 
-.sidebar {
+.activityBar {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  align-items: center;
   min-width: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   border: 1px solid var(--color-border);
+  border-radius: 6px 0 0 6px;
   background-color: var(--color-accent-soft);
-  border-radius: 6px;
 }
 
-.sidebarFooter {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: auto;
-  padding: 6px;
-}
-
-.sidebarToggle {
+.activityButton {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   border: 0;
-  padding: 6px;
+  padding: 10px;
   color: var(--color-primary);
   background: transparent;
   cursor: pointer;
   font: inherit;
 }
 
-.sidebarToggle:hover {
+.activityButton svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.activityButton:hover {
   background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
 }
 
-.toggleIcon {
-  flex: none;
-  width: 16px;
-  height: 16px;
-}
-
-.expandIcon,
-.workspace[data-sidebar-icon-only] .collapseIcon {
-  display: none;
-}
-
-.workspace[data-sidebar-icon-only] .expandIcon {
-  display: block;
-}
-
-.workspace[data-sidebar-ready] [data-sidebar-label] {
-  transition: opacity 120ms ease;
-}
-
-.workspace[data-sidebar-icon-only] [data-sidebar-label] {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.sidebarToggle:focus-visible {
+.activityButton:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }
 
+.sidebar {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-left: 0;
+  background-color: var(--color-accent-soft);
+  border-radius: 0 6px 6px 0;
+}
+
+.workspace[data-sidebar-collapsed] {
+  --sidebar-width: 0px;
+}
+
+.workspace[data-sidebar-collapsed] .sidebar {
+  visibility: hidden;
+  transition: visibility 0s 260ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace[data-sidebar-collapsed] .sidebar {
+    transition: none;
+  }
+}
+
+.workspace[data-sidebar-collapsed] .activityBar {
+  border-right: 1px solid var(--color-border);
+  border-radius: 6px;
+}
 .resizeHandle {
   position: relative;
   z-index: 1;
@@ -153,6 +170,7 @@
 }
 
 .resizeHandle:focus-visible {
+  background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }

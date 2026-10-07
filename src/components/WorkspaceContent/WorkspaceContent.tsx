@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { FiX } from "react-icons/fi";
-import { LuListTodo, LuPlus } from "react-icons/lu";
+import { LuFilePlus, LuListTodo } from "react-icons/lu";
 import { useContextMenu } from "../ContextMenu/useContextMenu";
 import TaskBoard, { type TaskBoardLabels } from "../TaskBoard/TaskBoard";
 import type { TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
@@ -18,14 +17,12 @@ const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : us
 
 export interface WorkspaceContentLabels {
   actionsLabel: string;
-  addTemplate: string;
+  newTaskList: string;
+  defaultTaskListTitle: string;
   deleteTaskList: string;
   editTaskList: string;
-  sidebarPages: string;
-  templateModalTitle: string;
-  templateModalDescription: string;
-  taskListTemplate: string;
-  closeModal: string;
+  sidebarTasks: string;
+  sidebarTaskLists: string;
   loadError: string;
   saveError: string;
   taskBoard: TaskBoardLabels;
@@ -45,15 +42,12 @@ export default function WorkspaceContent({ labels }: Props) {
   const [workspace, setWorkspace] = useState(emptyWorkspace);
   const [storageStatus, setStorageStatus] = useState<"loading" | "ready" | "load-error">("loading");
   const [saveError, setSaveError] = useState(false);
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [taskListToRename, setTaskListToRename] = useState<string | null>(null);
   const renameTaskListSubmitRef = useRef(false);
   const renameTaskListCancelRef = useRef(false);
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const skipNextSave = useRef(false);
   const pendingWorkspaceSave = useRef<WorkspaceData | null>(null);
   const saveTimer = useRef<number | null>(null);
-  const closedByActionRef = useRef(false);
   const loadError = storageStatus === "load-error";
 
   const cleanupTimer = useRef<number | null>(null);
@@ -92,7 +86,7 @@ export default function WorkspaceContent({ labels }: Props) {
         scheduleCleanupTaskFiles(pendingWorkspace);
         if (notify) setSaveError(false);
       } catch (error) {
-        console.error("Could not save workspace templates.", error);
+        console.error("Could not save workspace task lists.", error);
         if (notify) setSaveError(true);
       }
     },
@@ -101,7 +95,7 @@ export default function WorkspaceContent({ labels }: Props) {
 
   useIsomorphicLayoutEffect(() => {
     try {
-      const loaded = loadWorkspace(labels.taskListTemplate);
+      const loaded = loadWorkspace(labels.defaultTaskListTitle);
       setWorkspace(loaded.workspace);
       skipNextSave.current = true;
       if (loaded.migrated) {
@@ -109,17 +103,17 @@ export default function WorkspaceContent({ labels }: Props) {
           saveWorkspace(loaded.workspace);
           setSaveError(false);
         } catch (error) {
-          console.error("Could not save migrated workspace templates.", error);
+          console.error("Could not save migrated workspace task lists.", error);
           setSaveError(true);
         }
       }
       cleanupTaskFiles(loaded.workspace);
       setStorageStatus("ready");
     } catch (error) {
-      console.error("Could not load saved workspace templates.", error);
+      console.error("Could not load saved workspace task lists.", error);
       setStorageStatus("load-error");
     }
-  }, [cleanupTaskFiles, labels.taskListTemplate]);
+  }, [cleanupTaskFiles, labels.defaultTaskListTitle]);
 
   useEffect(() => {
     if (storageStatus !== "ready") return;
@@ -151,34 +145,6 @@ export default function WorkspaceContent({ labels }: Props) {
       flushPendingSave(false);
     };
   }, [flushPendingSave]);
-
-  useEffect(() => {
-    if (!isTemplateModalOpen) return;
-
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const regularFont = '400 1em "Comic Relief"';
-    const boldFont = '700 1em "Comic Relief"';
-    let cancelled = false;
-    const openDialog = async () => {
-      try {
-        if (!document.fonts.check(regularFont) || !document.fonts.check(boldFont)) {
-          await Promise.all([document.fonts.load(regularFont), document.fonts.load(boldFont)]);
-        }
-      } catch (error) {
-        console.error("Could not load template dialog fonts.", error);
-      }
-
-      if (!cancelled) dialog.showModal();
-    };
-
-    void openDialog();
-    return () => {
-      cancelled = true;
-      if (dialog.open) dialog.close();
-    };
-  }, [isTemplateModalOpen]);
 
   const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
   const selectedTaskList =
@@ -284,16 +250,18 @@ export default function WorkspaceContent({ labels }: Props) {
     onSelect: deleteTaskList,
   });
 
-  const addTaskList = () => {
-    closedByActionRef.current = true;
-    setIsTemplateModalOpen(false);
+  const createTaskList = () => {
+    if (storageStatus !== "ready") return;
+
     setWorkspace((current) => {
-      const baseTitle = labels.taskListTemplate;
-      const matchingTitles = current.taskLists.filter(
-        (taskList) => taskList.title === baseTitle || taskList.title.startsWith(`${baseTitle} `),
-      );
-      const title =
-        matchingTitles.length === 0 ? baseTitle : `${baseTitle} ${matchingTitles.length + 1}`;
+      const baseTitle = labels.newTaskList;
+      const existingTitles = new Set(current.taskLists.map((taskList) => taskList.title));
+      let title = baseTitle;
+      let suffix = 2;
+      while (existingTitles.has(title)) {
+        title = `${baseTitle} ${suffix}`;
+        suffix += 1;
+      }
       const taskList: TaskList = { id: crypto.randomUUID(), title, tasks: [] };
 
       return {
@@ -307,7 +275,20 @@ export default function WorkspaceContent({ labels }: Props) {
   const sidebar = sidebarTarget
     ? createPortal(
         <div className={styles.sidebarContent}>
-          <nav aria-label={labels.sidebarPages}>
+          <header className={styles.sidebarHeader}>
+            <h2>{labels.sidebarTasks}</h2>
+            <button
+              className={styles.sidebarAction}
+              type="button"
+              aria-label={labels.newTaskList}
+              title={labels.newTaskList}
+              disabled={storageStatus !== "ready"}
+              onClick={createTaskList}
+            >
+              <LuFilePlus aria-hidden="true" />
+            </button>
+          </header>
+          <nav aria-label={labels.sidebarTaskLists}>
             <ul className={styles.taskListNavigation}>
               {workspace.taskLists.map((taskList) => (
                 <li key={taskList.id}>
@@ -362,24 +343,13 @@ export default function WorkspaceContent({ labels }: Props) {
                       onContextMenu={(event) => onContextMenu(event, taskList.id)}
                     >
                       <LuListTodo aria-hidden="true" />
-                      <span data-sidebar-label>{taskList.title}</span>
+                      <span>{taskList.title}</span>
                     </button>
                   )}
                 </li>
               ))}
             </ul>
           </nav>
-          <button
-            className={styles.addTemplate}
-            type="button"
-            aria-label={labels.addTemplate}
-            title={labels.addTemplate}
-            disabled={loadError}
-            onClick={() => setIsTemplateModalOpen(true)}
-          >
-            <LuPlus aria-hidden="true" />
-            <span data-sidebar-label>{labels.addTemplate}</span>
-          </button>
         </div>,
         sidebarTarget,
       )
@@ -415,46 +385,6 @@ export default function WorkspaceContent({ labels }: Props) {
           ) : null}
         </>
       )}
-
-      <dialog
-        className={styles.templateDialog}
-        ref={dialogRef}
-        aria-labelledby="template-dialog-title"
-        onClose={() => {
-          setIsTemplateModalOpen(false);
-          if (closedByActionRef.current && document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur();
-          }
-          closedByActionRef.current = false;
-        }}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) setIsTemplateModalOpen(false);
-        }}
-      >
-        <header className={styles.dialogHeader}>
-          <div>
-            <h2 id="template-dialog-title">{labels.templateModalTitle}</h2>
-            <p>{labels.templateModalDescription}</p>
-          </div>
-          <button
-            className={styles.dialogCloseButton}
-            type="button"
-            aria-label={labels.closeModal}
-            onClick={() => setIsTemplateModalOpen(false)}
-          >
-            <FiX aria-hidden="true" />
-          </button>
-        </header>
-        <button
-          className={styles.templateOption}
-          type="button"
-          disabled={loadError}
-          onClick={addTaskList}
-        >
-          <LuListTodo aria-hidden="true" />
-          <span>{labels.taskListTemplate}</span>
-        </button>
-      </dialog>
     </>
   );
 }

@@ -9,19 +9,16 @@ const t = await createTranslator();
 <Layout>
   <WorkspaceLayout
     sidebarLabel={t("workspace.sidebar")}
+    tasksLabel={t("workspace.tasks")}
     resizeLabel={t("workspace.resizeSidebar")}
-    hideSidebarLabel={t("workspace.hideSidebar")}
-    showSidebarLabel={t("workspace.showSidebar")}
     workspaceContentLabels={{
       actionsLabel: t("common.actions"),
-      addTemplate: t("workspace.addTemplate"),
+      newTaskList: t("workspace.newTaskList"),
+      defaultTaskListTitle: t("workspace.defaultTaskListTitle"),
       deleteTaskList: t("workspace.deleteTaskList"),
       editTaskList: t("workspace.editTaskList"),
-      sidebarPages: t("workspace.pages"),
-      templateModalTitle: t("templates.modalTitle"),
-      templateModalDescription: t("templates.modalDescription"),
-      taskListTemplate: t("templates.taskList"),
-      closeModal: t("templates.closeModal"),
+      sidebarTasks: t("workspace.tasks"),
+      sidebarTaskLists: t("workspace.taskLists"),
       loadError: t("workspace.loadError"),
       saveError: t("workspace.saveError"),
       taskBoard: {
