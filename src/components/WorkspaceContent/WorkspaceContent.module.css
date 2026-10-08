@@ -35,11 +35,13 @@
 }
 
 .sidebarContent nav {
+  position: relative;
   flex: 1;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
+  user-select: none;
 }
 
 .sidebarContent nav::-webkit-scrollbar {
@@ -173,6 +175,7 @@ nav[data-custom-vertical-scrollbar-hidden] ~ .sidebarScrollbar {
 
 .taskListLink {
   width: 100%;
+  border: 1px solid transparent;
   border-radius: 6px;
 }
 
@@ -212,6 +215,11 @@ nav[data-custom-vertical-scrollbar-hidden] ~ .sidebarScrollbar {
 
 .sidebarAction:disabled {
   cursor: not-allowed;
+}
+
+.taskListNavigation li.selected .taskListLink {
+  background-color: color-mix(in srgb, var(--color-primary) 20%, var(--color-accent-soft));
+  border: 1px solid var(--color-primary);
 }
 
 .error {

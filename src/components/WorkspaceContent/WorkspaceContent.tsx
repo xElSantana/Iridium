@@ -3,6 +3,8 @@ import { useCustomVerticalScrollbar } from "../../hooks/useCustomVerticalScrollb
 import { createPortal } from "react-dom";
 import { LuFilePlus, LuListTodo } from "react-icons/lu";
 import { useContextMenu } from "../ContextMenu/useContextMenu";
+import { useMarqueeSelection } from "../../hooks/useMarqueeSelection";
+import Marquee from "../Marquee/Marquee";
 import TaskBoard, { type TaskBoardLabels } from "../TaskBoard/components/TaskBoard";
 import type { TaskBackgroundId } from "../../features/tasks/taskBackgrounds";
 import {
@@ -160,7 +162,17 @@ export default function WorkspaceContent({ labels }: Props) {
   const [sidebarTarget, setSidebarTarget] = useState<HTMLElement | null>(null);
   const navRef = useRef<HTMLElement>(null);
   const scrollbarTrackRef = useRef<HTMLDivElement>(null);
+  const taskListElements = useRef(new Map<string, HTMLElement>());
   const { updateAutoScroll, stopAutoScroll: stopSidebarAutoScroll } = useDragAutoScroll(navRef);
+  const getSelectableTaskLists = useCallback(() => taskListElements.current, []);
+  const {
+    selectedIds: selectedTaskListIds,
+    selectedCount: selectedTaskListCount,
+    isSelected: isTaskListSelected,
+    clearSelection: clearTaskListSelection,
+    startSelection: startTaskListSelection,
+    marqueeStyle: taskListMarqueeStyle,
+  } = useMarqueeSelection<string>(navRef, getSelectableTaskLists);
   const {
     updateScrollbar: updateSidebarScrollbar,
     onTrackPointerDown: handleScrollbarTrackPointerDown,
@@ -378,10 +390,25 @@ export default function WorkspaceContent({ labels }: Props) {
     editLabel: labels.editTaskList,
     label: labels.deleteTaskList,
     disabled: storageStatus !== "ready",
+    selectedCount: selectedTaskListCount,
     onEdit: (id: string) => {
       setTaskListToRename(id);
     },
-    onSelect: deleteTaskList,
+    onSelect: (id: string) => {
+      if (selectedTaskListCount > 0) {
+        const idsToDelete = Array.from(selectedTaskListIds);
+        setWorkspace((current) => ({
+          ...current,
+          taskLists: current.taskLists.filter((taskList) => !idsToDelete.includes(taskList.id)),
+          selectedTaskListId: idsToDelete.includes(current.selectedTaskListId ?? "")
+            ? (current.taskLists.find((tl) => !idsToDelete.includes(tl.id))?.id ?? null)
+            : current.selectedTaskListId,
+        }));
+        clearTaskListSelection();
+      } else {
+        deleteTaskList(id);
+      }
+    },
   });
 
   const createTaskList = () => {
@@ -428,6 +455,7 @@ export default function WorkspaceContent({ labels }: Props) {
             <nav
               ref={navRef}
               aria-label={labels.sidebarTaskLists}
+              onMouseDown={startTaskListSelection}
               onDragOverCapture={(event) => {
                 if (event.dataTransfer.types.includes(TASK_LIST_DRAG_TYPE)) {
                   updateAutoScroll(event.clientY);
@@ -442,13 +470,13 @@ export default function WorkspaceContent({ labels }: Props) {
                 {workspace.taskLists.map((taskList) => (
                   <li
                     key={taskList.id}
-                    className={
+                    className={`${
                       dragOverTaskList?.id === taskList.id
                         ? dragOverTaskList.position === "before"
                           ? styles.dropBefore
                           : styles.dropAfter
-                        : undefined
-                    }
+                        : ""
+                    }${isTaskListSelected(taskList.id) ? ` ${styles.selected}` : ""}`}
                   >
                     {taskListToRename === taskList.id ? (
                       <input
@@ -458,6 +486,7 @@ export default function WorkspaceContent({ labels }: Props) {
                         defaultValue={taskList.title}
                         maxLength={200}
                         aria-label={labels.editTaskList}
+                        data-no-marquee
                         onBlur={(event) => {
                           if (renameTaskListCancelRef.current) {
                             renameTaskListCancelRef.current = false;
@@ -495,9 +524,17 @@ export default function WorkspaceContent({ labels }: Props) {
                         draggable={storageStatus === "ready"}
                         aria-label={taskList.title}
                         title={taskList.title}
+                        data-no-marquee
                         aria-current={
                           taskList.id === workspace.selectedTaskListId ? "page" : undefined
                         }
+                        ref={(el) => {
+                          if (el) {
+                            taskListElements.current.set(taskList.id, el);
+                          } else {
+                            taskListElements.current.delete(taskList.id);
+                          }
+                        }}
                         onClick={() => selectTaskList(taskList.id)}
                         onContextMenu={(event) => onContextMenu(event, taskList.id)}
                         onDragStart={(event) => handleTaskListDragStart(event, taskList.id)}
@@ -511,6 +548,14 @@ export default function WorkspaceContent({ labels }: Props) {
                   </li>
                 ))}
               </ul>
+              {taskListMarqueeStyle && (
+                <Marquee
+                  left={taskListMarqueeStyle.left}
+                  top={taskListMarqueeStyle.top}
+                  width={taskListMarqueeStyle.width}
+                  height={taskListMarqueeStyle.height}
+                />
+              )}
             </nav>
             <div
               className={styles.sidebarScrollbar}

@@ -1,0 +1,8 @@
+.marquee {
+  position: absolute;
+  border: 1px solid var(--color-primary);
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  pointer-events: none;
+  z-index: 10;
+}

@@ -18,7 +18,9 @@ export interface TaskCardProps {
   statusLabel: string;
   isSelected: boolean;
   isEditing: boolean;
+  isMultiSelected: boolean;
   dropIndicator: DropPosition | null;
+  disableMarquee?: boolean;
   registerTaskElement: (taskId: string, element: HTMLElement | null) => void;
   onContextMenu: (event: MouseEvent<HTMLElement>, taskId: string) => void;
   onSelect: (taskId: string) => void;
@@ -39,7 +41,9 @@ export default memo(function TaskCard({
   statusLabel,
   isSelected,
   isEditing,
+  isMultiSelected,
   dropIndicator,
+  disableMarquee,
   registerTaskElement,
   onContextMenu,
   onSelect,
@@ -119,9 +123,9 @@ export default memo(function TaskCard({
 
   return (
     <article
-      className={`${styles.task}${dropIndicator === "before" ? ` ${styles.dropBefore}` : ""}${
-        dropIndicator === "after" ? ` ${styles.dropAfter}` : ""
-      }`}
+      className={`${styles.task}${isMultiSelected ? ` ${styles.multiSelected}` : ""}${
+        dropIndicator === "before" ? ` ${styles.dropBefore}` : ""
+      }${dropIndicator === "after" ? ` ${styles.dropAfter}` : ""}`}
       ref={setTaskElement}
       draggable
       tabIndex={0}
@@ -129,8 +133,9 @@ export default memo(function TaskCard({
       aria-expanded={isSelected}
       aria-label={`${title}, ${statusLabel}`}
       aria-keyshortcuts="Enter Space ArrowLeft ArrowRight"
+      data-no-marquee={disableMarquee || undefined}
       onContextMenu={(event) => onContextMenu(event, id)}
-      onClick={() => onSelect(id)}
+      onDoubleClick={() => onSelect(id)}
       onDragStart={(event) => onDragStart(event, id)}
       onDragOver={(event) => onDragOver(event, id)}
       onDragLeave={(event) => onDragLeave(event)}

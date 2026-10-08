@@ -13,6 +13,7 @@ interface ContextMenuOptions<T> {
   editLabel: string;
   label: string;
   disabled?: boolean;
+  selectedCount?: number;
   onEdit: (target: T) => void;
   onSelect: (target: T) => void;
 }
@@ -22,6 +23,7 @@ export function useContextMenu<T>({
   editLabel,
   label,
   disabled = false,
+  selectedCount = 0,
   onEdit,
   onSelect,
 }: ContextMenuOptions<T>) {
@@ -87,18 +89,20 @@ export function useContextMenu<T>({
             aria-label={actionsLabel}
             style={{ left: menu.position.x, top: menu.position.y }}
           >
-            <button
-              className={styles.menuItem}
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onEdit(menu.target);
-                setMenu(null);
-              }}
-            >
-              <LuPencil className={styles.menuItemIcon} aria-hidden="true" />
-              {editLabel}
-            </button>
+            {selectedCount === 0 && (
+              <button
+                className={styles.menuItem}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onEdit(menu.target);
+                  setMenu(null);
+                }}
+              >
+                <LuPencil className={styles.menuItemIcon} aria-hidden="true" />
+                {editLabel}
+              </button>
+            )}
             <button
               className={styles.menuItem}
               type="button"

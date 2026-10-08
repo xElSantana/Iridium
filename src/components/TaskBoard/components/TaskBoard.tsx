@@ -13,6 +13,8 @@ import { LuImagePlus, LuKanban, LuListTodo, LuPlus } from "react-icons/lu";
 import { TASK_BACKGROUNDS, type TaskBackgroundId } from "../../../features/tasks/taskBackgrounds";
 import { TASK_STATUSES, type Task, type TaskStatus } from "../../../features/tasks/taskStorage";
 import { useContextMenu } from "../../ContextMenu/useContextMenu";
+import { useMarqueeSelection } from "../../../hooks/useMarqueeSelection";
+import Marquee from "../../Marquee/Marquee";
 import TaskCard from "./TaskCard";
 import TaskDetails from "./TaskDetails";
 import { useCustomScrollbar } from "../hooks/useCustomScrollbar";
@@ -74,20 +76,6 @@ export default memo(function TaskBoard({
   const [draftPosition, setDraftPosition] = useState<"start" | "end">("end");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
   const [taskIdToRename, setTaskIdToRename] = useState<string | null>(null);
-  const {
-    selectedTaskId,
-    setSelectedTaskId,
-    panelWidth: taskDetailsWidth,
-    setPanelWidth: setTaskDetailsWidth,
-  } = useTaskDetailsPreference(taskListId, tasks);
-  const [taskDetailsTarget] = useState<HTMLElement | null>(() =>
-    typeof document !== "undefined" ? document.getElementById("workspace-task-details") : null,
-  );
-  const [taskDetailsSeparator] = useState<HTMLElement | null>(() =>
-    typeof document !== "undefined"
-      ? document.getElementById("workspace-task-details-separator")
-      : null,
-  );
   const draftCommitted = useRef(false);
   const titleEditCancelled = useRef(false);
   const taskElements = useRef(new Map<string, HTMLElement>());
@@ -108,6 +96,23 @@ export default memo(function TaskBoard({
     onVerticalThumbPointerUp: stopVerticalScrollbarThumbDragging,
     onVerticalKeyDown: handleVerticalScrollbarKeyDown,
   } = useCustomScrollbar();
+  const getSelectableElements = useCallback(() => taskElements.current, []);
+  const { selectedIds, selectedCount, isSelected, clearSelection, startSelection, marqueeStyle } =
+    useMarqueeSelection<string>(columnsBodyRef, getSelectableElements);
+  const {
+    selectedTaskId,
+    setSelectedTaskId,
+    panelWidth: taskDetailsWidth,
+    setPanelWidth: setTaskDetailsWidth,
+  } = useTaskDetailsPreference(taskListId, tasks);
+  const [taskDetailsTarget] = useState<HTMLElement | null>(() =>
+    typeof document !== "undefined" ? document.getElementById("workspace-task-details") : null,
+  );
+  const [taskDetailsSeparator] = useState<HTMLElement | null>(() =>
+    typeof document !== "undefined"
+      ? document.getElementById("workspace-task-details-separator")
+      : null,
+  );
   const {
     dragOverTaskId,
     dropPosition,
@@ -119,7 +124,7 @@ export default memo(function TaskBoard({
     stopAutoScroll,
     handleCardDragLeave,
     handleCardDrop,
-  } = useDragReorder(onTasksChange, columnsBodyRef);
+  } = useDragReorder(onTasksChange, columnsBodyRef, selectedCount, selectedIds, clearSelection);
   const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const closeTaskDetails = useCallback(() => {
@@ -138,15 +143,27 @@ export default memo(function TaskBoard({
     actionsLabel: labels.actionsLabel,
     editLabel: labels.editTask,
     label: labels.deleteTask,
+    selectedCount,
     onEdit: (taskId: string) => {
       setTaskIdToRename(taskId);
     },
     onSelect: (taskId: string) => {
-      onTasksChange((currentTasks) =>
-        currentTasks.filter((currentTask) => currentTask.id !== taskId),
-      );
-      if (selectedTaskId === taskId) {
-        setSelectedTaskId(null);
+      if (selectedCount > 0) {
+        const idsToDelete = Array.from(selectedIds);
+        onTasksChange((currentTasks) =>
+          currentTasks.filter((task) => !idsToDelete.includes(task.id)),
+        );
+        if (selectedTaskId && idsToDelete.includes(selectedTaskId)) {
+          setSelectedTaskId(null);
+        }
+        clearSelection();
+      } else {
+        onTasksChange((currentTasks) =>
+          currentTasks.filter((currentTask) => currentTask.id !== taskId),
+        );
+        if (selectedTaskId === taskId) {
+          setSelectedTaskId(null);
+        }
       }
     },
   });
@@ -208,12 +225,30 @@ export default memo(function TaskBoard({
   const handleColumnDrop = useCallback(
     (event: DragEvent<HTMLElement>, status: TaskStatus) => {
       event.preventDefault();
-      const taskId = event.dataTransfer.getData("text/plain");
+      const data = event.dataTransfer.getData("text/plain");
 
-      if (taskId && dragOverTaskId === null) moveTaskToEnd(taskId, status);
+      if (!data || dragOverTaskId !== null) return;
+
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          onTasksChange((currentTasks) => {
+            return currentTasks.map((task) =>
+              parsed.includes(task.id) ? { ...task, status } : task,
+            );
+          });
+          clearSelection();
+          clearDragOverTaskId();
+          return;
+        }
+      } catch {
+        const taskId = data;
+        moveTaskToEnd(taskId, status);
+      }
+
       clearDragOverTaskId();
     },
-    [clearDragOverTaskId, dragOverTaskId, moveTaskToEnd],
+    [clearDragOverTaskId, clearSelection, dragOverTaskId, moveTaskToEnd, onTasksChange],
   );
   const tasksByStatus: Record<TaskStatus, Task[]> = {
     notStarted: [],
@@ -281,6 +316,7 @@ export default memo(function TaskBoard({
           maxLength={200}
           placeholder={labels.taskPlaceholder}
           aria-label={labels.taskPlaceholder}
+          data-no-marquee
           onChange={(event) => {
             const input = event.currentTarget;
             setDraftTitle(input.value);
@@ -485,7 +521,7 @@ export default memo(function TaskBoard({
                   </div>
                 );
               })}
-              <div className={styles.columnsBody} ref={columnsBodyRef}>
+              <div className={styles.columnsBody} ref={columnsBodyRef} onMouseDown={startSelection}>
                 <div className={styles.columnsBodyContent} ref={columnsRef}>
                   {TASK_STATUSES.map((status) => {
                     const columnTasks = tasksByStatus[status];
@@ -512,7 +548,9 @@ export default memo(function TaskBoard({
                                   statusLabel={labels.statusLabels[status]}
                                   isSelected={selectedTaskId === task.id}
                                   isEditing={taskIdToRename === task.id}
+                                  isMultiSelected={isSelected(task.id)}
                                   dropIndicator={dragOverTaskId === task.id ? dropPosition : null}
+                                  disableMarquee={true}
                                   registerTaskElement={registerTaskElement}
                                   onContextMenu={onContextMenu}
                                   onSelect={selectTask}
@@ -545,6 +583,14 @@ export default memo(function TaskBoard({
                     );
                   })}
                 </div>
+                {marqueeStyle && (
+                  <Marquee
+                    left={marqueeStyle.left}
+                    top={marqueeStyle.top}
+                    width={marqueeStyle.width}
+                    height={marqueeStyle.height}
+                  />
+                )}
               </div>
             </div>
           </div>
