@@ -92,6 +92,13 @@ body {
   font-family: var(--font-family);
   font-weight: 400;
   font-style: normal;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+:where(input, textarea, [contenteditable], [contenteditable] *) {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 :where(button:not(:disabled)):hover {
