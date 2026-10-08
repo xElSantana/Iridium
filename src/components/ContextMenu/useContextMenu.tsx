@@ -87,6 +87,7 @@ export function useContextMenu<T>({
             ref={menuRef}
             role="menu"
             aria-label={actionsLabel}
+            data-preserve-selection
             style={{ left: menu.position.x, top: menu.position.y }}
           >
             {selectedCount === 0 && (

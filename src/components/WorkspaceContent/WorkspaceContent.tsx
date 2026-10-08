@@ -163,6 +163,7 @@ export default function WorkspaceContent({ labels }: Props) {
   const navRef = useRef<HTMLElement>(null);
   const scrollbarTrackRef = useRef<HTMLDivElement>(null);
   const taskListElements = useRef(new Map<string, HTMLElement>());
+  const taskListSelectionAnchor = useRef<string | null>(null);
   const { updateAutoScroll, stopAutoScroll: stopSidebarAutoScroll } = useDragAutoScroll(navRef);
   const getSelectableTaskLists = useCallback(() => taskListElements.current, []);
   const {
@@ -170,9 +171,12 @@ export default function WorkspaceContent({ labels }: Props) {
     selectedCount: selectedTaskListCount,
     isSelected: isTaskListSelected,
     clearSelection: clearTaskListSelection,
+    selectItems: selectTaskLists,
     startSelection: startTaskListSelection,
     marqueeStyle: taskListMarqueeStyle,
-  } = useMarqueeSelection<string>(navRef, getSelectableTaskLists);
+  } = useMarqueeSelection<string>(navRef, getSelectableTaskLists, {
+    allowShiftDragOnSelectableElements: true,
+  });
   const {
     updateScrollbar: updateSidebarScrollbar,
     onTrackPointerDown: handleScrollbarTrackPointerDown,
@@ -535,9 +539,46 @@ export default function WorkspaceContent({ labels }: Props) {
                             taskListElements.current.delete(taskList.id);
                           }
                         }}
-                        onClick={() => selectTaskList(taskList.id)}
+                        onClick={(event) => {
+                          if (event.shiftKey) {
+                            const anchorIndex = workspace.taskLists.findIndex(
+                              (item) => item.id === taskListSelectionAnchor.current,
+                            );
+                            const clickedIndex = workspace.taskLists.findIndex(
+                              (item) => item.id === taskList.id,
+                            );
+                            if (anchorIndex === -1) {
+                              taskListSelectionAnchor.current = taskList.id;
+                            }
+                            const startIndex =
+                              anchorIndex === -1
+                                ? clickedIndex
+                                : Math.min(anchorIndex, clickedIndex);
+                            const endIndex =
+                              anchorIndex === -1
+                                ? clickedIndex
+                                : Math.max(anchorIndex, clickedIndex);
+
+                            selectTaskLists(
+                              workspace.taskLists
+                                .slice(startIndex, endIndex + 1)
+                                .map((item) => item.id),
+                            );
+                            event.preventDefault();
+                            return;
+                          }
+
+                          taskListSelectionAnchor.current = taskList.id;
+                          selectTaskList(taskList.id);
+                        }}
                         onContextMenu={(event) => onContextMenu(event, taskList.id)}
-                        onDragStart={(event) => handleTaskListDragStart(event, taskList.id)}
+                        onDragStart={(event) => {
+                          if (event.shiftKey) {
+                            event.preventDefault();
+                            return;
+                          }
+                          handleTaskListDragStart(event, taskList.id);
+                        }}
                         onDragOver={(event) => handleTaskListDragOver(event, taskList.id)}
                         onDrop={(event) => handleTaskListDrop(event, taskList.id)}
                       >

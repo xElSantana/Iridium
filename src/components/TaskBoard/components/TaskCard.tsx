@@ -135,7 +135,7 @@ export default memo(function TaskCard({
       aria-keyshortcuts="Enter Space ArrowLeft ArrowRight"
       data-no-marquee={disableMarquee || undefined}
       onContextMenu={(event) => onContextMenu(event, id)}
-      onDoubleClick={() => onSelect(id)}
+      onClick={() => onSelect(id)}
       onDragStart={(event) => onDragStart(event, id)}
       onDragOver={(event) => onDragOver(event, id)}
       onDragLeave={(event) => onDragLeave(event)}

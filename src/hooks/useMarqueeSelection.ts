@@ -30,20 +30,95 @@ function doRectsIntersect(
 export function useMarqueeSelection<T extends string>(
   containerRef: React.RefObject<HTMLElement | null>,
   getSelectableElements: () => Map<T, HTMLElement>,
+  {
+    allowShiftDragOnSelectableElements = false,
+  }: { allowShiftDragOnSelectableElements?: boolean } = {},
 ) {
   const [selectedIds, setSelectedIds] = useState<Set<T>>(new Set());
+  const selectedIdsRef = useRef(selectedIds);
   const [marqueeRect, setMarqueeRect] = useState<MarqueeRect | null>(null);
   const isSelectingRef = useRef(false);
   const hasMadeSelectionRef = useRef(false);
+  const startedShiftDragOnItemRef = useRef(false);
+  const movedShiftDragOnItemRef = useRef(false);
+  const suppressClickRef = useRef(false);
+
+  const setSelection = useCallback(
+    (ids: Iterable<T>) => {
+      const nextSelection = new Set(ids);
+      selectedIdsRef.current = nextSelection;
+      setSelectedIds(nextSelection);
+    },
+    [setSelectedIds],
+  );
 
   const clearSelection = useCallback(() => {
-    setSelectedIds(new Set());
-  }, []);
+    setSelection([]);
+  }, [setSelection]);
+
+  useEffect(() => {
+    const clearSelectionOutsideItems = (event: PointerEvent) => {
+      suppressClickRef.current = false;
+      const currentSelection = selectedIdsRef.current;
+      const target = event.target;
+      if (currentSelection.size === 0 || event.button !== 0 || !(target instanceof Node)) {
+        return;
+      }
+      if (target instanceof Element && target.closest("[data-preserve-selection]")) {
+        return;
+      }
+
+      const elements = getSelectableElements();
+      const clickedSelectedItem = [...currentSelection].some((id) => {
+        const element = elements.get(id);
+        return element?.contains(target) ?? false;
+      });
+
+      if (!clickedSelectedItem) {
+        setSelection([]);
+      }
+    };
+
+    document.addEventListener("pointerdown", clearSelectionOutsideItems, true);
+    return () => document.removeEventListener("pointerdown", clearSelectionOutsideItems, true);
+  }, [getSelectableElements, setSelection]);
+
+  useEffect(() => {
+    const suppressMarqueeClick = (event: MouseEvent) => {
+      if (!suppressClickRef.current) return;
+
+      suppressClickRef.current = false;
+      const container = containerRef.current;
+      if (!(event.target instanceof Node) || !container?.contains(event.target)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    document.addEventListener("click", suppressMarqueeClick, true);
+    return () => document.removeEventListener("click", suppressMarqueeClick, true);
+  }, [containerRef]);
 
   const startSelection = useCallback(
     (event: React.MouseEvent) => {
+      suppressClickRef.current = false;
       if (event.button !== 0) return;
-      if ((event.target as HTMLElement).closest("[data-no-marquee]")) return;
+
+      const target = event.target;
+      const startedShiftDragOnItem =
+        allowShiftDragOnSelectableElements &&
+        event.shiftKey &&
+        target instanceof Element &&
+        [...getSelectableElements().values()].some(
+          (element) => element === target || element.contains(target),
+        );
+      if (
+        target instanceof Element &&
+        target.closest("[data-no-marquee]") &&
+        !startedShiftDragOnItem
+      ) {
+        return;
+      }
 
       const container = containerRef.current;
       if (!container) return;
@@ -52,8 +127,10 @@ export function useMarqueeSelection<T extends string>(
       const startX = event.clientX - rect.left + container.scrollLeft;
       const startY = event.clientY - rect.top + container.scrollTop;
 
-      setSelectedIds(new Set());
+      setSelection([]);
       hasMadeSelectionRef.current = false;
+      startedShiftDragOnItemRef.current = startedShiftDragOnItem;
+      movedShiftDragOnItemRef.current = false;
       isSelectingRef.current = true;
       setMarqueeRect({
         startX,
@@ -62,7 +139,7 @@ export function useMarqueeSelection<T extends string>(
         currentY: startY,
       });
     },
-    [containerRef],
+    [allowShiftDragOnSelectableElements, containerRef, getSelectableElements, setSelection],
   );
 
   const updateSelection = useCallback(
@@ -76,6 +153,14 @@ export function useMarqueeSelection<T extends string>(
       const rect = container.getBoundingClientRect();
       const currentX = event.clientX - rect.left + container.scrollLeft;
       const currentY = event.clientY - rect.top + container.scrollTop;
+
+      if (
+        startedShiftDragOnItemRef.current &&
+        (Math.abs(currentX - currentRect.startX) >= 5 ||
+          Math.abs(currentY - currentRect.startY) >= 5)
+      ) {
+        movedShiftDragOnItemRef.current = true;
+      }
 
       setMarqueeRect({ ...currentRect, currentX, currentY });
 
@@ -111,15 +196,18 @@ export function useMarqueeSelection<T extends string>(
         hasMadeSelectionRef.current = true;
       }
 
-      setSelectedIds(newSelectedIds);
+      setSelection(newSelectedIds);
     },
-    [getSelectableElements, containerRef, marqueeRect],
+    [getSelectableElements, containerRef, marqueeRect, setSelection],
   );
 
   const endSelection = useCallback(() => {
     const currentRect = marqueeRect;
     isSelectingRef.current = false;
     setMarqueeRect(null);
+    suppressClickRef.current = startedShiftDragOnItemRef.current && movedShiftDragOnItemRef.current;
+    startedShiftDragOnItemRef.current = false;
+    movedShiftDragOnItemRef.current = false;
 
     if (!currentRect) return;
 
@@ -128,9 +216,9 @@ export function useMarqueeSelection<T extends string>(
       Math.abs(currentRect.currentY - currentRect.startY);
 
     if (movedDistance < 5 && !hasMadeSelectionRef.current) {
-      setSelectedIds(new Set());
+      setSelection([]);
     }
-  }, [marqueeRect]);
+  }, [marqueeRect, setSelection]);
 
   useEffect(() => {
     if (!isSelectingRef.current) return;
@@ -166,6 +254,7 @@ export function useMarqueeSelection<T extends string>(
     selectedCount: selectedIds.size,
     isSelected,
     clearSelection,
+    selectItems: setSelection,
     startSelection,
     marqueeStyle,
   };
