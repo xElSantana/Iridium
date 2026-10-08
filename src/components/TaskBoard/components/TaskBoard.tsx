@@ -76,6 +76,14 @@ export default memo(function TaskBoard({
   const [draftPosition, setDraftPosition] = useState<"start" | "end">("end");
   const [isBannerPickerOpen, setIsBannerPickerOpen] = useState(false);
   const [taskIdToRename, setTaskIdToRename] = useState<string | null>(null);
+  const [taskIdToDeleteAfterClose, setTaskIdToDeleteAfterClose] = useState<string | null>(null);
+  const taskDetailsCloseInProgress = useRef(
+    closeTaskDetailsRequest || taskIdToDeleteAfterClose !== null,
+  );
+  useLayoutEffect(() => {
+    taskDetailsCloseInProgress.current =
+      closeTaskDetailsRequest || taskIdToDeleteAfterClose !== null;
+  }, [closeTaskDetailsRequest, taskIdToDeleteAfterClose]);
   const draftCommitted = useRef(false);
   const titleEditCancelled = useRef(false);
   const taskElements = useRef(new Map<string, HTMLElement>());
@@ -128,9 +136,15 @@ export default memo(function TaskBoard({
   const selectedBackground = TASK_BACKGROUNDS.find((background) => background.id === bannerId);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
   const closeTaskDetails = useCallback(() => {
+    if (taskIdToDeleteAfterClose !== null) {
+      onTasksChange((currentTasks) =>
+        currentTasks.filter((task) => task.id !== taskIdToDeleteAfterClose),
+      );
+      setTaskIdToDeleteAfterClose(null);
+    }
     setSelectedTaskId(null);
     onTaskDetailsClosed();
-  }, [onTaskDetailsClosed, setSelectedTaskId]);
+  }, [onTaskDetailsClosed, onTasksChange, setSelectedTaskId, taskIdToDeleteAfterClose]);
   const updateTaskDetails = useCallback(
     (taskId: string, changes: Partial<Pick<Task, "title" | "content">>) => {
       onTasksChange((currentTasks) =>
@@ -150,19 +164,26 @@ export default memo(function TaskBoard({
     onSelect: (taskId: string) => {
       if (selectedCount > 0) {
         const idsToDelete = Array.from(selectedIds);
-        onTasksChange((currentTasks) =>
-          currentTasks.filter((task) => !idsToDelete.includes(task.id)),
-        );
-        if (selectedTaskId && idsToDelete.includes(selectedTaskId)) {
-          setSelectedTaskId(null);
+        const selectedTaskIsBeingDeleted =
+          selectedTaskId !== null && idsToDelete.includes(selectedTaskId);
+        if (selectedTaskIsBeingDeleted) {
+          setTaskIdToDeleteAfterClose(selectedTaskId);
         }
+        onTasksChange((currentTasks) =>
+          currentTasks.filter(
+            (task) =>
+              !idsToDelete.includes(task.id) ||
+              (selectedTaskIsBeingDeleted && task.id === selectedTaskId),
+          ),
+        );
         clearSelection();
       } else {
-        onTasksChange((currentTasks) =>
-          currentTasks.filter((currentTask) => currentTask.id !== taskId),
-        );
         if (selectedTaskId === taskId) {
-          setSelectedTaskId(null);
+          setTaskIdToDeleteAfterClose(taskId);
+        } else {
+          onTasksChange((currentTasks) =>
+            currentTasks.filter((currentTask) => currentTask.id !== taskId),
+          );
         }
       }
     },
@@ -174,7 +195,13 @@ export default memo(function TaskBoard({
       taskElements.current.delete(taskId);
     }
   }, []);
-  const selectTask = useCallback((taskId: string) => setSelectedTaskId(taskId), []);
+  const selectTask = useCallback(
+    (taskId: string) => {
+      if (taskDetailsCloseInProgress.current) return;
+      setSelectedTaskId(taskId);
+    },
+    [setSelectedTaskId],
+  );
   const cancelTaskRename = useCallback(() => setTaskIdToRename(null), []);
   const renameTask = useCallback(
     (taskId: string, nextTitle: string) => {
@@ -641,7 +668,9 @@ export default memo(function TaskBoard({
               resizeLabel={labels.resizeTaskDetails}
               width={taskDetailsWidth}
               resizeTarget={taskDetailsSeparator}
-              closeRequested={closeTaskDetailsRequest}
+              closeRequested={
+                closeTaskDetailsRequest || taskIdToDeleteAfterClose === selectedTask.id
+              }
               onClose={closeTaskDetails}
               onResize={setTaskDetailsWidth}
               onTaskChange={updateTaskDetails}

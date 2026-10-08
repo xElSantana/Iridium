@@ -538,6 +538,7 @@ export default memo(
     previous.resizeLabel === next.resizeLabel &&
     previous.width === next.width &&
     previous.resizeTarget === next.resizeTarget &&
+    previous.closeRequested === next.closeRequested &&
     previous.onClose === next.onClose &&
     previous.onResize === next.onResize &&
     previous.onTaskChange === next.onTaskChange,
