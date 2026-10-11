@@ -11,6 +11,7 @@
 
 - **BlockNote:** `https://www.blocknotejs.org/docs/getting-started/mantine`
 - **Mantine:** `https://mantine.dev/getting-started/`
+- **Mantine extensions:**: `https://mantine.dev/x/extensions/`
 
 ## Rol
 
