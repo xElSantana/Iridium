@@ -12,6 +12,11 @@
 - **BlockNote:** `https://www.blocknotejs.org/docs/getting-started/mantine`
 - **Mantine:** `https://mantine.dev/getting-started/`
 - **Mantine extensions:**: `https://mantine.dev/x/extensions/`
+- **Mantine theming & Styles:** `https://mantine.dev/theming/mantine-provider/`
+- **Mantine Hooks:** `https://mantine.dev/hooks/package/`
+- **Mantine Form:** `https://mantine.dev/form/package/`
+- **Mantine Components:** `https://mantine.dev/core/package/`
+- **Mantine Extensins:** `https://mantine.dev/x/extensions/`
 
 ## Rol
 
