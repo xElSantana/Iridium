@@ -155,7 +155,8 @@
 }
 
 .taskTitleInput:focus-visible {
-  outline: none;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .closeButton {
@@ -208,8 +209,46 @@
   pointer-events: none;
 }
 
+.editor :global(.bn-side-menu > [draggable="true"]) {
+  margin-inline-end: 4px;
+}
+
 .editor :global(.bn-default-styles) {
   font-family: var(--font-family);
+}
+
+.editor :global(.bn-block-content[data-content-type="table"] td:not([data-background-color])),
+.editor :global(.bn-block-content[data-content-type="table"] th:not([data-background-color])) {
+  background-color: var(--color-accent-soft);
+}
+
+.editor :global(.bn-block-content[data-content-type="table"] td:not([data-text-color])),
+.editor :global(.bn-block-content[data-content-type="table"] th:not([data-text-color])) {
+  color: var(--color-text);
+}
+
+.editor :global(.bn-block-content[data-content-type="table"] td),
+.editor :global(.bn-block-content[data-content-type="table"] th) {
+  border-color: var(--color-border);
+}
+
+.editor :global(.bn-block-content[data-content-type="codeBlock"]) {
+  color: var(--color-text);
+  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
+}
+
+.editor :global(.bn-block-content[data-content-type="codeBlock"] > div > select) {
+  color: var(--color-text);
+}
+
+.editor :global(.bn-block-content[data-content-type="codeBlock"] > div > select > option) {
+  color: var(--color-text);
+  background-color: color-mix(in srgb, var(--color-text) 12%, var(--color-accent-soft));
+}
+
+.editor :global([data-content-type="quote"] blockquote) {
+  border-color: var(--color-border);
+  color: var(--color-text);
 }
 
 .editor :global([data-file-block] .bn-add-file-button) {
