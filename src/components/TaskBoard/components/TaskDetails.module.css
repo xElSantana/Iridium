@@ -118,6 +118,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  padding-bottom: 20px;
   margin-inline-end: 10px;
   --editor-content-offset: 54px;
 }
@@ -141,7 +142,7 @@
   width: calc(100% - var(--editor-content-offset));
   min-width: 0;
   border: 0;
-  padding: 4px 0 12px;
+  padding: 0;
   margin-left: var(--editor-content-offset);
   color: inherit;
   background: transparent;
@@ -155,8 +156,22 @@
 }
 
 .taskTitleInput:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline: none;
+}
+
+.taskStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-left: var(--editor-content-offset);
+  font-size: 0.85rem;
+}
+
+.taskStatus svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
 }
 
 .closeButton {
@@ -189,7 +204,7 @@
   flex: 0 0 auto;
   flex-direction: column;
   min-height: auto;
-  padding-top: 12px;
+  padding-top: 20px;
   --mantine-font-family: var(--font-family);
   --mantine-font-family-headings: var(--font-family);
 }

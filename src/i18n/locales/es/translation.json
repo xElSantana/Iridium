@@ -34,6 +34,7 @@
       "meadowDay": "Pradera de día",
       "meadowNight": "Pradera de noche"
     },
+    "statusLabel": "Estado:",
     "status": {
       "notStarted": "Sin Empezar",
       "inProgress": "En Curso",

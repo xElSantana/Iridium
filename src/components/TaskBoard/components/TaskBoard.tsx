@@ -39,6 +39,7 @@ export interface TaskBoardLabels {
   removeBanner: string;
   selectBanner: string;
   closeBannerPicker: string;
+  statusLabel: string;
   backgroundLabels: Record<TaskBackgroundId, string>;
   statusLabels: Record<TaskStatus, string>;
 }
@@ -663,6 +664,8 @@ export default memo(function TaskBoard({
               key={selectedTask.id}
               task={selectedTask}
               titleLabel={labels.taskPlaceholder}
+              statusPrefix={labels.statusLabel}
+              statusLabel={labels.statusLabels[selectedTask.status]}
               closeLabel={labels.closeTaskDetails}
               toggleWidthLabel={labels.toggleTaskDetailsWidth}
               resizeLabel={labels.resizeTaskDetails}

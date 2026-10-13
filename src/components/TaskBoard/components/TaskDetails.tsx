@@ -5,6 +5,7 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { createPortal } from "react-dom";
 import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FiChevronsRight, FiMaximize2, FiMinimize2, FiMoreVertical } from "react-icons/fi";
+import { SiStagetimer } from "react-icons/si";
 import type { Task } from "../../../features/tasks/taskStorage";
 import { createTaskMediaStorage } from "../../../features/tasks/taskMediaStorage";
 import { useCustomVerticalScrollbar } from "../../../hooks/useCustomVerticalScrollbar";
@@ -69,6 +70,8 @@ const getMaximumPanelWidth = (panel: HTMLElement | null) => {
 interface TaskDetailsProps {
   task: Task;
   titleLabel: string;
+  statusPrefix: string;
+  statusLabel: string;
   closeLabel: string;
   toggleWidthLabel: string;
   resizeLabel: string;
@@ -110,6 +113,8 @@ const TaskContent = memo(function TaskContent({
 function TaskDetails({
   task,
   titleLabel,
+  statusPrefix,
+  statusLabel,
   closeLabel,
   toggleWidthLabel,
   resizeLabel,
@@ -402,6 +407,12 @@ function TaskDetails({
                 }
               }}
             />
+            <span className={styles.taskStatus}>
+              <SiStagetimer aria-hidden="true" />
+              <span>
+                {statusPrefix} {statusLabel}
+              </span>
+            </span>
           </header>
           <TaskContent
             editor={editor}
@@ -532,6 +543,8 @@ export default memo(
   (previous, next) =>
     previous.task.id === next.task.id &&
     previous.task.title === next.task.title &&
+    previous.statusPrefix === next.statusPrefix &&
+    previous.statusLabel === next.statusLabel &&
     previous.titleLabel === next.titleLabel &&
     previous.closeLabel === next.closeLabel &&
     previous.toggleWidthLabel === next.toggleWidthLabel &&
