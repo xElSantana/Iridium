@@ -6,13 +6,13 @@ const t = await getTranslations();
 ---
 
 <label
-  class="upload-zone grid min-h-75 cursor-pointer place-items-center rounded-[30px] border border-dashed border-[#bdc9dc] text-center outline outline-dotted outline-[#bdc9dc] outline-offset-2 focus-within:outline-2 focus-within:outline-purple [&.is-dragging]:outline-2 [&.is-dragging]:outline-purple max-[600px]:min-h-62.5 max-[600px]:rounded-[22px]"
+  class="upload-zone grid min-h-75 cursor-pointer place-items-center rounded-[30px] border border-dashed border-border-light text-center outline outline-dotted outline-border-light outline-offset-2 focus-within:outline-2 focus-within:outline-purple [&.is-dragging]:outline-2 [&.is-dragging]:outline-purple max-[600px]:min-h-62.5 max-[600px]:rounded-[22px]"
   for="image-input"
   data-multiple-selected={t("upload.multipleSelected", { count: "__count__" })}
 >
   <span class="flex flex-col items-center p-6">
     <span
-      class="relative mb-2.25 grid h-13 w-14.5 place-items-center text-[#8d929c]"
+      class="relative mb-2.25 grid h-13 w-14.5 place-items-center text-icon-muted"
       aria-hidden="true"
     >
       <FiImage size={42} />
@@ -21,7 +21,7 @@ const t = await getTranslations();
       </span>
     </span>
     <span class="text-base font-bold text-text">{t("upload.addImages")}</span>
-    <span class="mt-1.5 text-xs text-[#9098a5]">
+    <span class="mt-1.5 text-xs text-text-tertiary">
       {t("upload.dropPrompt")} <span class="font-bold text-purple">{t("upload.selectFiles")}</span>
     </span>
     <span class="mt-2 min-h-4 text-xs text-muted" id="file-summary" aria-live="polite"></span>

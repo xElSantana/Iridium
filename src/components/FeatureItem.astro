@@ -3,9 +3,9 @@ const { title, description } = Astro.props;
 ---
 
 <article class="text-center">
-  <span class="mx-auto mb-2.5 grid size-13.5 place-items-center rounded-full border border-[#e4e9f1] text-purple">
+  <span class="mx-auto mb-2.5 grid size-13.5 place-items-center rounded-full border border-border-lighter text-purple">
     <slot name="icon" />
   </span>
   <h2 class="mb-1.5 mt-0 text-base font-bold text-text">{title}</h2>
-  <p class="mx-auto my-0 max-w-70 text-xs leading-[1.55] text-[#536176]">{description}</p>
+  <p class="mx-auto my-0 max-w-70 text-xs leading-[1.55] text-text-secondary">{description}</p>
 </article>
