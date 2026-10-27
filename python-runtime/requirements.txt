@@ -1,0 +1,2 @@
+Pillow==13.0.0
+pillow-avif-plugin==1.6.0
