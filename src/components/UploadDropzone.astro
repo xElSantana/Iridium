@@ -6,25 +6,23 @@ const t = await getTranslations();
 ---
 
 <label
-  class="upload-zone grid min-h-75 cursor-pointer place-items-center rounded-[30px] border border-dashed border-border-light text-center outline outline-dotted outline-border-light outline-offset-2 focus-within:outline-2 focus-within:outline-purple [&.is-dragging]:outline-2 [&.is-dragging]:outline-purple max-[600px]:min-h-62.5 max-[600px]:rounded-[22px]"
+  class="upload-zone grid min-h-64 cursor-pointer place-items-center rounded-2xl border border-dashed border-gray-300 text-center outline outline-dotted outline-gray-300 outline-offset-2 focus-within:outline-2 focus-within:outline-green-600 [&.is-dragging]:outline-2 [&.is-dragging]:outline-green-600 sm:min-h-80 sm:rounded-3xl"
   for="image-input"
   data-multiple-selected={t("upload.multipleSelected", { count: "__count__" })}
 >
   <span class="flex flex-col items-center p-6">
-    <span
-      class="relative mb-2.25 grid h-13 w-14.5 place-items-center text-icon-muted"
-      aria-hidden="true"
-    >
+    <span class="relative mb-2 grid h-12 w-16 place-items-center text-gray-400" aria-hidden="true">
       <FiImage size={42} />
-      <span class="absolute bottom-0 -right-0.75 grid size-6 place-items-center rounded-full bg-purple text-white">
+      <span class="absolute bottom-0 -right-1 grid size-6 place-items-center rounded-full bg-green-600 text-white">
         <FiUpload size={15} />
       </span>
     </span>
-    <span class="text-base font-bold text-text">{t("upload.addImages")}</span>
-    <span class="mt-1.5 text-xs text-text-tertiary">
-      {t("upload.dropPrompt")} <span class="font-bold text-purple">{t("upload.selectFiles")}</span>
+    <span class="text-base font-bold text-gray-900">{t("upload.addImages")}</span>
+    <span class="mt-1.5 text-xs text-gray-500">
+      {t("upload.dropPrompt")}{" "}
+      <span class="font-bold text-green-600">{t("upload.selectFiles")}</span>
     </span>
-    <span class="mt-2 min-h-4 text-xs text-muted" id="file-summary" aria-live="polite"></span>
+    <span class="mt-2 min-h-4 text-xs text-gray-500" id="file-summary" aria-live="polite"></span>
   </span>
   <input class="sr-only" id="image-input" type="file" accept="image/png" multiple />
 </label>

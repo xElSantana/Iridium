@@ -11,7 +11,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "format": "prettier --write .",
-    "lint": "eslint \"src/**/*.{js,mjs,astro}\""
+    "lint": "eslint \"src/**/*.{js,mjs,ts,tsx,astro}\""
   },
   "dependencies": {
     "@astrojs/react": "^7.1.1",
@@ -32,6 +32,7 @@
     "eslint": "^10.13.0",
     "eslint-plugin-astro": "^3.2.1",
     "prettier": "3.9.10",
-    "prettier-plugin-astro": "1.1.2"
+    "prettier-plugin-astro": "1.1.2",
+    "typescript-eslint": "^8.72.1"
   }
 }

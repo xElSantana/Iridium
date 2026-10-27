@@ -1,11 +1,12 @@
 {
   "site": {
-    "title": "PNG a JPG | Iridium",
+    "title": "Convertidor de Imágenes | Iridium",
     "mainNavigation": "Navegación principal"
   },
   "converter": {
-    "title": "Convertir imagen a JPG",
-    "description": "Convierte imágenes PNG a JPG gratis y en segundos. Solo tienes que añadir tus imágenes para empezar."
+    "titlePrefix": "Convertir imagen a",
+    "selectFormat": "Seleccionar formato de salida",
+    "description": "Convierte imágenes a diferentes formatos gratis y en segundos. Solo tienes que añadir tus imágenes para empezar."
   },
   "upload": {
     "addImages": "Añadir imágenes",

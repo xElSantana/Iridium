@@ -10,12 +10,11 @@ const t = await getTranslations();
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" href="/icon.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{t("site.title")}</title>
   </head>
-  <body class="min-h-screen min-w-[320px] bg-white font-sans text-text">
+  <body class="min-h-screen min-w-80 bg-white font-sans text-gray-900">
     <div class="flex min-h-screen items-center justify-center">
       <div class="w-full">
         <slot />

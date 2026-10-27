@@ -1,14 +1,17 @@
 ---
 import { getTranslations } from "../i18n";
+import FormatDropdown from "./FormatDropdown.astro";
 
 const t = await getTranslations();
 ---
 
 <section class="text-center" aria-labelledby="page-title">
-  <h1 class="m-0 text-[clamp(36px,5vw,46px)] font-[750] leading-[1.12] text-text" id="page-title">
-    {t("converter.title")}
+  <h1
+    class="m-0 text-4xl font-extrabold text-gray-900 inline-flex items-center justify-center gap-2 flex-wrap"
+    id="page-title"
+  >
+    <span>{t("converter.titlePrefix")}</span>
+    <FormatDropdown ariaLabel={t("converter.selectFormat")} />
   </h1>
-  <p class="mx-auto mb-3.75 mt-3 max-w-117.5 text-[15px] leading-[1.55] text-text-secondary">
-    {t("converter.description")}
-  </p>
+  <p class="mx-auto mb-4 mt-3 max-w-2xl text-base text-gray-600">{t("converter.description")}</p>
 </section>

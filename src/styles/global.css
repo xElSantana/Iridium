@@ -2,14 +2,6 @@
 
 @theme {
   --font-sans: "Segoe UI", sans-serif;
-  --color-text: #202630;
-  --color-muted: #788396;
-  --color-purple: #7800ff;
-  --color-text-secondary: #536176;
-  --color-icon-muted: #8d929c;
-  --color-text-tertiary: #9098a5;
-  --color-border-light: #bdc9dc;
-  --color-border-lighter: #e4e9f1;
 }
 
 :root {
