@@ -1,52 +1,16 @@
 {
-  "common": {
-    "actions": "Acciones"
+  "site": {
+    "title": "PNG a JPG | Iridium",
+    "mainNavigation": "Navegación principal"
   },
-  "workspace": {
-    "resizeSidebar": "Cambiar ancho de la barra lateral",
-    "sidebar": "Barra lateral",
-    "tasks": "Tareas",
-    "taskLists": "Listas de tareas",
-    "newTaskList": "Nueva lista de tareas",
-    "defaultTaskListTitle": "Lista de tareas",
-    "deleteTaskList": "Eliminar",
-    "editTaskList": "Editar",
-    "loadError": "No se pudieron cargar las listas de tareas guardadas. Los cambios están deshabilitados para proteger tus datos.",
-    "saveError": "No se pudieron guardar los cambios en este dispositivo."
+  "converter": {
+    "title": "Convertir imagen a JPG",
+    "description": "Convierte imágenes PNG a JPG gratis y en segundos. Solo tienes que añadir tus imágenes para empezar."
   },
-  "taskBoard": {
-    "boardView": "Tablero",
-    "titleLabel": "Título de la lista de tareas",
-    "addTask": "Nueva tarea",
-    "taskPlaceholder": "Nombre de la tarea",
-    "closeTaskDetails": "Cerrar tarea",
-    "toggleTaskDetailsWidth": "Alternar ancho completo del panel de tarea",
-    "resizeTaskDetails": "Cambiar ancho del panel de tarea",
-    "taskScrollbar": "Desplazamiento vertical de tareas",
-    "deleteTask": "Eliminar",
-    "editTask": "Editar título",
-    "addBanner": "Agregar banner",
-    "changeBanner": "Cambiar banner",
-    "removeBanner": "Quitar banner",
-    "selectBanner": "Selecciona un fondo",
-    "closeBannerPicker": "Cerrar selector",
-    "backgrounds": {
-      "meadowDay": "Pradera de día",
-      "meadowNight": "Pradera de noche"
-    },
-    "statusLabel": "Estado:",
-    "status": {
-      "notStarted": "Sin Empezar",
-      "inProgress": "En Curso",
-      "completed": "Finalizada"
-    }
-  },
-  "window": {
-    "controls": "Controles de ventana",
-    "inbox": "Bandeja de entrada",
-    "minimize": "Minimizar",
-    "maximize": "Maximizar",
-    "restore": "Restaurar",
-    "close": "Cerrar"
+  "upload": {
+    "addImages": "Añadir imágenes",
+    "dropPrompt": "Arrastra y suelta o",
+    "selectFiles": "selecciona archivos",
+    "multipleSelected": "{{count}} imágenes seleccionadas"
   }
 }

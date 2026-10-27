@@ -1,54 +1,8 @@
 ---
+import HomePage from "../components/HomePage.astro";
 import Layout from "../layouts/Layout.astro";
-import WorkspaceLayout from "../components/WorkspaceLayout/WorkspaceLayout.astro";
-import { createTranslator } from "../i18n";
-
-const t = await createTranslator();
 ---
 
 <Layout>
-  <WorkspaceLayout
-    sidebarLabel={t("workspace.sidebar")}
-    tasksLabel={t("workspace.tasks")}
-    resizeLabel={t("workspace.resizeSidebar")}
-    workspaceContentLabels={{
-      actionsLabel: t("common.actions"),
-      newTaskList: t("workspace.newTaskList"),
-      defaultTaskListTitle: t("workspace.defaultTaskListTitle"),
-      deleteTaskList: t("workspace.deleteTaskList"),
-      editTaskList: t("workspace.editTaskList"),
-      sidebarTasks: t("workspace.tasks"),
-      sidebarTaskLists: t("workspace.taskLists"),
-      loadError: t("workspace.loadError"),
-      saveError: t("workspace.saveError"),
-      taskBoard: {
-        actionsLabel: t("common.actions"),
-        boardView: t("taskBoard.boardView"),
-        titleLabel: t("taskBoard.titleLabel"),
-        addTask: t("taskBoard.addTask"),
-        taskPlaceholder: t("taskBoard.taskPlaceholder"),
-        closeTaskDetails: t("taskBoard.closeTaskDetails"),
-        toggleTaskDetailsWidth: t("taskBoard.toggleTaskDetailsWidth"),
-        resizeTaskDetails: t("taskBoard.resizeTaskDetails"),
-        taskScrollbar: t("taskBoard.taskScrollbar"),
-        deleteTask: t("taskBoard.deleteTask"),
-        editTask: t("taskBoard.editTask"),
-        addBanner: t("taskBoard.addBanner"),
-        changeBanner: t("taskBoard.changeBanner"),
-        removeBanner: t("taskBoard.removeBanner"),
-        selectBanner: t("taskBoard.selectBanner"),
-        closeBannerPicker: t("taskBoard.closeBannerPicker"),
-        statusLabel: t("taskBoard.statusLabel"),
-        backgroundLabels: {
-          "meadow-day": t("taskBoard.backgrounds.meadowDay"),
-          "meadow-night": t("taskBoard.backgrounds.meadowNight"),
-        },
-        statusLabels: {
-          notStarted: t("taskBoard.status.notStarted"),
-          inProgress: t("taskBoard.status.inProgress"),
-          completed: t("taskBoard.status.completed"),
-        },
-      },
-    }}
-  />
+  <HomePage />
 </Layout>

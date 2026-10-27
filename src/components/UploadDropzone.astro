@@ -1,0 +1,60 @@
+---
+import { FiImage, FiUpload } from "react-icons/fi";
+import { getTranslations } from "../i18n";
+
+const t = await getTranslations();
+---
+
+<label
+  class="upload-zone grid min-h-75 cursor-pointer place-items-center rounded-[30px] border border-dashed border-[#bdc9dc] text-center outline outline-dotted outline-[#bdc9dc] outline-offset-2 focus-within:outline-2 focus-within:outline-purple [&.is-dragging]:outline-2 [&.is-dragging]:outline-purple max-[600px]:min-h-62.5 max-[600px]:rounded-[22px]"
+  for="image-input"
+  data-multiple-selected={t("upload.multipleSelected", { count: "__count__" })}
+>
+  <span class="flex flex-col items-center p-6">
+    <span
+      class="relative mb-2.25 grid h-13 w-14.5 place-items-center text-[#8d929c]"
+      aria-hidden="true"
+    >
+      <FiImage size={42} />
+      <span class="absolute bottom-0 -right-0.75 grid size-6 place-items-center rounded-full bg-purple text-white">
+        <FiUpload size={15} />
+      </span>
+    </span>
+    <span class="text-base font-bold text-text">{t("upload.addImages")}</span>
+    <span class="mt-1.5 text-xs text-[#9098a5]">
+      {t("upload.dropPrompt")} <span class="font-bold text-purple">{t("upload.selectFiles")}</span>
+    </span>
+    <span class="mt-2 min-h-4 text-xs text-muted" id="file-summary" aria-live="polite"></span>
+  </span>
+  <input class="sr-only" id="image-input" type="file" accept="image/png" multiple />
+</label>
+
+<script lang="ts">
+  const dropZone = document.querySelector < HTMLElement > ".upload-zone";
+  const fileInput = document.querySelector < HTMLInputElement > "#image-input";
+  const fileSummary = document.querySelector < HTMLElement > "#file-summary";
+
+  if (dropZone && fileInput && fileSummary) {
+    const showFiles = (files) => {
+      if (!files?.length) return;
+      fileSummary.textContent =
+        files.length === 1
+          ? files[0].name
+          : (dropZone.dataset.multipleSelected?.replace("__count__", String(files.length)) ?? "");
+    };
+
+    fileInput.addEventListener("change", () => showFiles(fileInput.files));
+    dropZone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropZone.classList.add("is-dragging");
+    });
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("is-dragging");
+    });
+    dropZone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropZone.classList.remove("is-dragging");
+      showFiles(event.dataTransfer?.files ?? null);
+    });
+  }
+</script>

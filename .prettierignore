@@ -1,5 +1,5 @@
+node_modules/
 .astro/
 dist/
-node_modules/
 pnpm-lock.yaml
 src-tauri/

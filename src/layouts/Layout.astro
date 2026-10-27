@@ -1,52 +1,25 @@
 ---
 import "../styles/global.css";
-import WindowTitleBar from "../components/WindowTitleBar/WindowTitleBar.astro";
-import styles from "./Layout.module.css";
-import { createTranslator } from "../i18n";
+import { getTranslations } from "../i18n";
 
-const t = await createTranslator();
+const t = await getTranslations();
 ---
 
 <!doctype html>
-<html lang="es" data-theme="spring">
-  <!-- <html lang="es" data-theme="winter"> -->
-  <!-- <html lang="es" data-theme="autumn"> -->
-  <!-- <html lang="es" data-theme="dark"> -->
+<html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/resources/ui/icon.png" />
-    <link rel="icon" href="/resources/ui/icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
-    <title>Iridium</title>
-    <link
-      rel="preload"
-      href="/fonts/ComicRelief-Regular.ttf"
-      as="font"
-      type="font/ttf"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="preload"
-      href="/fonts/ComicRelief-Bold.ttf"
-      as="font"
-      type="font/ttf"
-      crossorigin="anonymous"
-    />
+    <title>{t("site.title")}</title>
   </head>
-  <body>
-    <div class={styles.windowFrame}>
-      <WindowTitleBar
-        labels={{
-          controls: t("window.controls"),
-          inbox: t("window.inbox"),
-          minimize: t("window.minimize"),
-          maximize: t("window.maximize"),
-          restore: t("window.restore"),
-          close: t("window.close"),
-        }}
-      />
-      <slot />
+  <body class="min-h-screen min-w-[320px] bg-white font-sans text-text">
+    <div class="flex min-h-screen items-center justify-center">
+      <div class="w-full">
+        <slot />
+      </div>
     </div>
   </body>
 </html>
