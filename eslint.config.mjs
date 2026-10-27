@@ -8,7 +8,8 @@ export default [
   ...astro.configs.recommended,
   {
     rules: {
-      "no-unused-vars": "error",
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/no-explicit-any": "error",
     },
   },
