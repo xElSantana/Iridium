@@ -17,7 +17,19 @@
     "remove": "Eliminar",
     "increaseQuality": "Aumentar calidad",
     "decreaseQuality": "Disminuir calidad",
-    "scrollbarLabel": "Desplazamiento de la lista de imágenes"
+    "scrollbarLabel": "Desplazamiento de la lista de imágenes",
+    "processing": "Convirtiendo...",
+    "errors": {
+      "selectImagesFailed": "No se pudieron seleccionar las imágenes",
+      "conversionFailed": "Error al convertir las imágenes",
+      "unknownError": "Error desconocido"
+    },
+    "progress": {
+      "converting": "Convirtiendo {{current}} de {{total}}",
+      "completed": "Conversión completada.",
+      "imagesProcessed": "{{count}} imágenes procesadas",
+      "savedIn": "Guardadas en: {{folder}}"
+    }
   },
   "optimizer": {
     "title": "Optimizador de imágenes",

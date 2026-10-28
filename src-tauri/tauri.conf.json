@@ -40,10 +40,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      "../python-runtime/*",
-      "../python-env/**/*"
-    ],
+    "resources": [],
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }

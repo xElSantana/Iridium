@@ -1,43 +1,30 @@
-use std::process::{Command, Stdio};
-use std::io::{BufRead, BufReader};
 use tauri::webview::PageLoadEvent;
-use tauri::Emitter;
-use serde::{Deserialize, Serialize};
+mod image_optimizer;
 
-#[derive(Clone, Serialize, Deserialize)]
-struct ProgressPayload {
-    r#type: String,
-    current: Option<u32>,
-    total: Option<u32>,
-    message: Option<String>,
-    output_folder: Option<String>,
-    processed_count: Option<u32>,
-}
+use image_optimizer::SUPPORTED_EXTENSIONS;
 
-struct TemporaryManifest(std::path::PathBuf);
-
-impl Drop for TemporaryManifest {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
-    }
+#[tauri::command]
+fn get_file_size(path: String) -> Result<u64, String> {
+    std::fs::metadata(&path)
+        .map(|m| m.len())
+        .map_err(|_| "No se pudo leer el tamaño del archivo".to_string())
 }
 
 #[tauri::command]
 async fn select_folder(app: tauri::AppHandle) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
-    
-    let folder = app.dialog()
+
+    let folder = app
+        .dialog()
         .file()
         .set_title("Selecciona la carpeta con imágenes")
         .blocking_pick_folder();
-    
+
     match folder {
         Some(path) => Ok(path.to_string()),
         None => Err("No se seleccionó ninguna carpeta".to_string()),
     }
 }
-
-const SUPPORTED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "webp", "avif", "bmp", "tiff", "gif"];
 
 #[tauri::command]
 fn list_folder_images(folder_path: String) -> Result<Vec<String>, String> {
@@ -84,13 +71,9 @@ async fn select_images(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     match files {
         Some(file_list) => {
             let paths: Vec<String> = file_list.into_iter().map(|f| f.to_string()).collect();
-            if paths.is_empty() {
-                Err("No se seleccionó ninguna imagen".to_string())
-            } else {
-                Ok(paths)
-            }
+            Ok(paths)
         }
-        None => Err("No se seleccionó ninguna imagen".to_string()),
+        None => Ok(Vec::new()),
     }
 }
 
@@ -103,135 +86,25 @@ async fn optimize_images(
     quality: u8,
 ) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        optimize_images_blocking(app, image_paths, folder_path, output_format, quality)
+        image_optimizer::optimize_images_blocking(app, image_paths, folder_path, output_format, quality)
     })
     .await
-    .map_err(|error| format!("Error ejecutando optimización: {error}"))?
-}
-
-fn optimize_images_blocking(
-    app: tauri::AppHandle,
-    image_paths: Option<Vec<String>>,
-    folder_path: Option<String>,
-    output_format: String,
-    quality: u8,
-) -> Result<String, String> {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    use tauri::Manager;
-
-    // Obtener ruta del script Python
-    let python_script = app
-        .path()
-        .resource_dir()
-        .map_err(|e| format!("Error obteniendo directorio de recursos: {}", e))?
-        .join("python-runtime")
-        .join("optimizer.py");
-
-    // Obtener Python del entorno virtual
-    let python_bin = app
-        .path()
-        .resource_dir()
-        .map_err(|e| format!("Error obteniendo directorio de recursos: {}", e))?
-        .join("python-env")
-        .join("bin")
-        .join("python3");
-
-    let mut _temp_manifest: Option<TemporaryManifest> = None;
-
-    let mut cmd = Command::new(python_bin);
-    cmd.arg(python_script);
-
-    if let Some(paths) = image_paths.filter(|p| !p.is_empty()) {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos();
-        let manifest_file = std::env::temp_dir().join(format!(
-            "iridium_manifest_{}_{}.json",
-            std::process::id(),
-            timestamp
-        ));
-        let manifest_content = serde_json::json!({
-            "files": paths,
-            "output_format": output_format,
-            "quality": quality,
-        });
-        let manifest_content = serde_json::to_string(&manifest_content)
-            .map_err(|e| e.to_string())?;
-        let manifest_file = TemporaryManifest(manifest_file);
-
-        std::fs::write(&manifest_file.0, manifest_content)
-            .map_err(|e| format!("Error creando archivo temporal: {}", e))?;
-
-        cmd.arg(&manifest_file.0);
-        _temp_manifest = Some(manifest_file);
-    } else if let Some(folder) = folder_path.filter(|f| !f.is_empty()) {
-        cmd.arg(&folder)
-            .arg(&output_format)
-            .arg(quality.to_string());
-    } else {
-        return Err("No se proporcionaron imágenes ni carpeta para optimizar".to_string());
-    }
-
-    // Ejecutar script Python
-    let mut child = cmd
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|e| format!("Error ejecutando Python: {}", e))?;
-
-    let mut result_folder = String::new();
-    let mut process_error = None;
-
-    // Leer salida línea por línea
-    if let Some(stdout) = child.stdout.take() {
-        let reader = BufReader::new(stdout);
-
-        for line in reader.lines() {
-            if let Ok(line) = line {
-                // Parsear JSON del script Python
-                if let Ok(payload) = serde_json::from_str::<ProgressPayload>(&line) {
-                    // Emitir evento al frontend
-                    let _ = app.emit("image-optimization-progress", payload.clone());
-
-                    if payload.r#type == "success" {
-                        result_folder = payload.output_folder.unwrap_or_default();
-                    } else if payload.r#type == "error" && process_error.is_none() {
-                        process_error = Some(
-                            payload.message.unwrap_or_else(|| "Error desconocido".to_string()),
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    // Esperar a que termine el proceso
-    let status = child.wait().map_err(|e| format!("Error esperando proceso: {}", e))?;
-
-    if !status.success() {
-        return Err(process_error.unwrap_or_else(|| "El proceso de optimización falló".to_string()));
-    }
-
-    if let Some(error) = process_error {
-        return Err(error);
-    }
-
-    Ok(result_folder)
+    .map_err(|error| format!("Error ejecutando optimización: {error}"))
+    .and_then(|result| result)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tauri::Builder::default()
-    .plugin(tauri_plugin_dialog::init())
-    .setup(|app| {
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
-      }
+    tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            if cfg!(debug_assertions) {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
 
             let window_config = &app.config().app.windows[0];
             tauri::WebviewWindowBuilder::from_config(app, window_config)?
@@ -244,9 +117,15 @@ pub fn run() {
                 })
                 .build()?;
 
-      Ok(())
-    })
-    .invoke_handler(tauri::generate_handler![select_folder, select_images, optimize_images, list_folder_images])
-    .run(tauri::generate_context!())
-    .expect("error while building tauri application");
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            select_folder,
+            select_images,
+            optimize_images,
+            list_folder_images,
+            get_file_size
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while building tauri application");
 }
