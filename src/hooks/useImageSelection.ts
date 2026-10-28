@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { UnlistenFn } from "@tauri-apps/api/event";
@@ -23,13 +23,19 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
   const dropzoneRef = useRef<HTMLDivElement>(null);
+  const selectedItemsRef = useRef(selectedItems);
+  selectedItemsRef.current = selectedItems;
 
   const handlePaths = async (paths: string[]) => {
     const filtered = paths.filter((path) => /\.(jpe?g|png|webp|avif|gif|bmp|tiff)$/i.test(path));
     if (filtered.length === 0) return;
 
+    const knownPaths = new Set(selectedItemsRef.current.map((item) => item.path));
+    const uniqueIncoming = [...new Set(filtered)].filter((p) => !knownPaths.has(p));
+    if (uniqueIncoming.length === 0) return;
+
     const newItems = await Promise.all(
-      filtered.map(async (path) => {
+      uniqueIncoming.map(async (path) => {
         const size = await invoke<number>("get_file_size", { path }).catch(() => 0);
         return {
           id: crypto.randomUUID(),
@@ -42,15 +48,7 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
       }),
     );
 
-    setSelectedItems((previous) => {
-      const knownPaths = new Set(previous.map((item) => item.path));
-      const uniqueItems = newItems.filter((item) => {
-        if (knownPaths.has(item.path)) return false;
-        knownPaths.add(item.path);
-        return true;
-      });
-      return [...previous, ...uniqueItems];
-    });
+    setSelectedItems((previous) => [...previous, ...newItems]);
     setError("");
   };
 
@@ -66,15 +64,15 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
     }
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     setSelectedItems((previous) => previous.filter((item) => item.id !== id));
-  };
+  }, []);
 
-  const updateItemFormat = (id: string, format: string) => {
+  const updateItemFormat = useCallback((id: string, format: string) => {
     setSelectedItems((previous) =>
       previous.map((item) => (item.id === id ? { ...item, format } : item)),
     );
-  };
+  }, []);
 
   useEffect(() => {
     const handleFormatChange = (event: Event) => {

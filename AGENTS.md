@@ -16,6 +16,7 @@
 - **EsLint:** `https://eslint.org/docs/latest/use/getting-started`
 - **React Icons:** `https://react-icons.github.io/react-icons/`
 - **Zustand:** `https://zustand.docs.pmnd.rs/learn/getting-started/introduction`
+- **React-toastify:** `https://fkhadra.github.io/react-toastify/introduction`
 
 ## Rol
 

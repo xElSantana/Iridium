@@ -17,6 +17,7 @@
     "remove": "Eliminar",
     "increaseQuality": "Aumentar calidad",
     "decreaseQuality": "Disminuir calidad",
+    "qualityLabel": "Calidad",
     "scrollbarLabel": "Desplazamiento de la lista de imágenes",
     "processing": "Convirtiendo...",
     "errors": {
@@ -29,41 +30,6 @@
       "completed": "Conversión completada.",
       "imagesProcessed": "{{count}} imágenes procesadas",
       "savedIn": "Guardadas en: {{folder}}"
-    }
-  },
-  "optimizer": {
-    "title": "Optimizador de imágenes",
-    "selectFolder": "Seleccionar Carpeta",
-    "selectedFolder": "Carpeta seleccionada:",
-    "optimize": "Optimizar Imágenes",
-    "processing": "Procesando...",
-    "selectFolderFirst": "Primero selecciona imágenes o una carpeta",
-    "formats": {
-      "label": "Formato de salida",
-      "webp": "WebP",
-      "avif": "AVIF",
-      "jpg": "JPG",
-      "png": "PNG"
-    },
-    "quality": {
-      "label": "Calidad",
-      "value": "{{value}}%"
-    },
-    "progress": {
-      "optimizing": "Optimizando {{current}} de {{total}}",
-      "completed": "¡Completado!",
-      "imagesProcessed": "{{count}} imágenes procesadas",
-      "savedIn": "Guardadas en: {{folder}}"
-    },
-    "errors": {
-      "noFolder": "No se seleccionó ninguna carpeta",
-      "optimizationFailed": "Error durante la optimización",
-      "unknownError": "Error desconocido",
-      "loadPreviewFailed": "No se pudieron cargar las miniaturas"
-    },
-    "preview": {
-      "totalImages": "{{count}} imágenes encontradas",
-      "showing": "Mostrando {{shown}} de {{total}}"
     }
   }
 }

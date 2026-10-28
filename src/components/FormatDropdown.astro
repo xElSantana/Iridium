@@ -1,14 +1,15 @@
 ---
 import { FiChevronDown, FiCheck } from "react-icons/fi";
+import { SUPPORTED_FORMATS } from "../constants/formats";
 
 interface Props {
-  formats?: string[];
+  formats?: readonly string[];
   defaultFormat?: string;
   ariaLabel?: string;
 }
 
 const {
-  formats = ["JPG", "PNG", "WEBP", "AVIF", "BMP", "TIFF"],
+  formats = SUPPORTED_FORMATS,
   defaultFormat = "JPG",
   ariaLabel = "Seleccionar formato",
 } = Astro.props;

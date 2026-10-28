@@ -1,24 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { toast } from "react-toastify";
 import type { ImageFileItem } from "./useImageSelection";
 
-export interface ProgressPayload {
+interface ProgressPayload {
   type: "progress" | "error" | "success";
   current?: number;
   total?: number;
-  message?: string;
-  output_folder?: string;
-  processed_count?: number;
 }
 
 interface ImageConversionTranslations {
   conversionFailed: string;
-  unknownError: string;
   progress: {
     converting: string;
     completed: string;
     imagesProcessed: string;
+    savedIn: string;
   };
 }
 
@@ -28,47 +26,19 @@ export function useImageConversion(
   translations: ImageConversionTranslations,
 ) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState<ProgressPayload | null>(null);
-  const [error, setError] = useState("");
-  const progressOffsetRef = useRef(0);
-  const totalImagesRef = useRef(0);
+  const unlistenProgressRef = useRef<UnlistenFn | null>(null);
 
   useEffect(() => {
-    let unlistenProgress: UnlistenFn | undefined;
-    let disposed = false;
-
-    const registerProgressListener = async () => {
-      try {
-        unlistenProgress = await listen<ProgressPayload>("image-optimization-progress", (event) => {
-          const payload = event.payload;
-          if (payload.type === "progress") {
-            setProgress({
-              ...payload,
-              current: progressOffsetRef.current + (payload.current ?? 0),
-              total: totalImagesRef.current,
-            });
-          } else if (payload.type === "error") {
-            setError(payload.message || translations.unknownError);
-          }
-        });
-
-        if (disposed) unlistenProgress();
-      } catch {
-        setError(translations.unknownError);
-      }
-    };
-
-    void registerProgressListener();
-
     return () => {
-      disposed = true;
-      unlistenProgress?.();
+      unlistenProgressRef.current?.();
+      unlistenProgressRef.current = null;
     };
-  }, [translations.unknownError]);
+  }, []);
 
   const convertImages = async () => {
     if (selectedItems.length === 0 || isProcessing) return;
 
+    const totalImages = selectedItems.length;
     const groups = new Map<string, { format: string; paths: string[] }>();
     for (const item of selectedItems) {
       const separator = Math.max(item.path.lastIndexOf("/"), item.path.lastIndexOf("\\"));
@@ -81,17 +51,34 @@ export function useImageConversion(
     }
 
     setIsProcessing(true);
-    setError("");
-    setProgress({ type: "progress", current: 0, total: selectedItems.length });
-    totalImagesRef.current = selectedItems.length;
-    progressOffsetRef.current = 0;
+    const toastId = toast.loading(
+      translations.progress.converting
+        .replace("{{current}}", "1")
+        .replace("{{total}}", String(totalImages)),
+    );
 
-    let completed = 0;
-    const outputFolders: string[] = [];
+    let progressOffset = 0;
 
     try {
+      unlistenProgressRef.current = await listen<ProgressPayload>(
+        "image-optimization-progress",
+        (event) => {
+          if (event.payload.type === "progress" && event.payload.current !== undefined) {
+            const current = Math.min(progressOffset + event.payload.current, totalImages);
+            toast.update(toastId, {
+              render: translations.progress.converting
+                .replace("{{current}}", String(current))
+                .replace("{{total}}", String(totalImages)),
+            });
+          }
+        },
+      );
+
+      let completed = 0;
+      const outputFolders: string[] = [];
+
       for (const group of groups.values()) {
-        progressOffsetRef.current = completed;
+        progressOffset = completed;
         const outputFolder = await invoke<string>("optimize_images", {
           imagePaths: group.paths,
           outputFormat: group.format,
@@ -101,49 +88,51 @@ export function useImageConversion(
         outputFolders.push(outputFolder);
       }
 
-      setProgress({
+      const uniqueFolders = [...new Set(outputFolders)];
+      const successMsg = `${translations.progress.completed} ${translations.progress.imagesProcessed.replace("{{count}}", String(completed))}`;
+      const folderLines = uniqueFolders
+        .map((f) => translations.progress.savedIn.replace("{{folder}}", f))
+        .join("\n");
+      const renderContent = folderLines ? `${successMsg}\n${folderLines}` : successMsg;
+
+      toast.update(toastId, {
+        render: renderContent,
         type: "success",
-        processed_count: completed,
-        output_folder: [...new Set(outputFolders)].join("\n"),
+        isLoading: false,
+        autoClose: 5000,
+        closeButton: true,
       });
     } catch (reason) {
-      setProgress(null);
       let message =
         typeof reason === "string" ? reason : reason instanceof Error ? reason.message : "";
 
+      const uniqueDirectories = new Set<string>();
       for (const item of selectedItems) {
         const separator = Math.max(item.path.lastIndexOf("/"), item.path.lastIndexOf("\\"));
-        const directory = item.path.slice(0, separator);
+        uniqueDirectories.add(item.path.slice(0, separator));
         message = message.replaceAll(item.path, "imagen seleccionada");
-        message = message.replaceAll(directory, "carpeta seleccionada");
         message = message.replaceAll(item.name, "imagen");
       }
+      for (const directory of uniqueDirectories) {
+        message = message.replaceAll(directory, "carpeta seleccionada");
+      }
 
-      setError((currentError) => currentError || message || translations.conversionFailed);
+      toast.update(toastId, {
+        render: message || translations.conversionFailed,
+        type: "error",
+        isLoading: false,
+        autoClose: 5000,
+        closeButton: true,
+      });
     } finally {
+      unlistenProgressRef.current?.();
+      unlistenProgressRef.current = null;
       setIsProcessing(false);
     }
   };
 
-  const progressMessage = (() => {
-    if (!progress) return "";
-    if (progress.type === "progress" && progress.current !== undefined && progress.total) {
-      return translations.progress.converting
-        .replace("{{current}}", progress.current.toString())
-        .replace("{{total}}", progress.total.toString());
-    }
-    if (progress.type === "success" && progress.processed_count !== undefined) {
-      return `${translations.progress.completed} ${translations.progress.imagesProcessed.replace("{{count}}", progress.processed_count.toString())}`;
-    }
-    return progress.message || "";
-  })();
-
   return {
     isProcessing,
-    progress,
-    progressMessage,
-    error,
     convertImages,
-    clearError: () => setError(""),
   };
 }

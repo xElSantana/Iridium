@@ -1,13 +1,13 @@
-import { useState } from "react";
-import { FaCheckCircle, FaSpinner } from "react-icons/fa";
+import { memo, useState } from "react";
 import { FiImage, FiUpload, FiPlus, FiZap, FiX } from "react-icons/fi";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import QualityInput from "./QualityInput.tsx";
 import CustomScrollArea from "./CustomScrollArea.tsx";
 import { formatBytes } from "../utils/format";
+import { SUPPORTED_FORMATS } from "../constants/formats";
 import { useImageConversion } from "../hooks/useImageConversion";
 import { useImageSelection, type ImageFileItem } from "../hooks/useImageSelection";
-
-const FORMATS = ["JPG", "PNG", "WEBP", "AVIF", "BMP", "TIFF"] as const;
 
 interface ImageDropzoneProps {
   translations: {
@@ -25,7 +25,6 @@ interface ImageDropzoneProps {
     selectImagesFailed: string;
     conversionFailed: string;
     unknownError: string;
-    processing: string;
     progress: {
       converting: string;
       completed: string;
@@ -40,12 +39,12 @@ interface ImageItemRowProps {
   loading: "eager" | "lazy";
   labelConvertTo: string;
   labelRemove: string;
-  onUpdateFormat: (format: string) => void;
-  onRemove: () => void;
+  onUpdateFormat: (id: string, format: string) => void;
+  onRemove: (id: string) => void;
   disabled: boolean;
 }
 
-function ImageItemRow({
+const ImageItemRow = memo(function ImageItemRow({
   item,
   loading,
   labelConvertTo,
@@ -72,11 +71,11 @@ function ImageItemRow({
         <span className="text-xs text-gray-400 hidden sm:inline">{labelConvertTo}</span>
         <select
           value={item.format.toLowerCase()}
-          onChange={(e) => onUpdateFormat(e.target.value.toUpperCase())}
+          onChange={(e) => onUpdateFormat(item.id, e.target.value.toUpperCase())}
           disabled={disabled}
           className="format-select text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-500 cursor-pointer text-gray-700"
         >
-          {FORMATS.map((fmt) => (
+          {SUPPORTED_FORMATS.map((fmt) => (
             <option key={fmt} value={fmt.toLowerCase()}>
               {fmt}
             </option>
@@ -84,7 +83,7 @@ function ImageItemRow({
         </select>
         <button
           type="button"
-          onClick={onRemove}
+          onClick={() => onRemove(item.id)}
           disabled={disabled}
           className="btn-remove text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
           title={labelRemove}
@@ -94,7 +93,7 @@ function ImageItemRow({
       </div>
     </div>
   );
-}
+});
 
 export default function ImageDropzone({ translations }: ImageDropzoneProps) {
   const [quality, setQuality] = useState(85);
@@ -108,19 +107,10 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
     removeItem,
     updateItemFormat,
   } = useImageSelection(translations);
-  const {
-    isProcessing,
-    progress,
-    progressMessage,
-    error: conversionError,
-    convertImages,
-    clearError: clearConversionError,
-  } = useImageConversion(selectedItems, quality, translations);
-  const error = selectionError || conversionError;
+  const { isProcessing, convertImages } = useImageConversion(selectedItems, quality, translations);
 
   const handleConvert = () => {
     clearSelectionError();
-    clearConversionError();
     void convertImages();
   };
 
@@ -172,8 +162,8 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
                 loading={index === 0 ? "eager" : "lazy"}
                 labelConvertTo={translations.convertTo}
                 labelRemove={translations.remove}
-                onUpdateFormat={(format) => updateItemFormat(item.id, format)}
-                onRemove={() => removeItem(item.id)}
+                onUpdateFormat={updateItemFormat}
+                onRemove={removeItem}
                 disabled={isProcessing}
               />
             ))}
@@ -209,11 +199,9 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
                 disabled={isProcessing || selectedItems.length === 0}
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-full text-xs font-bold transition-all shadow-sm hover:shadow disabled:cursor-not-allowed cursor-pointer"
               >
-                {isProcessing ? <FaSpinner className="animate-spin" /> : <FiZap size={14} />}
+                <FiZap size={14} />
                 <span>
-                  {isProcessing
-                    ? translations.processing
-                    : translations.convertAll.replace("{{count}}", String(selectedItems.length))}
+                  {translations.convertAll.replace("{{count}}", String(selectedItems.length))}
                 </span>
               </button>
             </div>
@@ -221,46 +209,13 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
         </div>
       )}
 
-      {error && (
+      {selectionError && (
         <p className="mt-4 text-sm text-red-600" role="alert">
-          {error}
+          {selectionError}
         </p>
       )}
 
-      {progress && (
-        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <div className="flex items-start gap-3">
-            {progress.type === "success" ? (
-              <FaCheckCircle className="mt-1 text-xl text-green-600" />
-            ) : (
-              <FaSpinner className="mt-1 animate-spin text-xl text-blue-600" />
-            )}
-            <div className="flex-1">
-              <p className="font-medium text-gray-800">{progressMessage}</p>
-              {progress.type === "success" &&
-                progress.output_folder &&
-                progress.output_folder.split("\n").map((folder) => (
-                  <p key={folder} className="mt-2 break-all text-sm text-gray-600">
-                    {translations.progress.savedIn.replace("{{folder}}", folder)}
-                  </p>
-                ))}
-              {progress.type === "progress" && progress.current !== undefined && progress.total && (
-                <div className="mt-3">
-                  <div className="h-2 w-full rounded-full bg-gray-200">
-                    <div
-                      className="h-2 rounded-full bg-blue-600 transition-all duration-300"
-                      style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {progress.current} / {progress.total}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <ToastContainer position="top-center" />
     </div>
   );
 }
