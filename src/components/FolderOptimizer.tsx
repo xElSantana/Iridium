@@ -33,7 +33,6 @@ interface FolderOptimizerProps {
       value: string;
     };
     progress: {
-      analyzing: string;
       optimizing: string;
       completed: string;
       imagesProcessed: string;
@@ -68,11 +67,8 @@ export default function FolderOptimizer({ translations }: FolderOptimizerProps) 
     listen<ProgressPayload>("image-optimization-progress", (event) => {
       setProgress(event.payload);
 
-      if (event.payload.type === "success") {
-        setIsProcessing(false);
-      } else if (event.payload.type === "error") {
+      if (event.payload.type === "error") {
         setError(event.payload.message || translations.errors.unknownError);
-        setIsProcessing(false);
       }
     }).then((fn) => {
       unlisten = fn;
@@ -125,8 +121,9 @@ export default function FolderOptimizer({ translations }: FolderOptimizerProps) 
         outputFormat,
         quality,
       });
+      setIsProcessing(false);
     } catch {
-      setError(translations.errors.optimizationFailed);
+      setError((currentError) => currentError || translations.errors.optimizationFailed);
       setIsProcessing(false);
     }
   };

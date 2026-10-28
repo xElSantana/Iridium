@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { FiImage, FiUpload, FiPlus, FiSettings, FiZap, FiX } from "react-icons/fi";
+import { FiImage, FiUpload, FiPlus, FiZap, FiX } from "react-icons/fi";
+import QualityInput from "./QualityInput.tsx";
+import CustomScrollArea from "./CustomScrollArea.tsx";
 import { formatBytes, getFileExtension } from "../utils/format";
 
 const FORMATS = ["JPG", "PNG", "WEBP", "AVIF"] as const;
@@ -20,18 +22,16 @@ interface ImageDropzoneProps {
     convertAll: string;
     remove: string;
     addMore: string;
-    qualitySettings: string;
     qualityLabel: string;
-    qualityLevels: {
-      min: string;
-      recommended: string;
-      max: string;
-    };
+    increaseQuality: string;
+    decreaseQuality: string;
+    scrollbarLabel: string;
   };
 }
 
 interface ImageItemRowProps {
   item: ImageFileItem;
+  loading: "eager" | "lazy";
   labelConvertTo: string;
   labelRemove: string;
   onUpdateFormat: (format: string) => void;
@@ -40,6 +40,7 @@ interface ImageItemRowProps {
 
 function ImageItemRow({
   item,
+  loading,
   labelConvertTo,
   labelRemove,
   onUpdateFormat,
@@ -49,7 +50,7 @@ function ImageItemRow({
     <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0 gap-3">
       <div className="flex items-center gap-3.5 min-w-0">
         <div className="size-12 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200">
-          <img src={item.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+          <img src={item.url} alt="" className="w-full h-full object-cover" loading={loading} />
         </div>
         <div className="min-w-0">
           <p className="font-semibold text-sm text-gray-900 truncate" title={item.file.name}>
@@ -90,8 +91,6 @@ function ImageItemRow({
 export default function ImageDropzone({ translations }: ImageDropzoneProps) {
   const [selectedItems, setSelectedItems] = useState<ImageFileItem[]>([]);
   const [globalFormat, setGlobalFormat] = useState<string>("JPG");
-  const [quality, setQuality] = useState<number>(85);
-  const [showSettings, setShowSettings] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
   const itemsRef = useRef<ImageFileItem[]>([]);
@@ -131,24 +130,14 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
     setSelectedItems((prev) => prev.map((item) => (item.id === id ? { ...item, format } : item)));
   };
 
-  // Limpieza de URLs para evitar memory leaks
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      itemsRef.current.forEach((item) => {
-        if (item.url) URL.revokeObjectURL(item.url);
-      });
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
       itemsRef.current.forEach((item) => {
         if (item.url) URL.revokeObjectURL(item.url);
       });
     };
   }, []);
 
-  // Sincronización con el dropdown global de formato
   useEffect(() => {
     const handleFormatChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ format?: string }>;
@@ -223,53 +212,24 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
             isDragging ? "outline-2 outline-green-600" : ""
           }`}
         >
-          {/* Lista de archivos */}
-          <div
-            id="file-list"
-            className="min-h-0 flex-1 space-y-3 divide-y divide-gray-100 overflow-y-auto pr-3 scrollbar-gutter-stable"
+          <CustomScrollArea
+            className="min-h-0 flex-1"
+            contentClassName="divide-y divide-gray-100"
+            label={translations.scrollbarLabel}
           >
-            {selectedItems.map((item) => (
+            {selectedItems.map((item, index) => (
               <ImageItemRow
                 key={item.id}
                 item={item}
+                loading={index === 0 ? "eager" : "lazy"}
                 labelConvertTo={translations.convertTo}
                 labelRemove={translations.remove}
                 onUpdateFormat={(format) => updateItemFormat(item.id, format)}
                 onRemove={() => removeItem(item.id)}
               />
             ))}
-          </div>
+          </CustomScrollArea>
 
-          {/* Panel expandible de ajustes (calidad) */}
-          {showSettings && (
-            <div
-              id="settings-panel"
-              className="my-3 shrink-0 rounded-2xl border border-gray-100 bg-gray-50 p-4"
-            >
-              <div className="mb-1.5 flex items-center justify-between text-xs font-semibold text-gray-700">
-                <span>{translations.qualityLabel}</span>
-                <span id="quality-val" className="font-mono">
-                  {quality}%
-                </span>
-              </div>
-              <input
-                id="quality-slider"
-                type="range"
-                min="1"
-                max="100"
-                value={quality}
-                onChange={(e) => setQuality(Number(e.target.value))}
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-green-600"
-              />
-              <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-                <span>{translations.qualityLevels.min}</span>
-                <span>{translations.qualityLevels.recommended}</span>
-                <span>{translations.qualityLevels.max}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Barra inferior de acciones */}
           <div className="mt-auto flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
             <div className="flex items-center gap-2">
               <label
@@ -281,24 +241,22 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
               </label>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                id="btn-settings"
-                onClick={() => setShowSettings((prev) => !prev)}
-                className="p-2.5 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors cursor-pointer"
-                title={translations.qualitySettings}
-              >
-                <FiSettings size={16} />
-              </button>
+            <QualityInput
+              label={translations.qualityLabel}
+              decreaseLabel={translations.decreaseQuality}
+              increaseLabel={translations.increaseQuality}
+            />
 
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 id="btn-convert-all"
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-full text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer"
               >
                 <FiZap size={14} />
-                <span>{translations.convertAll}</span>
+                <span>
+                  {translations.convertAll.replace("{{count}}", String(selectedItems.length))}
+                </span>
               </button>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { getTranslations } from "../i18n";
 const t = await getTranslations();
 ---
 
-<Layout title={t("site.title")}>
+<Layout>
   <main class="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 py-12">
     <div class="container mx-auto px-4">
       <div class="text-center mb-12">
@@ -34,7 +34,6 @@ const t = await getTranslations();
             value: t("optimizer.quality.value"),
           },
           progress: {
-            analyzing: t("optimizer.progress.analyzing"),
             optimizing: t("optimizer.progress.optimizing"),
             completed: t("optimizer.progress.completed"),
             imagesProcessed: t("optimizer.progress.imagesProcessed"),

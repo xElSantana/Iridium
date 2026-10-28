@@ -14,6 +14,14 @@ struct ProgressPayload {
     processed_count: Option<u32>,
 }
 
+struct TemporaryManifest(std::path::PathBuf);
+
+impl Drop for TemporaryManifest {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
 #[tauri::command]
 async fn select_folder(app: tauri::AppHandle) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
@@ -94,6 +102,20 @@ async fn optimize_images(
     output_format: String,
     quality: u8,
 ) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        optimize_images_blocking(app, image_paths, folder_path, output_format, quality)
+    })
+    .await
+    .map_err(|error| format!("Error ejecutando optimización: {error}"))?
+}
+
+fn optimize_images_blocking(
+    app: tauri::AppHandle,
+    image_paths: Option<Vec<String>>,
+    folder_path: Option<String>,
+    output_format: String,
+    quality: u8,
+) -> Result<String, String> {
     use std::time::{SystemTime, UNIX_EPOCH};
     use tauri::Manager;
 
@@ -114,7 +136,7 @@ async fn optimize_images(
         .join("bin")
         .join("python3");
 
-    let mut temp_manifest_path: Option<std::path::PathBuf> = None;
+    let mut _temp_manifest: Option<TemporaryManifest> = None;
 
     let mut cmd = Command::new(python_bin);
     cmd.arg(python_script);
@@ -123,19 +145,26 @@ async fn optimize_images(
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
-            .as_millis();
-        let manifest_file = std::env::temp_dir().join(format!("iridium_manifest_{}.json", timestamp));
+            .as_nanos();
+        let manifest_file = std::env::temp_dir().join(format!(
+            "iridium_manifest_{}_{}.json",
+            std::process::id(),
+            timestamp
+        ));
         let manifest_content = serde_json::json!({
             "files": paths,
             "output_format": output_format,
             "quality": quality,
         });
+        let manifest_content = serde_json::to_string(&manifest_content)
+            .map_err(|e| e.to_string())?;
+        let manifest_file = TemporaryManifest(manifest_file);
 
-        std::fs::write(&manifest_file, serde_json::to_string(&manifest_content).map_err(|e| e.to_string())?)
+        std::fs::write(&manifest_file.0, manifest_content)
             .map_err(|e| format!("Error creando archivo temporal: {}", e))?;
 
-        cmd.arg(&manifest_file);
-        temp_manifest_path = Some(manifest_file);
+        cmd.arg(&manifest_file.0);
+        _temp_manifest = Some(manifest_file);
     } else if let Some(folder) = folder_path.filter(|f| !f.is_empty()) {
         cmd.arg(&folder)
             .arg(&output_format)
@@ -147,11 +176,12 @@ async fn optimize_images(
     // Ejecutar script Python
     let mut child = cmd
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stderr(Stdio::null())
         .spawn()
         .map_err(|e| format!("Error ejecutando Python: {}", e))?;
 
     let mut result_folder = String::new();
+    let mut process_error = None;
 
     // Leer salida línea por línea
     if let Some(stdout) = child.stdout.take() {
@@ -166,11 +196,10 @@ async fn optimize_images(
 
                     if payload.r#type == "success" {
                         result_folder = payload.output_folder.unwrap_or_default();
-                    } else if payload.r#type == "error" {
-                        if let Some(ref tmp) = temp_manifest_path {
-                            let _ = std::fs::remove_file(tmp);
-                        }
-                        return Err(payload.message.unwrap_or("Error desconocido".to_string()));
+                    } else if payload.r#type == "error" && process_error.is_none() {
+                        process_error = Some(
+                            payload.message.unwrap_or_else(|| "Error desconocido".to_string()),
+                        );
                     }
                 }
             }
@@ -180,12 +209,12 @@ async fn optimize_images(
     // Esperar a que termine el proceso
     let status = child.wait().map_err(|e| format!("Error esperando proceso: {}", e))?;
 
-    if let Some(ref tmp) = temp_manifest_path {
-        let _ = std::fs::remove_file(tmp);
+    if !status.success() {
+        return Err(process_error.unwrap_or_else(|| "El proceso de optimización falló".to_string()));
     }
 
-    if !status.success() {
-        return Err("El proceso de optimización falló".to_string());
+    if let Some(error) = process_error {
+        return Err(error);
     }
 
     Ok(result_folder)

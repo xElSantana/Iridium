@@ -1,7 +1,6 @@
 {
   "site": {
-    "title": "Convertidor de Imágenes | Iridium",
-    "mainNavigation": "Navegación principal"
+    "title": "Convertidor de Imágenes | Iridium"
   },
   "converter": {
     "titlePrefix": "Convertir imagen a",
@@ -10,30 +9,20 @@
   },
   "upload": {
     "addImages": "Añadir imágenes",
-    "selectImages": "Seleccionar imágenes",
-    "selectFolder": "Seleccionar carpeta",
     "dropPrompt": "Arrastra y suelta o",
     "selectFiles": "selecciona archivos",
-    "clear": "Limpiar",
-    "multipleSelected": "{{count}} imágenes seleccionadas",
-    "noImages": "No se seleccionó ninguna imagen",
-    "selectImagesFirst": "Primero añade imágenes o selecciona una carpeta",
     "addMore": "Añadir más",
     "convertTo": "Convertir a",
-    "convertAll": "Optimizar todo",
+    "convertAll": "Convertir ({{count}})",
     "remove": "Eliminar",
-    "qualitySettings": "Ajustes de calidad",
-    "qualityLevels": {
-      "min": "1% (menor peso)",
-      "recommended": "85% (recomendado)",
-      "max": "100% (máxima calidad)"
-    }
+    "increaseQuality": "Aumentar calidad",
+    "decreaseQuality": "Disminuir calidad",
+    "scrollbarLabel": "Desplazamiento de la lista de imágenes"
   },
   "optimizer": {
     "title": "Optimizador de imágenes",
     "selectFolder": "Seleccionar Carpeta",
     "selectedFolder": "Carpeta seleccionada:",
-    "selectImages": "Seleccionar Imágenes",
     "optimize": "Optimizar Imágenes",
     "processing": "Procesando...",
     "selectFolderFirst": "Primero selecciona imágenes o una carpeta",
@@ -49,7 +38,6 @@
       "value": "{{value}}%"
     },
     "progress": {
-      "analyzing": "Analizando imágenes...",
       "optimizing": "Optimizando {{current}} de {{total}}",
       "completed": "¡Completado!",
       "imagesProcessed": "{{count}} imágenes procesadas",
@@ -57,7 +45,6 @@
     },
     "errors": {
       "noFolder": "No se seleccionó ninguna carpeta",
-      "noImages": "No se seleccionó ninguna imagen",
       "optimizationFailed": "Error durante la optimización",
       "unknownError": "Error desconocido",
       "loadPreviewFailed": "No se pudieron cargar las miniaturas"
