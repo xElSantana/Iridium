@@ -1,5 +1,6 @@
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
+use tauri::webview::PageLoadEvent;
 use tauri::Emitter;
 use serde::{Deserialize, Serialize};
 
@@ -202,6 +203,18 @@ pub fn run() {
             .build(),
         )?;
       }
+
+            let window_config = &app.config().app.windows[0];
+            tauri::WebviewWindowBuilder::from_config(app, window_config)?
+                .on_page_load(|window, payload| {
+                    if payload.event() == PageLoadEvent::Finished {
+                        if let Err(error) = window.show() {
+                            log::error!("No se pudo mostrar la ventana principal: {error}");
+                        }
+                    }
+                })
+                .build()?;
+
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![select_folder, select_images, optimize_images, list_folder_images])

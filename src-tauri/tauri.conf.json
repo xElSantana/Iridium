@@ -15,6 +15,9 @@
         "title": "Iridium",
         "width": 800,
         "height": 600,
+        "create": false,
+        "visible": false,
+        "backgroundColor": "#ffffff",
         "resizable": true,
         "fullscreen": false
       }
