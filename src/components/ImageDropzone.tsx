@@ -214,7 +214,7 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
         >
           <CustomScrollArea
             className="min-h-0 flex-1"
-            contentClassName="divide-y divide-gray-100"
+            contentClassName="divide-y divide-gray-100 pb-3"
             label={translations.scrollbarLabel}
           >
             {selectedItems.map((item, index) => (
