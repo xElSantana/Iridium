@@ -14,6 +14,18 @@ const MAX_DECODE_BYTES: u64 = 384 * 1024 * 1024;
 pub(super) const SUPPORTED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "webp", "avif", "bmp", "tiff", "gif"];
 
 #[derive(Clone, Serialize)]
+pub(super) struct OptimizedItem {
+    pub source_path: String,
+    pub output_size: u64,
+}
+
+#[derive(Clone, Serialize)]
+pub(super) struct OptimizeImagesResult {
+    pub output_folder: String,
+    pub items: Vec<OptimizedItem>,
+}
+
+#[derive(Clone, Serialize)]
 struct ProgressPayload {
     r#type: String,
     current: Option<u32>,
@@ -21,6 +33,8 @@ struct ProgressPayload {
     message: Option<String>,
     output_folder: Option<String>,
     processed_count: Option<u32>,
+    source_path: Option<String>,
+    output_size: Option<u64>,
 }
 
 pub(super) fn optimize_images_blocking(
@@ -29,7 +43,7 @@ pub(super) fn optimize_images_blocking(
     folder_path: Option<String>,
     output_format: String,
     quality: u8,
-) -> Result<String, String> {
+) -> Result<OptimizeImagesResult, String> {
     if !(1..=100).contains(&quality) {
         return Err("La calidad debe estar entre 1 y 100".to_string());
     }
@@ -76,6 +90,8 @@ pub(super) fn optimize_images_blocking(
             message: Some(format!("Iniciando optimización de {total} imágenes...")),
             output_folder: None,
             processed_count: None,
+            source_path: None,
+            output_size: None,
         },
     );
 
@@ -84,6 +100,7 @@ pub(super) fn optimize_images_blocking(
         .unwrap_or(4);
     let worker_count = available.clamp(1, 8).min(images.len());
 
+    let results = std::sync::Mutex::new(Vec::new());
     let next_index = AtomicUsize::new(0);
     let completed_count = AtomicU32::new(0);
     let processed_count = AtomicU32::new(0);
@@ -107,9 +124,18 @@ pub(super) fn optimize_images_blocking(
                         .unwrap_or("imagen");
 
                     match process_image(image_path, &output_folder, format, quality) {
-                        Ok(()) => {
+                        Ok(output_size) => {
                             processed_count.fetch_add(1, Ordering::Relaxed);
                             let current = completed_count.fetch_add(1, Ordering::Relaxed) + 1;
+                            let source_path_str = image_path.to_string_lossy().into_owned();
+
+                            if let Ok(mut list) = results.lock() {
+                                list.push(OptimizedItem {
+                                    source_path: source_path_str.clone(),
+                                    output_size,
+                                });
+                            }
+
                             emit_progress(
                                 &app,
                                 ProgressPayload {
@@ -119,6 +145,8 @@ pub(super) fn optimize_images_blocking(
                                     message: Some(format!("Optimizando: {name}")),
                                     output_folder: None,
                                     processed_count: None,
+                                    source_path: Some(source_path_str),
+                                    output_size: Some(output_size),
                                 },
                             );
                         }
@@ -134,6 +162,8 @@ pub(super) fn optimize_images_blocking(
                                     message: Some(format!("No se pudo procesar {name}: {error}")),
                                     output_folder: None,
                                     processed_count: None,
+                                    source_path: None,
+                                    output_size: None,
                                 },
                             );
                         }
@@ -157,12 +187,15 @@ pub(super) fn optimize_images_blocking(
                 message: Some(message.clone()),
                 output_folder: None,
                 processed_count: None,
+                source_path: None,
+                output_size: None,
             },
         );
         return Err(message);
     }
 
     let output_folder = output_folder.to_string_lossy().into_owned();
+    let items = results.into_inner().unwrap_or_default();
     emit_progress(
         &app,
         ProgressPayload {
@@ -172,9 +205,14 @@ pub(super) fn optimize_images_blocking(
             message: None,
             output_folder: Some(output_folder.clone()),
             processed_count: Some(processed),
+            source_path: None,
+            output_size: None,
         },
     );
-    Ok(output_folder)
+    Ok(OptimizeImagesResult {
+        output_folder,
+        items,
+    })
 }
 
 #[derive(Clone, Copy)]
@@ -256,7 +294,7 @@ fn process_image(
     output_folder: &Path,
     format: OutputFormat,
     quality: u8,
-) -> Result<(), String> {
+) -> Result<u64, String> {
     let metadata = fs::metadata(source).map_err(|_| "El archivo no se pudo abrir".to_string())?;
     if metadata.len() > MAX_FILE_BYTES {
         return Err("El archivo supera el tamaño máximo permitido".to_string());
@@ -278,11 +316,16 @@ fn process_image(
         .unwrap_or("imagen");
     let (destination, mut writer) = create_output_file(output_folder, stem, format.extension())?;
     let encoded = encode_image(image, &mut writer, format, quality);
-    if encoded.is_err() {
+    if let Err(err) = encoded {
         drop(writer);
         let _ = fs::remove_file(destination);
+        return Err(err);
     }
-    encoded
+    drop(writer);
+    let output_size = fs::metadata(&destination)
+        .map(|m| m.len())
+        .unwrap_or(0);
+    Ok(output_size)
 }
 
 fn decode_image(path: &Path) -> Result<DynamicImage, String> {
@@ -521,4 +564,58 @@ fn flatten_on_white(image: DynamicImage) -> image::RgbImage {
 
 fn emit_progress(app: &tauri::AppHandle, payload: ProgressPayload) {
     let _ = app.emit("image-optimization-progress", payload);
+}
+
+pub(super) fn generate_thumbnail(path: &str) -> Result<String, String> {
+    let source_path = Path::new(path);
+    if !source_path.is_file() {
+        return Err("El archivo no existe".to_string());
+    }
+
+    let metadata = fs::metadata(source_path).map_err(|_| "No se pudo leer el archivo".to_string())?;
+    if metadata.len() > MAX_FILE_BYTES {
+        return Err("El archivo supera el tamaño máximo permitido".to_string());
+    }
+
+    let image = if source_path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("avif"))
+    {
+        decode_avif(source_path)?
+    } else {
+        decode_image(source_path)?
+    };
+
+    let thumb = image.thumbnail(96, 96);
+    let rgba = thumb.into_rgba8();
+    let encoded = webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height())
+        .encode(75.0);
+
+    let b64 = base64_encode(&encoded);
+    Ok(format!("data:image/webp;base64,{b64}"))
+}
+
+fn base64_encode(data: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut result = String::with_capacity((data.len() + 2) / 3 * 4);
+    for chunk in data.chunks(3) {
+        let b0 = chunk[0];
+        let b1 = if chunk.len() > 1 { chunk[1] } else { 0 };
+        let b2 = if chunk.len() > 2 { chunk[2] } else { 0 };
+
+        result.push(TABLE[(b0 >> 2) as usize] as char);
+        result.push(TABLE[(((b0 & 0x03) << 4) | (b1 >> 4)) as usize] as char);
+        if chunk.len() > 1 {
+            result.push(TABLE[(((b1 & 0x0f) << 2) | (b2 >> 6)) as usize] as char);
+        } else {
+            result.push('=');
+        }
+        if chunk.len() > 2 {
+            result.push(TABLE[(b2 & 0x3f) as usize] as char);
+        } else {
+            result.push('=');
+        }
+    }
+    result
 }

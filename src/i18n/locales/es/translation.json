@@ -23,7 +23,10 @@
     "errors": {
       "selectImagesFailed": "No se pudieron seleccionar las imágenes",
       "conversionFailed": "Error al transformar las imágenes",
-      "unknownError": "Error desconocido"
+      "unknownError": "Error desconocido",
+      "selectedImage": "imagen seleccionada",
+      "selectedFile": "imagen",
+      "selectedFolder": "carpeta seleccionada"
     },
     "progress": {
       "converting": "Transformando {{current}} de {{total}}",

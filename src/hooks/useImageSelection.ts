@@ -10,6 +10,7 @@ export interface ImageFileItem {
   url: string;
   format: string;
   size: number;
+  outputSize?: number;
 }
 
 interface ImageSelectionTranslations {
@@ -34,19 +35,25 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
     const uniqueIncoming = [...new Set(filtered)].filter((p) => !knownPaths.has(p));
     if (uniqueIncoming.length === 0) return;
 
-    const newItems = await Promise.all(
-      uniqueIncoming.map(async (path) => {
-        const size = await invoke<number>("get_file_size", { path }).catch(() => 0);
-        return {
-          id: crypto.randomUUID(),
-          path,
-          name: path.split(/[/\\]/).pop() || path,
-          url: convertFileSrc(path),
-          format: globalFormat,
-          size,
-        };
-      }),
+    const metadataList = await invoke<Array<{ path: string; name: string; size: number }>>(
+      "get_images_metadata",
+      { paths: uniqueIncoming },
+    ).catch(() =>
+      uniqueIncoming.map((path) => ({
+        path,
+        name: path.split(/[/\\]/).pop() || path,
+        size: 0,
+      })),
     );
+
+    const newItems = metadataList.map((meta) => ({
+      id: crypto.randomUUID(),
+      path: meta.path,
+      name: meta.name,
+      url: convertFileSrc(meta.path),
+      format: globalFormat,
+      size: meta.size,
+    }));
 
     setSelectedItems((previous) => [...previous, ...newItems]);
     setError("");
@@ -71,6 +78,12 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
   const updateItemFormat = useCallback((id: string, format: string) => {
     setSelectedItems((previous) =>
       previous.map((item) => (item.id === id ? { ...item, format } : item)),
+    );
+  }, []);
+
+  const updateItemOutputSize = useCallback((path: string, outputSize: number) => {
+    setSelectedItems((previous) =>
+      previous.map((item) => (item.path === path ? { ...item, outputSize } : item)),
     );
   }, []);
 
@@ -141,5 +154,6 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
     selectImages,
     removeItem,
     updateItemFormat,
+    updateItemOutputSize,
   };
 }

@@ -1,13 +1,46 @@
+use serde::Serialize;
 use tauri::{webview::PageLoadEvent, Manager};
 mod image_optimizer;
 
 use image_optimizer::SUPPORTED_EXTENSIONS;
+
+#[derive(Serialize)]
+struct ImageMetadata {
+    path: String,
+    name: String,
+    size: u64,
+}
 
 #[tauri::command]
 fn get_file_size(path: String) -> Result<u64, String> {
     std::fs::metadata(&path)
         .map(|m| m.len())
         .map_err(|_| "No se pudo leer el tamaño del archivo".to_string())
+}
+
+#[tauri::command]
+fn get_images_metadata(paths: Vec<String>) -> Vec<ImageMetadata> {
+    paths
+        .into_iter()
+        .map(|path| {
+            let path_obj = std::path::Path::new(&path);
+            let name = path_obj
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("imagen")
+                .to_string();
+            let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+            ImageMetadata { path, name, size }
+        })
+        .collect()
+}
+
+#[tauri::command]
+async fn get_image_thumbnail(path: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || image_optimizer::generate_thumbnail(&path))
+        .await
+        .map_err(|e| e.to_string())
+        .and_then(|r| r)
 }
 
 #[tauri::command]
@@ -94,7 +127,7 @@ async fn optimize_images(
     folder_path: Option<String>,
     output_format: String,
     quality: u8,
-) -> Result<String, String> {
+) -> Result<image_optimizer::OptimizeImagesResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
         image_optimizer::optimize_images_blocking(app, image_paths, folder_path, output_format, quality)
     })
@@ -134,7 +167,9 @@ pub fn run() {
             select_images,
             optimize_images,
             list_folder_images,
-            get_file_size
+            get_file_size,
+            get_images_metadata,
+            get_image_thumbnail
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

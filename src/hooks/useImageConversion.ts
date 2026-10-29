@@ -10,8 +10,16 @@ interface ProgressPayload {
   total?: number;
 }
 
+interface OptimizeImagesResult {
+  output_folder: string;
+  items: Array<{ source_path: string; output_size: number }>;
+}
+
 interface ImageConversionTranslations {
   conversionFailed: string;
+  selectedImage: string;
+  selectedFile: string;
+  selectedFolder: string;
   progress: {
     converting: string;
     completed: string;
@@ -22,12 +30,18 @@ export function useImageConversion(
   selectedItems: ImageFileItem[],
   quality: number,
   translations: ImageConversionTranslations,
+  onItemConverted: (path: string, outputSize: number) => void,
 ) {
   const [isProcessing, setIsProcessing] = useState(false);
   const unlistenProgressRef = useRef<UnlistenFn | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       unlistenProgressRef.current?.();
       unlistenProgressRef.current = null;
     };
@@ -56,6 +70,35 @@ export function useImageConversion(
     );
 
     let progressOffset = 0;
+    let lastToastUpdate = 0;
+    let pendingCurrent = 0;
+
+    const updateToastProgress = (current: number) => {
+      pendingCurrent = current;
+      const now = performance.now();
+      if (now - lastToastUpdate >= 80 || current >= totalImages) {
+        lastToastUpdate = now;
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
+        toast.update(toastId, {
+          render: translations.progress.converting
+            .replace("{{current}}", String(current))
+            .replace("{{total}}", String(totalImages)),
+        });
+      } else if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(() => {
+          rafIdRef.current = null;
+          lastToastUpdate = performance.now();
+          toast.update(toastId, {
+            render: translations.progress.converting
+              .replace("{{current}}", String(pendingCurrent))
+              .replace("{{total}}", String(totalImages)),
+          });
+        });
+      }
+    };
 
     try {
       unlistenProgressRef.current = await listen<ProgressPayload>(
@@ -63,11 +106,7 @@ export function useImageConversion(
         (event) => {
           if (event.payload.type === "progress" && event.payload.current !== undefined) {
             const current = Math.min(progressOffset + event.payload.current, totalImages);
-            toast.update(toastId, {
-              render: translations.progress.converting
-                .replace("{{current}}", String(current))
-                .replace("{{total}}", String(totalImages)),
-            });
+            updateToastProgress(current);
           }
         },
       );
@@ -75,12 +114,20 @@ export function useImageConversion(
       let completed = 0;
       for (const group of groups.values()) {
         progressOffset = completed;
-        await invoke("optimize_images", {
+        const result = await invoke<OptimizeImagesResult>("optimize_images", {
           imagePaths: group.paths,
           outputFormat: group.format,
           quality,
         });
+        for (const item of result.items) {
+          onItemConverted(item.source_path, item.output_size);
+        }
         completed += group.paths.length;
+      }
+
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
       }
 
       toast.update(toastId, {
@@ -98,11 +145,11 @@ export function useImageConversion(
       for (const item of selectedItems) {
         const separator = Math.max(item.path.lastIndexOf("/"), item.path.lastIndexOf("\\"));
         uniqueDirectories.add(item.path.slice(0, separator));
-        message = message.replaceAll(item.path, "imagen seleccionada");
-        message = message.replaceAll(item.name, "imagen");
+        message = message.replaceAll(item.path, translations.selectedImage);
+        message = message.replaceAll(item.name, translations.selectedFile);
       }
       for (const directory of uniqueDirectories) {
-        message = message.replaceAll(directory, "carpeta seleccionada");
+        message = message.replaceAll(directory, translations.selectedFolder);
       }
 
       toast.update(toastId, {
@@ -113,6 +160,10 @@ export function useImageConversion(
         closeButton: true,
       });
     } finally {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       unlistenProgressRef.current?.();
       unlistenProgressRef.current = null;
       setIsProcessing(false);

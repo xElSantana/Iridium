@@ -1,4 +1,5 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { FiImage, FiUpload, FiPlus, FiX } from "react-icons/fi";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -26,6 +27,9 @@ interface ImageDropzoneProps {
     selectImagesFailed: string;
     conversionFailed: string;
     unknownError: string;
+    selectedImage: string;
+    selectedFile: string;
+    selectedFolder: string;
     progress: {
       converting: string;
       completed: string;
@@ -35,7 +39,6 @@ interface ImageDropzoneProps {
 
 interface ImageItemRowProps {
   item: ImageFileItem;
-  loading: "eager" | "lazy";
   labelConvertTo: string;
   labelRemove: string;
   onUpdateFormat: (id: string, format: string) => void;
@@ -43,26 +46,83 @@ interface ImageItemRowProps {
   disabled: boolean;
 }
 
+const thumbnailCache = new Map<string, string>();
+
 const ImageItemRow = memo(function ImageItemRow({
   item,
-  loading,
   labelConvertTo,
   labelRemove,
   onUpdateFormat,
   onRemove,
   disabled,
 }: ImageItemRowProps) {
+  const [thumbSrc, setThumbSrc] = useState<string>(() => thumbnailCache.get(item.path) ?? "");
+
+  useEffect(() => {
+    if (thumbnailCache.has(item.path)) {
+      setThumbSrc(thumbnailCache.get(item.path)!);
+      return;
+    }
+
+    let active = true;
+    invoke<string>("get_image_thumbnail", { path: item.path })
+      .then((dataUrl) => {
+        thumbnailCache.set(item.path, dataUrl);
+        if (active) setThumbSrc(dataUrl);
+      })
+      .catch(() => {
+        thumbnailCache.set(item.path, item.url);
+        if (active) setThumbSrc(item.url);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [item.path, item.url]);
+
   return (
     <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0 gap-3">
       <div className="flex items-center gap-3.5 min-w-0">
         <div className="size-12 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200">
-          <img src={item.url} alt="" className="w-full h-full object-cover" loading={loading} />
+          {thumbSrc ? (
+            <img
+              src={thumbSrc}
+              alt=""
+              className="w-full h-full object-cover"
+              decoding="async"
+              onError={() => {
+                if (thumbSrc !== item.url) {
+                  setThumbSrc(item.url);
+                }
+              }}
+            />
+          ) : (
+            <FiImage className="text-gray-400" size={20} />
+          )}
         </div>
         <div className="min-w-0">
           <p className="font-semibold text-sm text-gray-900 truncate" title={item.name}>
             {item.name}
           </p>
-          <p className="text-xs text-gray-400 font-medium">{formatBytes(item.size)}</p>
+          <p className="text-xs text-gray-400 font-medium">
+            {item.outputSize !== undefined ? (
+              <>
+                <span>{formatBytes(item.size)}</span>
+                <span className="mx-1">→</span>
+                <span
+                  className={
+                    item.outputSize > item.size
+                      ? "text-amber-500 font-semibold"
+                      : "text-green-600 font-semibold"
+                  }
+                >
+                  {formatBytes(item.outputSize)}
+                </span>
+              </>
+            ) : (
+              formatBytes(item.size)
+            )}
+          </p>
         </div>
       </div>
 
@@ -101,8 +161,14 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
     selectImages,
     removeItem,
     updateItemFormat,
+    updateItemOutputSize,
   } = useImageSelection(translations);
-  const { isProcessing, convertImages } = useImageConversion(selectedItems, quality, translations);
+  const { isProcessing, convertImages } = useImageConversion(
+    selectedItems,
+    quality,
+    translations,
+    updateItemOutputSize,
+  );
 
   const handleConvert = () => {
     clearSelectionError();
@@ -150,11 +216,10 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
             contentClassName="divide-y divide-gray-100 pb-3"
             label={translations.scrollbarLabel}
           >
-            {selectedItems.map((item, index) => (
+            {selectedItems.map((item) => (
               <ImageItemRow
                 key={item.id}
                 item={item}
-                loading={index === 0 ? "eager" : "lazy"}
                 labelConvertTo={translations.convertTo}
                 labelRemove={translations.remove}
                 onUpdateFormat={updateItemFormat}
