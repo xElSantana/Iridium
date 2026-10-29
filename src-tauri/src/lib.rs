@@ -1,4 +1,4 @@
-use tauri::webview::PageLoadEvent;
+use tauri::{webview::PageLoadEvent, Manager};
 mod image_optimizer;
 
 use image_optimizer::SUPPORTED_EXTENSIONS;
@@ -11,14 +11,19 @@ fn get_file_size(path: String) -> Result<u64, String> {
 }
 
 #[tauri::command]
-async fn select_folder(app: tauri::AppHandle) -> Result<String, String> {
+async fn select_folder(window: tauri::WebviewWindow) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
 
-    let folder = app
+    let folder = window
         .dialog()
         .file()
+        .set_parent(&window)
         .set_title("Selecciona la carpeta con imágenes")
         .blocking_pick_folder();
+
+    if let Some(icon) = window.app_handle().default_window_icon() {
+        let _ = window.set_icon(icon.clone());
+    }
 
     match folder {
         Some(path) => Ok(path.to_string()),
@@ -58,15 +63,20 @@ fn list_folder_images(folder_path: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-async fn select_images(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+async fn select_images(window: tauri::WebviewWindow) -> Result<Vec<String>, String> {
     use tauri_plugin_dialog::DialogExt;
 
-    let files = app
+    let files = window
         .dialog()
         .file()
+        .set_parent(&window)
         .set_title("Selecciona imágenes")
         .add_filter("Imágenes", SUPPORTED_EXTENSIONS)
         .blocking_pick_files();
+
+    if let Some(icon) = window.app_handle().default_window_icon() {
+        let _ = window.set_icon(icon.clone());
+    }
 
     match files {
         Some(file_list) => {
