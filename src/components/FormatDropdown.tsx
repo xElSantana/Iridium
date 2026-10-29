@@ -3,12 +3,12 @@ import { createPortal } from "react-dom";
 import { FiCheck, FiChevronDown } from "react-icons/fi";
 import { SUPPORTED_FORMATS } from "../constants/formats";
 import { readOutputFormat } from "../utils/converterPreferences";
+import { useClientTranslations } from "../hooks/useClientTranslations";
 
 interface FormatDropdownProps {
   formats?: readonly string[];
   value?: string;
   defaultValue?: string;
-  label: string;
   variant?: "header" | "compact";
   disabled?: boolean;
   broadcastFormatChange?: boolean;
@@ -26,12 +26,13 @@ export default function FormatDropdown({
   formats = SUPPORTED_FORMATS,
   value,
   defaultValue = "JPG",
-  label,
   variant = "header",
   disabled = false,
   broadcastFormatChange = false,
   onChange,
 }: FormatDropdownProps) {
+  const { t } = useClientTranslations();
+  const label = t("converter.selectFormat");
   const [internalValue, setInternalValue] = useState(() => {
     if (!broadcastFormatChange || typeof window === "undefined") return defaultValue;
     return readOutputFormat() ?? defaultValue;

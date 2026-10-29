@@ -11,33 +11,7 @@ import { SUPPORTED_FORMATS } from "../constants/formats";
 import { useImageConversion } from "../hooks/useImageConversion";
 import { useImageSelection, type ImageFileItem } from "../hooks/useImageSelection";
 import { readImageQuality, saveImageQuality } from "../utils/converterPreferences";
-
-interface ImageDropzoneProps {
-  translations: {
-    addImages: string;
-    dropPrompt: string;
-    selectFiles: string;
-    convertTo: string;
-    convertAll: string;
-    remove: string;
-    addMore: string;
-    clear: string;
-    qualityLabel: string;
-    increaseQuality: string;
-    decreaseQuality: string;
-    scrollbarLabel: string;
-    selectImagesFailed: string;
-    conversionFailed: string;
-    unknownError: string;
-    selectedImage: string;
-    selectedFile: string;
-    selectedFolder: string;
-    progress: {
-      converting: string;
-      completed: string;
-    };
-  };
-}
+import { useClientTranslations } from "../hooks/useClientTranslations";
 
 interface ImageItemRowProps {
   item: ImageFileItem;
@@ -133,7 +107,6 @@ const ImageItemRow = memo(function ImageItemRow({
         <FormatDropdown
           value={item.format}
           formats={SUPPORTED_FORMATS}
-          label={labelConvertTo}
           variant="compact"
           onChange={(format) => onUpdateFormat(item.id, format)}
           disabled={disabled}
@@ -152,9 +125,36 @@ const ImageItemRow = memo(function ImageItemRow({
   );
 });
 
-export default function ImageDropzone({ translations }: ImageDropzoneProps) {
+export default function ImageDropzone() {
+  const { t } = useClientTranslations();
   const [quality, setQuality] = useState(60);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+
+  const translations = {
+    addImages: t("upload.addImages"),
+    dropPrompt: t("upload.dropPrompt"),
+    selectFiles: t("upload.selectFiles"),
+    convertTo: t("upload.convertTo"),
+    convertAll: t("upload.convertAll"),
+    remove: t("upload.remove"),
+    addMore: t("upload.addMore"),
+    clear: t("upload.clear"),
+    qualityLabel: t("upload.qualityLabel"),
+    increaseQuality: t("upload.increaseQuality"),
+    decreaseQuality: t("upload.decreaseQuality"),
+    scrollbarLabel: t("upload.scrollbarLabel"),
+    selectImagesFailed: t("upload.errors.selectImagesFailed"),
+    conversionFailed: t("upload.errors.conversionFailed"),
+    unknownError: t("upload.errors.unknownError"),
+    selectedImage: t("upload.errors.selectedImage"),
+    selectedFile: t("upload.errors.selectedFile"),
+    selectedFolder: t("upload.errors.selectedFolder"),
+    progress: {
+      converting: t("upload.progress.converting"),
+      completed: t("upload.progress.completed"),
+    },
+  };
+
   const {
     dropzoneRef,
     selectedItems,

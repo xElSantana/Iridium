@@ -1,35 +1,5 @@
 ---
 import ImageDropzone from "./ImageDropzone";
-import { getTranslations, resolveLanguage } from "../i18n";
-
-const language = resolveLanguage(Astro.cookies.get("iridium-language")?.value, Astro.url);
-const t = await getTranslations(language);
 ---
 
-<ImageDropzone
-  client:load
-  translations={{
-    addImages: t("upload.addImages"),
-    dropPrompt: t("upload.dropPrompt"),
-    selectFiles: t("upload.selectFiles"),
-    convertTo: t("upload.convertTo"),
-    convertAll: t("upload.convertAll"),
-    remove: t("upload.remove"),
-    addMore: t("upload.addMore"),
-    clear: t("upload.clear"),
-    qualityLabel: t("upload.qualityLabel"),
-    increaseQuality: t("upload.increaseQuality"),
-    decreaseQuality: t("upload.decreaseQuality"),
-    scrollbarLabel: t("upload.scrollbarLabel"),
-    selectImagesFailed: t("upload.errors.selectImagesFailed"),
-    conversionFailed: t("upload.errors.conversionFailed"),
-    unknownError: t("upload.errors.unknownError"),
-    selectedImage: t("upload.errors.selectedImage"),
-    selectedFile: t("upload.errors.selectedFile"),
-    selectedFolder: t("upload.errors.selectedFolder"),
-    progress: {
-      converting: t("upload.progress.converting"),
-      completed: t("upload.progress.completed"),
-    },
-  }}
-/>
+<ImageDropzone client:load />

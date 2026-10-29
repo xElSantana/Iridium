@@ -1,35 +1,80 @@
 ---
 import "../styles/global.css";
-import { getTranslations, resolveLanguage } from "../i18n";
 import CustomTitleBar from "../components/CustomTitleBar.astro";
 
-const language = resolveLanguage(Astro.cookies.get("iridium-language")?.value, Astro.url);
-const t = await getTranslations(language);
+import esTranslations from "../i18n/locales/es/translation.json";
+import enTranslations from "../i18n/locales/en/translation.json";
+
+const translations = {
+  es: esTranslations,
+  en: enTranslations,
+};
 ---
 
 <!doctype html>
-<html lang={language}>
+<html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/png" href="/icon.png" />
     <meta name="generator" content={Astro.generator} />
-    <title>{t("site.title")}</title>
-    <script is:inline>
+    <title id="page-title">{esTranslations.site.title}</title>
+    <script is:inline define:vars={{ translations }}>
+      window.__TRANSLATIONS__ = translations;
+
+      function getTranslation(key, lang) {
+        const keys = key.split(".");
+        let value = translations[lang];
+        for (const k of keys) {
+          if (value && typeof value === "object") {
+            value = value[k];
+          } else {
+            return key;
+          }
+        }
+        return value || key;
+      }
+
+      function updatePageLanguage(language) {
+        document.documentElement.lang = language;
+        const titleEl = document.getElementById("page-title");
+        if (titleEl) titleEl.textContent = getTranslation("site.title", language);
+
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          const key = el.getAttribute("data-i18n");
+          if (key) el.textContent = getTranslation(key, language);
+        });
+
+        document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+          const key = el.getAttribute("data-i18n-aria");
+          if (key) el.setAttribute("aria-label", getTranslation(key, language));
+        });
+      }
+
       const savedTheme = localStorage.getItem("iridium-theme");
       document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
 
-      const currentSearchLanguage = new URLSearchParams(window.location.search).get("lang");
-      const storedLanguage =
-        currentSearchLanguage === "en" || currentSearchLanguage === "es"
-          ? currentSearchLanguage
-          : localStorage.getItem("iridium-language");
+      const urlParams = new URLSearchParams(window.location.search);
+      const langParam = urlParams.get("lang");
+      const storedLanguage = localStorage.getItem("iridium-language");
+      const initialLanguage =
+        langParam === "en" || langParam === "es"
+          ? langParam
+          : storedLanguage === "en" || storedLanguage === "es"
+            ? storedLanguage
+            : "es";
 
-      if (storedLanguage === "en" || storedLanguage === "es") {
-        document.documentElement.lang = storedLanguage;
-        document.cookie = `iridium-language=${storedLanguage}; path=/; max-age=31536000`;
-        localStorage.setItem("iridium-language", storedLanguage);
+      localStorage.setItem("iridium-language", initialLanguage);
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => updatePageLanguage(initialLanguage));
+      } else {
+        updatePageLanguage(initialLanguage);
       }
+
+      window.updatePageLanguage = updatePageLanguage;
+      window.getTranslation = getTranslation;
+      window.getCurrentLanguage = () => localStorage.getItem("iridium-language") || "es";
     </script>
   </head>
   <body class="min-h-screen min-w-80 bg-surface font-sans text-foreground antialiased">

@@ -1,10 +1,7 @@
 ---
-import { getTranslations, resolveLanguage } from "../i18n";
+import esTranslations from "../i18n/locales/es/translation.json";
 import PreferencesMenu from "./PreferencesMenu.astro";
 import { FiMinus, FiSquare, FiX } from "react-icons/fi";
-
-const language = resolveLanguage(Astro.cookies.get("iridium-language")?.value, Astro.url);
-const t = await getTranslations(language);
 ---
 
 <header class="flex h-10 shrink-0 items-center bg-surface-subtle text-sm text-foreground-secondary">
@@ -15,7 +12,8 @@ const t = await getTranslations(language);
   <div class="h-full flex-1" data-tauri-drag-region></div>
   <div class="flex h-full" id="window-controls">
     <button
-      aria-label={t("titleBar.minimize")}
+      aria-label={esTranslations.titleBar.minimize}
+      data-i18n-aria="titleBar.minimize"
       class="flex w-10 cursor-pointer items-center justify-center transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-2 focus-visible:outline-accent"
       data-window-action="minimize"
       type="button"
@@ -23,7 +21,8 @@ const t = await getTranslations(language);
       <FiMinus aria-hidden="true" size={16} />
     </button>
     <button
-      aria-label={t("titleBar.toggleMaximize")}
+      aria-label={esTranslations.titleBar.toggleMaximize}
+      data-i18n-aria="titleBar.toggleMaximize"
       class="flex w-10 cursor-pointer items-center justify-center transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-2 focus-visible:outline-accent"
       data-window-action="toggleMaximize"
       type="button"
@@ -31,7 +30,8 @@ const t = await getTranslations(language);
       <FiSquare aria-hidden="true" size={14} />
     </button>
     <button
-      aria-label={t("titleBar.close")}
+      aria-label={esTranslations.titleBar.close}
+      data-i18n-aria="titleBar.close"
       class="flex w-10 cursor-pointer items-center justify-center transition-colors hover:bg-danger hover:text-on-accent focus-visible:bg-danger focus-visible:text-on-accent focus-visible:outline-2 focus-visible:outline-accent"
       data-window-action="close"
       type="button"
