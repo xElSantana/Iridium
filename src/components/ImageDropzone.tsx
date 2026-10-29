@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { FiImage, FiUpload, FiPlus, FiX } from "react-icons/fi";
+import { FiImage, FiUpload, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import QualityInput from "./QualityInput.tsx";
@@ -20,6 +20,7 @@ interface ImageDropzoneProps {
     convertAll: string;
     remove: string;
     addMore: string;
+    clear: string;
     qualityLabel: string;
     increaseQuality: string;
     decreaseQuality: string;
@@ -151,7 +152,7 @@ const ImageItemRow = memo(function ImageItemRow({
 });
 
 export default function ImageDropzone({ translations }: ImageDropzoneProps) {
-  const [quality, setQuality] = useState(85);
+  const [quality, setQuality] = useState(60);
   const {
     dropzoneRef,
     selectedItems,
@@ -160,6 +161,7 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
     clearError: clearSelectionError,
     selectImages,
     removeItem,
+    clearItems,
     updateItemFormat,
     updateItemOutputSize,
   } = useImageSelection(translations);
@@ -240,18 +242,26 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
                 <FiPlus size={14} />
                 <span>{translations.addMore}</span>
               </button>
+              <button
+                type="button"
+                onClick={clearItems}
+                disabled={isProcessing}
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors"
+              >
+                <FiTrash2 size={14} />
+                <span>{translations.clear}</span>
+              </button>
             </div>
 
-            <QualityInput
-              label={translations.qualityLabel}
-              decreaseLabel={translations.decreaseQuality}
-              increaseLabel={translations.increaseQuality}
-              value={quality}
-              onChange={setQuality}
-              disabled={isProcessing}
-            />
-
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <QualityInput
+                label={translations.qualityLabel}
+                decreaseLabel={translations.decreaseQuality}
+                increaseLabel={translations.increaseQuality}
+                value={quality}
+                onChange={setQuality}
+                disabled={isProcessing}
+              />
               <button
                 type="button"
                 id="btn-convert-all"

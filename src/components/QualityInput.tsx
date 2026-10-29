@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 interface QualityInputProps {
@@ -19,6 +19,50 @@ export default function QualityInput({
   disabled,
 }: QualityInputProps) {
   const [draft, setDraft] = useState(String(value));
+  const valueRef = useRef(value);
+  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const repeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const skipNextClickRef = useRef(false);
+  valueRef.current = value;
+
+  const stopRepeating = () => {
+    if (holdTimeoutRef.current !== null) {
+      clearTimeout(holdTimeoutRef.current);
+      holdTimeoutRef.current = null;
+    }
+    if (repeatIntervalRef.current !== null) {
+      clearInterval(repeatIntervalRef.current);
+      repeatIntervalRef.current = null;
+    }
+  };
+
+  const startRepeating = (change: -1 | 1, pointerId: number, currentTarget: HTMLButtonElement) => {
+    if (disabled) return;
+
+    stopRepeating();
+    skipNextClickRef.current = false;
+    currentTarget.setPointerCapture(pointerId);
+    holdTimeoutRef.current = setTimeout(() => {
+      skipNextClickRef.current = true;
+      const repeat = () => {
+        const nextValue = valueRef.current + change;
+        if (nextValue < 1 || nextValue > 100) {
+          stopRepeating();
+          return;
+        }
+        updateValue(nextValue);
+      };
+      repeat();
+      repeatIntervalRef.current = setInterval(repeat, 100);
+    }, 400);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (holdTimeoutRef.current !== null) clearTimeout(holdTimeoutRef.current);
+      if (repeatIntervalRef.current !== null) clearInterval(repeatIntervalRef.current);
+    };
+  }, []);
 
   const updateValue = (nextValue: number) => {
     const boundedValue = Math.min(100, Math.max(1, nextValue));
@@ -27,14 +71,27 @@ export default function QualityInput({
   };
 
   const handleInputChange = (nextDraft: string) => {
-    setDraft(nextDraft);
-    if (!/^\d+$/.test(nextDraft)) return;
+    if (nextDraft === "") {
+      setDraft("");
+      return;
+    }
 
-    const nextValue = Number(nextDraft);
-    if (nextValue >= 1 && nextValue <= 100) onChange(nextValue);
+    if (!/^\d+$/.test(nextDraft)) {
+      setDraft(String(value));
+      return;
+    }
+
+    const boundedValue = Math.min(100, Math.max(1, Number(nextDraft)));
+    setDraft(String(boundedValue));
+    onChange(boundedValue);
   };
 
   const handleBlur = () => {
+    if (draft === "") {
+      updateValue(value);
+      return;
+    }
+
     const parsedValue = Number(draft);
     updateValue(Number.isFinite(parsedValue) ? parsedValue : value);
   };
@@ -49,7 +106,20 @@ export default function QualityInput({
           type="button"
           aria-label={decreaseLabel}
           disabled={disabled || value <= 1}
-          onClick={() => updateValue(value - 1)}
+          onPointerDown={(event) => startRepeating(-1, event.pointerId, event.currentTarget)}
+          onPointerUp={stopRepeating}
+          onPointerCancel={() => {
+            stopRepeating();
+            skipNextClickRef.current = false;
+          }}
+          onLostPointerCapture={stopRepeating}
+          onClick={(event) => {
+            if (event.detail > 0 && skipNextClickRef.current) {
+              skipNextClickRef.current = false;
+              return;
+            }
+            updateValue(value - 1);
+          }}
           className="grid size-6 cursor-pointer place-items-center rounded-l-md text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
         >
           <FiChevronLeft aria-hidden="true" size={14} />
@@ -78,7 +148,20 @@ export default function QualityInput({
           type="button"
           aria-label={increaseLabel}
           disabled={disabled || value >= 100}
-          onClick={() => updateValue(value + 1)}
+          onPointerDown={(event) => startRepeating(1, event.pointerId, event.currentTarget)}
+          onPointerUp={stopRepeating}
+          onPointerCancel={() => {
+            stopRepeating();
+            skipNextClickRef.current = false;
+          }}
+          onLostPointerCapture={stopRepeating}
+          onClick={(event) => {
+            if (event.detail > 0 && skipNextClickRef.current) {
+              skipNextClickRef.current = false;
+              return;
+            }
+            updateValue(value + 1);
+          }}
           className="grid size-6 cursor-pointer place-items-center rounded-r-md text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
         >
           <FiChevronRight aria-hidden="true" size={14} />

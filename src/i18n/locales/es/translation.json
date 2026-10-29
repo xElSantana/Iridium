@@ -15,6 +15,7 @@
     "convertTo": "Transformar a",
     "convertAll": "Transformar ({{count}})",
     "remove": "Eliminar",
+    "clear": "Limpiar",
     "increaseQuality": "Aumentar calidad",
     "decreaseQuality": "Disminuir calidad",
     "qualityLabel": "Calidad",

@@ -75,6 +75,10 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
     setSelectedItems((previous) => previous.filter((item) => item.id !== id));
   }, []);
 
+  const clearItems = useCallback(() => {
+    setSelectedItems([]);
+  }, []);
+
   const updateItemFormat = useCallback((id: string, format: string) => {
     setSelectedItems((previous) =>
       previous.map((item) => (item.id === id ? { ...item, format } : item)),
@@ -153,6 +157,7 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
     clearError: () => setError(""),
     selectImages,
     removeItem,
+    clearItems,
     updateItemFormat,
     updateItemOutputSize,
   };
