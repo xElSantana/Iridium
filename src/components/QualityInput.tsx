@@ -25,6 +25,10 @@ export default function QualityInput({
   const skipNextClickRef = useRef(false);
   valueRef.current = value;
 
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
   const stopRepeating = () => {
     if (holdTimeoutRef.current !== null) {
       clearTimeout(holdTimeoutRef.current);

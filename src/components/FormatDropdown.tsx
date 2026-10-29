@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { FiCheck, FiChevronDown } from "react-icons/fi";
 import { SUPPORTED_FORMATS } from "../constants/formats";
+import { readOutputFormat } from "../utils/converterPreferences";
 
 interface FormatDropdownProps {
   formats?: readonly string[];
@@ -31,7 +32,10 @@ export default function FormatDropdown({
   broadcastFormatChange = false,
   onChange,
 }: FormatDropdownProps) {
-  const [internalValue, setInternalValue] = useState(defaultValue);
+  const [internalValue, setInternalValue] = useState(() => {
+    if (!broadcastFormatChange || typeof window === "undefined") return defaultValue;
+    return readOutputFormat() ?? defaultValue;
+  });
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState<DropdownCoords | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -168,7 +172,7 @@ export default function FormatDropdown({
         onClick={toggleDropdown}
         className={
           isHeader
-            ? "inline-flex cursor-pointer items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-4xl font-extrabold text-white transition-colors hover:bg-green-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 disabled:cursor-not-allowed disabled:opacity-50 [&[aria-expanded=true]_.chevron-icon]:rotate-180"
+            ? "inline-flex w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-4xl font-extrabold text-white transition-colors hover:bg-green-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 disabled:cursor-not-allowed disabled:opacity-50 [&[aria-expanded=true]_.chevron-icon]:rotate-180"
             : "flex w-full cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-semibold text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
         }
       >

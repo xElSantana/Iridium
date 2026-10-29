@@ -10,6 +10,7 @@ import { formatBytes } from "../utils/format";
 import { SUPPORTED_FORMATS } from "../constants/formats";
 import { useImageConversion } from "../hooks/useImageConversion";
 import { useImageSelection, type ImageFileItem } from "../hooks/useImageSelection";
+import { readImageQuality, saveImageQuality } from "../utils/converterPreferences";
 
 interface ImageDropzoneProps {
   translations: {
@@ -153,6 +154,7 @@ const ImageItemRow = memo(function ImageItemRow({
 
 export default function ImageDropzone({ translations }: ImageDropzoneProps) {
   const [quality, setQuality] = useState(60);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const {
     dropzoneRef,
     selectedItems,
@@ -165,6 +167,17 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
     updateItemFormat,
     updateItemOutputSize,
   } = useImageSelection(translations);
+
+  useEffect(() => {
+    const savedQuality = readImageQuality();
+    if (savedQuality !== null) setQuality(savedQuality);
+    setPreferencesLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (preferencesLoaded) saveImageQuality(quality);
+  }, [preferencesLoaded, quality]);
+
   const { isProcessing, convertImages } = useImageConversion(
     selectedItems,
     quality,

@@ -11,7 +11,13 @@ const t = await getTranslations();
     id="page-title"
   >
     <span>{t("converter.titlePrefix")}</span>
-    <FormatDropdown client:load label={t("converter.selectFormat")} broadcastFormatChange />
+    <FormatDropdown client:only="react" label={t("converter.selectFormat")} broadcastFormatChange>
+      <span
+        slot="fallback"
+        aria-hidden="true"
+        class="inline-flex h-14 w-44 rounded-lg bg-green-600"
+      />
+    </FormatDropdown>
   </h1>
   <p class="mx-auto mb-4 mt-3 max-w-2xl text-base text-gray-600">{t("converter.description")}</p>
 </section>
