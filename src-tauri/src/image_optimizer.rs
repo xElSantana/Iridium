@@ -1,8 +1,9 @@
 use std::fs::{self, File, OpenOptions};
-use std::io::{Cursor, Write};
+use std::io::{BufWriter, Cursor, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU32, AtomicUsize, Ordering};
 
-use image::{DynamicImage, ImageBuffer, ImageEncoder, ImageFormat, ImageReader, Luma, Rgb};
+use image::{DynamicImage, ImageBuffer, ImageEncoder, ImageFormat, ImageReader, Luma};
 use serde::Serialize;
 use tauri::Emitter;
 
@@ -78,47 +79,75 @@ pub(super) fn optimize_images_blocking(
         },
     );
 
-    let mut processed_count = 0;
-    let mut failed_count = 0;
-    for (index, image_path) in images.iter().enumerate() {
-        let current = u32::try_from(index + 1).unwrap_or(total);
-        let name = image_path
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("imagen");
-        emit_progress(
-            &app,
-            ProgressPayload {
-                r#type: "progress".to_string(),
-                current: Some(current),
-                total: Some(total),
-                message: Some(format!("Optimizando: {name}")),
-                output_folder: None,
-                processed_count: None,
-            },
-        );
+    let available = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4);
+    let worker_count = available.clamp(1, 8).min(images.len());
 
-        match process_image(image_path, &output_folder, format, quality) {
-            Ok(()) => processed_count += 1,
-            Err(error) => {
-                failed_count += 1;
-                emit_progress(
-                    &app,
-                    ProgressPayload {
-                        r#type: "error".to_string(),
-                        current: Some(current),
-                        total: Some(total),
-                        message: Some(format!("No se pudo procesar {name}: {error}")),
-                        output_folder: None,
-                        processed_count: None,
-                    },
-                );
-            }
+    let next_index = AtomicUsize::new(0);
+    let completed_count = AtomicU32::new(0);
+    let processed_count = AtomicU32::new(0);
+    let failed_count = AtomicU32::new(0);
+
+    std::thread::scope(|scope| {
+        for _ in 0..worker_count {
+            scope.spawn(|| {
+                while let Some(index) = {
+                    let idx = next_index.fetch_add(1, Ordering::Relaxed);
+                    if idx < images.len() {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                } {
+                    let image_path = &images[index];
+                    let name = image_path
+                        .file_name()
+                        .and_then(|value| value.to_str())
+                        .unwrap_or("imagen");
+
+                    match process_image(image_path, &output_folder, format, quality) {
+                        Ok(()) => {
+                            processed_count.fetch_add(1, Ordering::Relaxed);
+                            let current = completed_count.fetch_add(1, Ordering::Relaxed) + 1;
+                            emit_progress(
+                                &app,
+                                ProgressPayload {
+                                    r#type: "progress".to_string(),
+                                    current: Some(current),
+                                    total: Some(total),
+                                    message: Some(format!("Optimizando: {name}")),
+                                    output_folder: None,
+                                    processed_count: None,
+                                },
+                            );
+                        }
+                        Err(error) => {
+                            failed_count.fetch_add(1, Ordering::Relaxed);
+                            let current = completed_count.fetch_add(1, Ordering::Relaxed) + 1;
+                            emit_progress(
+                                &app,
+                                ProgressPayload {
+                                    r#type: "error".to_string(),
+                                    current: Some(current),
+                                    total: Some(total),
+                                    message: Some(format!("No se pudo procesar {name}: {error}")),
+                                    output_folder: None,
+                                    processed_count: None,
+                                },
+                            );
+                        }
+                    }
+                }
+            });
         }
-    }
+    });
 
-    if failed_count > 0 {
-        let message = format!("No se pudieron procesar {failed_count} de {total} imágenes.");
+    let failed = failed_count.load(Ordering::Relaxed);
+    let processed = processed_count.load(Ordering::Relaxed);
+
+    if failed > 0 {
+        let message = format!("No se pudieron procesar {failed} de {total} imágenes.");
         emit_progress(
             &app,
             ProgressPayload {
@@ -142,7 +171,7 @@ pub(super) fn optimize_images_blocking(
             total: Some(total),
             message: None,
             output_folder: Some(output_folder.clone()),
-            processed_count: Some(processed_count),
+            processed_count: Some(processed),
         },
     );
     Ok(output_folder)
@@ -247,19 +276,16 @@ fn process_image(
         .file_stem()
         .and_then(|value| value.to_str())
         .unwrap_or("imagen");
-    let (destination, mut file) = create_output_file(output_folder, stem, format.extension())?;
-    let encoded = encode_image(image, &mut file, format, quality);
+    let (destination, mut writer) = create_output_file(output_folder, stem, format.extension())?;
+    let encoded = encode_image(image, &mut writer, format, quality);
     if encoded.is_err() {
+        drop(writer);
         let _ = fs::remove_file(destination);
     }
     encoded
 }
 
 fn decode_image(path: &Path) -> Result<DynamicImage, String> {
-    let (width, height) = image::image_dimensions(path)
-        .map_err(|_| "El archivo no se pudo leer como imagen".to_string())?;
-    validate_dimensions(width, height)?;
-
     let mut reader = ImageReader::open(path)
         .map_err(|_| "El archivo no se pudo abrir".to_string())?
         .with_guessed_format()
@@ -269,9 +295,11 @@ fn decode_image(path: &Path) -> Result<DynamicImage, String> {
     limits.max_image_height = Some(MAX_IMAGE_DIMENSION);
     limits.max_alloc = Some(MAX_DECODE_BYTES);
     reader.limits(limits);
-    reader
+    let image = reader
         .decode()
-        .map_err(|_| "No se pudo decodificar la imagen".to_string())
+        .map_err(|_| "No se pudo decodificar la imagen".to_string())?;
+    validate_dimensions(image.width(), image.height())?;
+    Ok(image)
 }
 
 fn decode_avif(path: &Path) -> Result<DynamicImage, String> {
@@ -375,7 +403,7 @@ fn create_output_file(
     output_folder: &Path,
     stem: &str,
     extension: &str,
-) -> Result<(PathBuf, File), String> {
+) -> Result<(PathBuf, BufWriter<File>), String> {
     for suffix in 0..10_000 {
         let name = if suffix == 0 {
             format!("{stem}.{extension}")
@@ -384,7 +412,7 @@ fn create_output_file(
         };
         let path = output_folder.join(name);
         match OpenOptions::new().write(true).create_new(true).open(&path) {
-            Ok(file) => return Ok((path, file)),
+            Ok(file) => return Ok((path, BufWriter::new(file))),
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
             Err(_) => return Err("No se pudo crear el archivo de salida".to_string()),
         }
@@ -394,65 +422,101 @@ fn create_output_file(
 
 fn encode_image(
     image: DynamicImage,
-    file: &mut File,
+    writer: &mut BufWriter<File>,
     format: OutputFormat,
     quality: u8,
 ) -> Result<(), String> {
     match format {
         OutputFormat::Jpeg => {
             let rgb = flatten_on_white(image);
-            image::codecs::jpeg::JpegEncoder::new_with_quality(file, quality)
+            image::codecs::jpeg::JpegEncoder::new_with_quality(&mut *writer, quality)
                 .write_image(
                     rgb.as_raw(),
                     rgb.width(),
                     rgb.height(),
                     image::ExtendedColorType::Rgb8,
                 )
-                .map_err(|_| "No se pudo codificar la imagen JPEG".to_string())
+                .map_err(|_| "No se pudo codificar la imagen JPEG".to_string())?;
         }
-        OutputFormat::Png => image
-            .write_to(file, ImageFormat::Png)
-            .map_err(|_| "No se pudo codificar la imagen PNG".to_string()),
+        OutputFormat::Png => {
+            image
+                .write_to(&mut *writer, ImageFormat::Png)
+                .map_err(|_| "No se pudo codificar la imagen PNG".to_string())?;
+        }
         OutputFormat::Webp => {
-            let rgba = image.to_rgba8();
-            let encoded = webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height())
-                .encode(f32::from(quality));
-            file.write_all(&encoded)
-                .map_err(|_| "No se pudo guardar la imagen WebP".to_string())
+            let encoded = match image {
+                DynamicImage::ImageRgb8(rgb) => {
+                    webp::Encoder::from_rgb(rgb.as_raw(), rgb.width(), rgb.height())
+                        .encode(f32::from(quality))
+                }
+                DynamicImage::ImageLuma8(luma) => {
+                    let rgb = DynamicImage::ImageLuma8(luma).into_rgb8();
+                    webp::Encoder::from_rgb(rgb.as_raw(), rgb.width(), rgb.height())
+                        .encode(f32::from(quality))
+                }
+                other => {
+                    let rgba = other.into_rgba8();
+                    webp::Encoder::from_rgba(rgba.as_raw(), rgba.width(), rgba.height())
+                        .encode(f32::from(quality))
+                }
+            };
+            writer
+                .write_all(&encoded)
+                .map_err(|_| "No se pudo guardar la imagen WebP".to_string())?;
         }
         OutputFormat::Avif => {
-            let rgba = image.to_rgba8();
-            image::codecs::avif::AvifEncoder::new_with_speed_quality(file, 6, quality)
+            let rgba = image.into_rgba8();
+            image::codecs::avif::AvifEncoder::new_with_speed_quality(&mut *writer, 8, quality)
                 .write_image(
                     rgba.as_raw(),
                     rgba.width(),
                     rgba.height(),
                     image::ExtendedColorType::Rgba8,
                 )
-                .map_err(|_| "No se pudo codificar la imagen AVIF".to_string())
+                .map_err(|_| "No se pudo codificar la imagen AVIF".to_string())?;
         }
         OutputFormat::Bmp => {
             let rgb = flatten_on_white(image);
             DynamicImage::ImageRgb8(rgb)
-                .write_to(file, ImageFormat::Bmp)
-                .map_err(|_| "No se pudo codificar la imagen BMP".to_string())
+                .write_to(&mut *writer, ImageFormat::Bmp)
+                .map_err(|_| "No se pudo codificar la imagen BMP".to_string())?;
         }
-        OutputFormat::Tiff => image
-            .write_to(file, ImageFormat::Tiff)
-            .map_err(|_| "No se pudo codificar la imagen TIFF".to_string()),
+        OutputFormat::Tiff => {
+            image
+                .write_to(&mut *writer, ImageFormat::Tiff)
+                .map_err(|_| "No se pudo codificar la imagen TIFF".to_string())?;
+        }
     }
+    writer
+        .flush()
+        .map_err(|_| "No se pudo escribir en el archivo de salida".to_string())
 }
 
 fn flatten_on_white(image: DynamicImage) -> image::RgbImage {
-    let rgba = image.to_rgba8();
-    ImageBuffer::from_fn(rgba.width(), rgba.height(), |x, y| {
-        let pixel = rgba.get_pixel(x, y).0;
-        let alpha = u16::from(pixel[3]);
-        let blend = |channel: u8| {
-            ((u16::from(channel) * alpha + 255 * (255 - alpha) + 127) / 255) as u8
-        };
-        Rgb([blend(pixel[0]), blend(pixel[1]), blend(pixel[2])])
-    })
+    match image {
+        DynamicImage::ImageRgb8(rgb) => rgb,
+        DynamicImage::ImageLuma8(luma) => DynamicImage::ImageLuma8(luma).into_rgb8(),
+        DynamicImage::ImageRgb16(rgb16) => DynamicImage::ImageRgb16(rgb16).into_rgb8(),
+        DynamicImage::ImageLuma16(luma16) => DynamicImage::ImageLuma16(luma16).into_rgb8(),
+        other => {
+            let rgba = other.into_rgba8();
+            let width = rgba.width();
+            let height = rgba.height();
+            let raw = rgba.into_raw();
+            let mut rgb_raw = Vec::with_capacity((width * height * 3) as usize);
+            for chunk in raw.chunks_exact(4) {
+                let alpha = u16::from(chunk[3]);
+                let blend = |channel: u8| -> u8 {
+                    ((u16::from(channel) * alpha + 255 * (255 - alpha) + 127) / 255) as u8
+                };
+                rgb_raw.push(blend(chunk[0]));
+                rgb_raw.push(blend(chunk[1]));
+                rgb_raw.push(blend(chunk[2]));
+            }
+            ImageBuffer::from_raw(width, height, rgb_raw)
+                .unwrap_or_else(|| ImageBuffer::new(width, height))
+        }
+    }
 }
 
 fn emit_progress(app: &tauri::AppHandle, payload: ProgressPayload) {
