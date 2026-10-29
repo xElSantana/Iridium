@@ -1,0 +1,71 @@
+---
+import { getTranslations } from "../i18n";
+import { FiMinus, FiSquare, FiX } from "react-icons/fi";
+
+const t = await getTranslations();
+---
+
+<header class="flex h-10 shrink-0 items-center bg-gray-100 text-sm text-gray-700">
+  <div class="flex h-full flex-1 items-center px-3" data-tauri-drag-region>
+    <img alt="Iridium" class="block h-6 w-6" data-tauri-drag-region src="/icon.png" />
+  </div>
+  <div class="flex h-full" id="window-controls">
+    <button
+      aria-label={t("titleBar.minimize")}
+      class="flex w-10 cursor-pointer items-center justify-center transition-colors hover:bg-gray-200 focus-visible:bg-gray-200 focus-visible:outline-2 focus-visible:outline-green-600"
+      data-window-action="minimize"
+      type="button"
+    >
+      <FiMinus aria-hidden="true" size={16} />
+    </button>
+    <button
+      aria-label={t("titleBar.toggleMaximize")}
+      class="flex w-10 cursor-pointer items-center justify-center transition-colors hover:bg-gray-200 focus-visible:bg-gray-200 focus-visible:outline-2 focus-visible:outline-green-600"
+      data-window-action="toggleMaximize"
+      type="button"
+    >
+      <FiSquare aria-hidden="true" size={14} />
+    </button>
+    <button
+      aria-label={t("titleBar.close")}
+      class="flex w-10 cursor-pointer items-center justify-center transition-colors hover:bg-red-600 hover:text-white focus-visible:bg-red-600 focus-visible:text-white focus-visible:outline-2 focus-visible:outline-green-600"
+      data-window-action="close"
+      type="button"
+    >
+      <FiX aria-hidden="true" size={16} />
+    </button>
+  </div>
+</header>
+
+<script>
+  import { isTauri } from "@tauri-apps/api/core";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
+
+  const controls = document.querySelector<HTMLDivElement>("#window-controls");
+
+  if (controls && !isTauri()) {
+    controls.hidden = true;
+  } else if (controls) {
+    const appWindow = getCurrentWindow();
+
+    controls.querySelectorAll<HTMLButtonElement>("[data-window-action]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        try {
+          switch (button.dataset.windowAction) {
+            case "minimize":
+              await appWindow.minimize();
+              break;
+            case "toggleMaximize":
+              await appWindow.toggleMaximize();
+              break;
+            case "close":
+              await appWindow.close();
+              break;
+          }
+        } catch (error) {
+          console.error("No se pudo ejecutar el control de la ventana:", error);
+        }
+      });
+    });
+  }
+</script>

@@ -19,7 +19,8 @@
         "visible": false,
         "backgroundColor": "#ffffff",
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "decorations": false
       }
     ],
     "security": {

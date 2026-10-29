@@ -2,6 +2,11 @@
   "site": {
     "title": "Transformador de Imágenes | Iridium"
   },
+  "titleBar": {
+    "minimize": "Minimizar ventana",
+    "toggleMaximize": "Maximizar o restaurar ventana",
+    "close": "Cerrar ventana"
+  },
   "converter": {
     "titlePrefix": "Transformar imagen a",
     "selectFormat": "Seleccionar formato de salida",

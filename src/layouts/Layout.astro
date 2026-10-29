@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import { getTranslations } from "../i18n";
+import CustomTitleBar from "../components/CustomTitleBar.astro";
 
 const t = await getTranslations();
 ---
@@ -15,9 +16,12 @@ const t = await getTranslations();
     <title>{t("site.title")}</title>
   </head>
   <body class="min-h-screen min-w-80 bg-white font-sans text-gray-900 antialiased">
-    <div class="flex min-h-screen items-center justify-center">
-      <div class="w-full">
-        <slot />
+    <div class="flex min-h-screen flex-col">
+      <CustomTitleBar />
+      <div class="flex flex-1 items-center justify-center">
+        <div class="w-full">
+          <slot />
+        </div>
       </div>
     </div>
   </body>
