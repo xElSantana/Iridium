@@ -134,7 +134,7 @@ export function useImageConversion(
         render: translations.progress.completed,
         type: "success",
         isLoading: false,
-        autoClose: 5000,
+        autoClose: 2000,
         closeButton: true,
       });
     } catch (reason) {
@@ -156,7 +156,7 @@ export function useImageConversion(
         render: message || translations.conversionFailed,
         type: "error",
         isLoading: false,
-        autoClose: 5000,
+        autoClose: 2000,
         closeButton: true,
       });
     } finally {
