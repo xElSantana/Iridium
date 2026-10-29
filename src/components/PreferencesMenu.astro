@@ -1,0 +1,134 @@
+---
+import { getTranslations } from "../i18n";
+import { FiCheck, FiChevronRight } from "react-icons/fi";
+
+const t = await getTranslations();
+const themeOptions = [
+  { value: "light", label: t("preferences.themeLight") },
+  { value: "dark", label: t("preferences.themeDark") },
+];
+---
+
+<div class="relative flex h-full items-center" id="preferences">
+  <button
+    aria-expanded="false"
+    aria-haspopup="menu"
+    class="titlebar-preferences-trigger flex h-8 cursor-pointer items-center gap-1 rounded-md px-3 focus-visible:outline-2 focus-visible:outline-accent"
+    id="preferences-trigger"
+    type="button"
+  >
+    <span>{t("preferences.title")}</span>
+  </button>
+  <div
+    aria-label={t("preferences.title")}
+    class="absolute left-0 top-full z-50 min-w-44 rounded-lg border border-border bg-surface shadow-lg"
+    hidden
+    id="preferences-menu"
+    role="menu"
+  >
+    <div class="relative">
+      <button
+        aria-expanded="false"
+        aria-haspopup="menu"
+        class="flex w-full cursor-pointer items-center justify-between gap-6 rounded-md px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+        id="theme-trigger"
+        role="menuitem"
+        type="button"
+      >
+        <span>{t("preferences.theme")}</span>
+        <FiChevronRight aria-hidden="true" size={14} />
+      </button>
+      <div
+        aria-label={t("preferences.theme")}
+        class="absolute left-full top-0 z-50 min-w-36 overflow-hidden rounded-lg border border-border bg-surface shadow-lg"
+        hidden
+        id="theme-menu"
+        role="menu"
+      >
+        {themeOptions.map(({ value, label }) => (
+          <button
+            aria-checked="false"
+            class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+            data-theme-option={value}
+            role="menuitemradio"
+            type="button"
+          >
+            <span>{label}</span>
+            <span class="hidden" data-theme-check>
+              <FiCheck aria-hidden="true" size={14} />
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const preferences = document.querySelector<HTMLDivElement>("#preferences");
+  const preferencesTrigger = document.querySelector<HTMLButtonElement>("#preferences-trigger");
+  const preferencesMenu = document.querySelector<HTMLDivElement>("#preferences-menu");
+  const themeTrigger = document.querySelector<HTMLButtonElement>("#theme-trigger");
+  const themeMenu = document.querySelector<HTMLDivElement>("#theme-menu");
+  const themeOptions = document.querySelectorAll<HTMLButtonElement>("[data-theme-option]");
+
+  const closePreferences = (restoreFocus = false) => {
+    if (!preferencesTrigger || !preferencesMenu || !themeTrigger || !themeMenu) return;
+    preferencesMenu.hidden = true;
+    preferencesTrigger.setAttribute("aria-expanded", "false");
+    themeMenu.hidden = true;
+    themeTrigger.setAttribute("aria-expanded", "false");
+    if (restoreFocus) preferencesTrigger.focus();
+  };
+
+  const updateThemeSelection = (mode: string) => {
+    themeOptions.forEach((option) => {
+      const selected = option.dataset.themeOption === mode;
+      option.setAttribute("aria-checked", String(selected));
+      const check = option.querySelector<HTMLElement>("[data-theme-check]");
+      if (check) check.classList.toggle("hidden", !selected);
+    });
+  };
+
+  const applyTheme = (mode: "light" | "dark") => {
+    document.documentElement.dataset.theme = mode;
+    updateThemeSelection(mode);
+  };
+
+  if (preferences && preferencesTrigger && preferencesMenu && themeTrigger && themeMenu) {
+    const themeMode = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+    updateThemeSelection(themeMode);
+
+    preferencesTrigger.addEventListener("click", () => {
+      const isOpening = preferencesMenu.hidden;
+      preferencesMenu.hidden = !isOpening;
+      preferencesTrigger.setAttribute("aria-expanded", String(isOpening));
+      themeMenu.hidden = true;
+      themeTrigger.setAttribute("aria-expanded", "false");
+    });
+
+    themeTrigger.addEventListener("click", () => {
+      const isOpening = themeMenu.hidden;
+      themeMenu.hidden = !isOpening;
+      themeTrigger.setAttribute("aria-expanded", String(isOpening));
+    });
+
+    themeOptions.forEach((option) => {
+      option.addEventListener("click", () => {
+        const mode = option.dataset.themeOption;
+        if (mode !== "light" && mode !== "dark") return;
+        localStorage.setItem("iridium-theme", mode);
+        applyTheme(mode);
+        closePreferences();
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!preferences.contains(event.target as Node)) closePreferences();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !preferencesMenu.hidden) closePreferences(true);
+    });
+  }
+</script>

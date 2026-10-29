@@ -172,8 +172,8 @@ export default function FormatDropdown({
         onClick={toggleDropdown}
         className={
           isHeader
-            ? "inline-flex w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-4xl font-extrabold text-white transition-colors hover:bg-green-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 disabled:cursor-not-allowed disabled:opacity-50 [&[aria-expanded=true]_.chevron-icon]:rotate-180"
-            : "flex w-full cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-semibold text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+            ? "inline-flex w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-4xl font-extrabold text-on-accent transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-hover disabled:cursor-not-allowed disabled:opacity-50 [&[aria-expanded=true]_.chevron-icon]:rotate-180"
+            : "flex w-full cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 text-xs font-semibold text-foreground-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground-muted disabled:cursor-not-allowed disabled:opacity-50"
         }
       >
         <span>{format.toUpperCase()}</span>
@@ -187,7 +187,7 @@ export default function FormatDropdown({
       {isOpen && isHeader && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border-2 border-gray-200 bg-white py-1 shadow-lg"
+          className="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border-2 border-border bg-surface py-1 shadow-lg"
         >
           {formats.map((option) => {
             const isSelected = option.toUpperCase() === format.toUpperCase();
@@ -198,10 +198,12 @@ export default function FormatDropdown({
                 role="menuitemradio"
                 aria-checked={isSelected}
                 onClick={() => selectFormat(option)}
-                className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left font-semibold text-gray-900 hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none gap-4 text-lg"
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left font-semibold text-foreground hover:bg-surface-subtle focus-visible:bg-surface-subtle focus-visible:outline-none gap-4 text-lg"
               >
                 <span>{option}</span>
-                {isSelected && <FiCheck aria-hidden="true" className="text-green-500" size={20} />}
+                {isSelected && (
+                  <FiCheck aria-hidden="true" className="text-accent-soft" size={20} />
+                )}
               </button>
             );
           })}
@@ -224,7 +226,7 @@ export default function FormatDropdown({
               width: `${coords.width}px`,
               zIndex: 9999,
             }}
-            className="rounded-lg border border-gray-200 bg-white py-1 shadow-lg max-h-48 overflow-y-auto"
+            className="rounded-lg border border-border bg-surface py-1 shadow-lg max-h-48 overflow-y-auto"
           >
             {formats.map((option) => {
               const isSelected = option.toUpperCase() === format.toUpperCase();
@@ -235,11 +237,11 @@ export default function FormatDropdown({
                   role="menuitemradio"
                   aria-checked={isSelected}
                   onClick={() => selectFormat(option)}
-                  className="flex w-full cursor-pointer items-center justify-between px-2.5 py-1.5 text-left font-semibold text-gray-900 hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none gap-2 text-xs"
+                  className="flex w-full cursor-pointer items-center justify-between px-2.5 py-1.5 text-left font-semibold text-foreground hover:bg-surface-subtle focus-visible:bg-surface-subtle focus-visible:outline-none gap-2 text-xs"
                 >
                   <span>{option}</span>
                   {isSelected && (
-                    <FiCheck aria-hidden="true" className="text-green-500" size={14} />
+                    <FiCheck aria-hidden="true" className="text-accent-soft" size={14} />
                   )}
                 </button>
               );

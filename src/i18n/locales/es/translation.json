@@ -7,6 +7,12 @@
     "toggleMaximize": "Maximizar o restaurar ventana",
     "close": "Cerrar ventana"
   },
+  "preferences": {
+    "title": "Preferencias",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro"
+  },
   "converter": {
     "titlePrefix": "Transformar imagen a",
     "selectFormat": "Seleccionar formato de salida",

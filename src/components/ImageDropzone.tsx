@@ -85,7 +85,7 @@ const ImageItemRow = memo(function ImageItemRow({
   return (
     <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0 gap-3">
       <div className="flex items-center gap-3.5 min-w-0">
-        <div className="size-12 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200">
+        <div className="size-12 rounded-xl overflow-hidden bg-surface-subtle flex items-center justify-center shrink-0 border border-border">
           {thumbSrc ? (
             <img
               src={thumbSrc}
@@ -99,14 +99,14 @@ const ImageItemRow = memo(function ImageItemRow({
               }}
             />
           ) : (
-            <FiImage className="text-gray-400" size={20} />
+            <FiImage className="text-foreground-faint" size={20} />
           )}
         </div>
         <div className="min-w-0">
-          <p className="font-semibold text-sm text-gray-900 truncate" title={item.name}>
+          <p className="font-semibold text-sm text-foreground truncate" title={item.name}>
             {item.name}
           </p>
-          <p className="text-xs text-gray-400 font-medium">
+          <p className="text-xs text-foreground-faint font-medium">
             {item.outputSize !== undefined ? (
               <>
                 <span>{formatBytes(item.size)}</span>
@@ -114,8 +114,8 @@ const ImageItemRow = memo(function ImageItemRow({
                 <span
                   className={
                     item.outputSize > item.size
-                      ? "text-amber-500 font-semibold"
-                      : "text-green-600 font-semibold"
+                      ? "text-warning font-semibold"
+                      : "text-accent font-semibold"
                   }
                 >
                   {formatBytes(item.outputSize)}
@@ -129,7 +129,7 @@ const ImageItemRow = memo(function ImageItemRow({
       </div>
 
       <div className="flex items-center gap-3 shrink-0">
-        <span className="text-xs text-gray-400 hidden sm:inline">{labelConvertTo}</span>
+        <span className="text-xs text-foreground-faint hidden sm:inline">{labelConvertTo}</span>
         <FormatDropdown
           value={item.format}
           formats={SUPPORTED_FORMATS}
@@ -142,7 +142,7 @@ const ImageItemRow = memo(function ImageItemRow({
           type="button"
           onClick={() => onRemove(item.id)}
           disabled={disabled}
-          className="btn-remove text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+          className="btn-remove text-foreground-faint hover:text-foreground-muted p-1.5 rounded-lg hover:bg-surface-subtle transition-colors cursor-pointer"
           title={labelRemove}
         >
           <FiX size={16} />
@@ -198,37 +198,37 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
           id="empty-dropzone"
           onClick={selectImages}
           disabled={isProcessing}
-          className={`upload-zone grid h-64 w-full cursor-pointer place-items-center rounded-2xl border border-dashed border-gray-300 bg-transparent text-center outline outline-dotted outline-gray-300 outline-offset-2 focus-visible:outline-2 focus-visible:outline-green-600 disabled:cursor-not-allowed sm:h-80 sm:rounded-3xl ${
-            isDragging ? "outline-2 outline-green-600" : ""
+          className={`upload-zone grid h-64 w-full cursor-pointer place-items-center rounded-2xl border border-dashed border-border-strong bg-transparent text-center outline outline-dotted outline-border-strong outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed sm:h-80 sm:rounded-3xl ${
+            isDragging ? "outline-2 outline-accent" : ""
           }`}
         >
           <span className="flex flex-col items-center p-6">
             <span
-              className="relative mb-2 grid h-12 w-16 place-items-center text-gray-400"
+              className="relative mb-2 grid h-12 w-16 place-items-center text-foreground-faint"
               aria-hidden="true"
             >
               <FiImage size={42} />
-              <span className="absolute bottom-0 -right-1 grid size-6 place-items-center rounded-full bg-green-600 text-white">
+              <span className="absolute bottom-0 -right-1 grid size-6 place-items-center rounded-full bg-accent text-on-accent">
                 <FiUpload size={15} />
               </span>
             </span>
-            <span className="text-base font-bold text-gray-900">{translations.addImages}</span>
-            <span className="mt-1.5 text-xs text-gray-500">
+            <span className="text-base font-bold text-foreground">{translations.addImages}</span>
+            <span className="mt-1.5 text-xs text-foreground-soft">
               {translations.dropPrompt}{" "}
-              <span className="font-bold text-green-600">{translations.selectFiles}</span>
+              <span className="font-bold text-accent">{translations.selectFiles}</span>
             </span>
           </span>
         </button>
       ) : (
         <div
           id="card-preview"
-          className={`flex h-64 flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all sm:h-80 sm:rounded-3xl ${
-            isDragging ? "outline-2 outline-green-600" : ""
+          className={`flex h-64 flex-col rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all sm:h-80 sm:rounded-3xl ${
+            isDragging ? "outline-2 outline-accent" : ""
           }`}
         >
           <CustomScrollArea
             className="min-h-0 flex-1"
-            contentClassName="divide-y divide-gray-100 pb-3"
+            contentClassName="divide-y divide-border-muted pb-3"
             label={translations.scrollbarLabel}
           >
             {selectedItems.map((item) => (
@@ -244,13 +244,13 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
             ))}
           </CustomScrollArea>
 
-          <div className="mt-auto flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
+          <div className="mt-auto flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border-muted pt-4">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={selectImages}
                 disabled={isProcessing}
-                className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-border-strong rounded-full text-xs font-semibold text-foreground-secondary hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors"
               >
                 <FiPlus size={14} />
                 <span>{translations.addMore}</span>
@@ -259,7 +259,7 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
                 type="button"
                 onClick={clearItems}
                 disabled={isProcessing}
-                className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 border border-border-strong rounded-full text-xs font-semibold text-foreground-secondary hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors"
               >
                 <FiTrash2 size={14} />
                 <span>{translations.clear}</span>
@@ -280,7 +280,7 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
                 id="btn-convert-all"
                 onClick={handleConvert}
                 disabled={isProcessing || selectedItems.length === 0}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-full text-xs font-bold transition-all shadow-sm hover:shadow disabled:cursor-not-allowed cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-accent hover:bg-accent-hover disabled:bg-disabled text-on-accent rounded-full text-xs font-bold transition-all shadow-sm hover:shadow disabled:cursor-not-allowed cursor-pointer"
               >
                 <span>
                   {translations.convertAll.replace("{{count}}", String(selectedItems.length))}
@@ -292,7 +292,7 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
       )}
 
       {selectionError && (
-        <p className="mt-4 text-sm text-red-600" role="alert">
+        <p className="mt-4 text-sm text-danger" role="alert">
           {selectionError}
         </p>
       )}

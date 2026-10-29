@@ -14,8 +14,12 @@ const t = await getTranslations();
     <link rel="icon" type="image/png" href="/icon.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{t("site.title")}</title>
+    <script is:inline>
+      const savedTheme = localStorage.getItem("iridium-theme");
+      document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
+    </script>
   </head>
-  <body class="min-h-screen min-w-80 bg-white font-sans text-gray-900 antialiased">
+  <body class="min-h-screen min-w-80 bg-surface font-sans text-foreground antialiased">
     <div class="flex min-h-screen flex-col">
       <CustomTitleBar />
       <div class="flex flex-1 items-center justify-center">

@@ -102,10 +102,10 @@ export default function QualityInput({
 
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor="quality-input" className="text-xs font-bold text-gray-700">
+      <label htmlFor="quality-input" className="text-xs font-bold text-foreground-secondary">
         {label}
       </label>
-      <div className="flex items-center rounded-md border border-gray-300">
+      <div className="flex items-center rounded-md border border-border-strong">
         <button
           type="button"
           aria-label={decreaseLabel}
@@ -124,7 +124,7 @@ export default function QualityInput({
             }
             updateValue(value - 1);
           }}
-          className="grid size-6 cursor-pointer place-items-center rounded-l-md text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
+          className="grid size-6 cursor-pointer place-items-center rounded-l-md text-foreground-soft hover:bg-surface-subtle disabled:cursor-not-allowed disabled:text-foreground-disabled disabled:hover:bg-transparent"
         >
           <FiChevronLeft aria-hidden="true" size={14} />
         </button>
@@ -146,7 +146,7 @@ export default function QualityInput({
               updateValue(value - 1);
             }
           }}
-          className="h-6 w-10 bg-transparent text-center text-xs leading-6 text-gray-700 focus:outline-none focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-green-600"
+          className="h-6 w-10 bg-transparent text-center text-xs leading-6 text-foreground-secondary focus:outline-none focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-accent"
         />
         <button
           type="button"
@@ -166,7 +166,7 @@ export default function QualityInput({
             }
             updateValue(value + 1);
           }}
-          className="grid size-6 cursor-pointer place-items-center rounded-r-md text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
+          className="grid size-6 cursor-pointer place-items-center rounded-r-md text-foreground-soft hover:bg-surface-subtle disabled:cursor-not-allowed disabled:text-foreground-disabled disabled:hover:bg-transparent"
         >
           <FiChevronRight aria-hidden="true" size={14} />
         </button>
