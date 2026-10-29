@@ -15,8 +15,6 @@ interface ImageConversionTranslations {
   progress: {
     converting: string;
     completed: string;
-    imagesProcessed: string;
-    savedIn: string;
   };
 }
 
@@ -75,28 +73,18 @@ export function useImageConversion(
       );
 
       let completed = 0;
-      const outputFolders: string[] = [];
-
       for (const group of groups.values()) {
         progressOffset = completed;
-        const outputFolder = await invoke<string>("optimize_images", {
+        await invoke("optimize_images", {
           imagePaths: group.paths,
           outputFormat: group.format,
           quality,
         });
         completed += group.paths.length;
-        outputFolders.push(outputFolder);
       }
 
-      const uniqueFolders = [...new Set(outputFolders)];
-      const successMsg = `${translations.progress.completed} ${translations.progress.imagesProcessed.replace("{{count}}", String(completed))}`;
-      const folderLines = uniqueFolders
-        .map((f) => translations.progress.savedIn.replace("{{folder}}", f))
-        .join("\n");
-      const renderContent = folderLines ? `${successMsg}\n${folderLines}` : successMsg;
-
       toast.update(toastId, {
-        render: renderContent,
+        render: translations.progress.completed,
         type: "success",
         isLoading: false,
         autoClose: 5000,

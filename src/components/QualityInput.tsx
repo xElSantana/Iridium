@@ -42,7 +42,7 @@ export default function QualityInput({
   return (
     <div className="flex items-center gap-2">
       <label htmlFor="quality-input" className="text-xs font-bold text-gray-700">
-        {label}: {value}%
+        {label}
       </label>
       <div className="flex items-center rounded-md border border-gray-300">
         <button

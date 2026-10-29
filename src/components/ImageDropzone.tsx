@@ -1,8 +1,9 @@
 import { memo, useState } from "react";
-import { FiImage, FiUpload, FiPlus, FiZap, FiX } from "react-icons/fi";
+import { FiImage, FiUpload, FiPlus, FiX } from "react-icons/fi";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import QualityInput from "./QualityInput.tsx";
+import FormatDropdown from "./FormatDropdown.tsx";
 import CustomScrollArea from "./CustomScrollArea.tsx";
 import { formatBytes } from "../utils/format";
 import { SUPPORTED_FORMATS } from "../constants/formats";
@@ -28,8 +29,6 @@ interface ImageDropzoneProps {
     progress: {
       converting: string;
       completed: string;
-      imagesProcessed: string;
-      savedIn: string;
     };
   };
 }
@@ -69,18 +68,14 @@ const ImageItemRow = memo(function ImageItemRow({
 
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-xs text-gray-400 hidden sm:inline">{labelConvertTo}</span>
-        <select
-          value={item.format.toLowerCase()}
-          onChange={(e) => onUpdateFormat(item.id, e.target.value.toUpperCase())}
+        <FormatDropdown
+          value={item.format}
+          formats={SUPPORTED_FORMATS}
+          label={labelConvertTo}
+          variant="compact"
+          onChange={(format) => onUpdateFormat(item.id, format)}
           disabled={disabled}
-          className="format-select text-xs font-semibold bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-500 cursor-pointer text-gray-700"
-        >
-          {SUPPORTED_FORMATS.map((fmt) => (
-            <option key={fmt} value={fmt.toLowerCase()}>
-              {fmt}
-            </option>
-          ))}
-        </select>
+        />
         <button
           type="button"
           onClick={() => onRemove(item.id)}
@@ -199,7 +194,6 @@ export default function ImageDropzone({ translations }: ImageDropzoneProps) {
                 disabled={isProcessing || selectedItems.length === 0}
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-full text-xs font-bold transition-all shadow-sm hover:shadow disabled:cursor-not-allowed cursor-pointer"
               >
-                <FiZap size={14} />
                 <span>
                   {translations.convertAll.replace("{{count}}", String(selectedItems.length))}
                 </span>

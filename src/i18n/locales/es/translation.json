@@ -1,35 +1,33 @@
 {
   "site": {
-    "title": "Convertidor de Imágenes | Iridium"
+    "title": "Transformador de Imágenes | Iridium"
   },
   "converter": {
-    "titlePrefix": "Convertir imagen a",
+    "titlePrefix": "Transformar imagen a",
     "selectFormat": "Seleccionar formato de salida",
-    "description": "Convierte imágenes a diferentes formatos gratis y en segundos. Solo tienes que añadir tus imágenes para empezar."
+    "description": "Las imágenes transformadas se guardan junto a las originales."
   },
   "upload": {
     "addImages": "Añadir imágenes",
     "dropPrompt": "Arrastra y suelta o",
     "selectFiles": "selecciona archivos",
     "addMore": "Añadir más",
-    "convertTo": "Convertir a",
-    "convertAll": "Convertir ({{count}})",
+    "convertTo": "Transformar a",
+    "convertAll": "Transformar ({{count}})",
     "remove": "Eliminar",
     "increaseQuality": "Aumentar calidad",
     "decreaseQuality": "Disminuir calidad",
     "qualityLabel": "Calidad",
     "scrollbarLabel": "Desplazamiento de la lista de imágenes",
-    "processing": "Convirtiendo...",
+    "processing": "Transformar",
     "errors": {
       "selectImagesFailed": "No se pudieron seleccionar las imágenes",
-      "conversionFailed": "Error al convertir las imágenes",
+      "conversionFailed": "Error al transformar las imágenes",
       "unknownError": "Error desconocido"
     },
     "progress": {
-      "converting": "Convirtiendo {{current}} de {{total}}",
-      "completed": "Conversión completada.",
-      "imagesProcessed": "{{count}} imágenes procesadas",
-      "savedIn": "Guardadas en: {{folder}}"
+      "converting": "Transformando {{current}} de {{total}}",
+      "completed": "Transformación completada"
     }
   }
 }

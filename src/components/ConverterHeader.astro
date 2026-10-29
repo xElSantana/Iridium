@@ -1,6 +1,6 @@
 ---
 import { getTranslations } from "../i18n";
-import FormatDropdown from "./FormatDropdown.astro";
+import FormatDropdown from "./FormatDropdown.tsx";
 
 const t = await getTranslations();
 ---
@@ -11,7 +11,7 @@ const t = await getTranslations();
     id="page-title"
   >
     <span>{t("converter.titlePrefix")}</span>
-    <FormatDropdown ariaLabel={t("converter.selectFormat")} />
+    <FormatDropdown client:load label={t("converter.selectFormat")} broadcastFormatChange />
   </h1>
   <p class="mx-auto mb-4 mt-3 max-w-2xl text-base text-gray-600">{t("converter.description")}</p>
 </section>
