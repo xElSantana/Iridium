@@ -11,7 +11,10 @@
     "title": "Preferencias",
     "theme": "Tema",
     "themeLight": "Claro",
-    "themeDark": "Oscuro"
+    "themeDark": "Oscuro",
+    "language": "Idioma",
+    "languageSpanish": "Español",
+    "languageEnglish": "Inglés"
   },
   "converter": {
     "titlePrefix": "Transformar imagen a",

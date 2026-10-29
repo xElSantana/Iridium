@@ -1,11 +1,16 @@
 ---
-import { getTranslations } from "../i18n";
+import { getTranslations, resolveLanguage } from "../i18n";
 import { FiCheck, FiChevronRight } from "react-icons/fi";
 
-const t = await getTranslations();
+const language = resolveLanguage(Astro.cookies.get("iridium-language")?.value, Astro.url);
+const t = await getTranslations(language);
 const themeOptions = [
   { value: "light", label: t("preferences.themeLight") },
   { value: "dark", label: t("preferences.themeDark") },
+];
+const languageOptions = [
+  { value: "es", label: t("preferences.languageSpanish") },
+  { value: "en", label: t("preferences.languageEnglish") },
 ];
 ---
 
@@ -30,7 +35,7 @@ const themeOptions = [
       <button
         aria-expanded="false"
         aria-haspopup="menu"
-        class="flex w-full cursor-pointer items-center justify-between gap-6 rounded-md px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+        class="flex w-full cursor-pointer items-center justify-between gap-6 rounded-t-lg px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
         id="theme-trigger"
         role="menuitem"
         type="button"
@@ -54,7 +59,42 @@ const themeOptions = [
             type="button"
           >
             <span>{label}</span>
-            <span class="hidden" data-theme-check>
+            <span class="hidden text-accent" data-theme-check>
+              <FiCheck aria-hidden="true" size={14} />
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+    <div class="relative border-t border-border/80">
+      <button
+        aria-expanded="false"
+        aria-haspopup="menu"
+        class="flex w-full cursor-pointer items-center justify-between gap-6 rounded-b-lg px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+        id="language-trigger"
+        role="menuitem"
+        type="button"
+      >
+        <span>{t("preferences.language")}</span>
+        <FiChevronRight aria-hidden="true" size={14} />
+      </button>
+      <div
+        aria-label={t("preferences.language")}
+        class="absolute left-full top-0 z-50 min-w-36 overflow-hidden rounded-lg border border-border bg-surface shadow-lg"
+        hidden
+        id="language-menu"
+        role="menu"
+      >
+        {languageOptions.map(({ value, label }) => (
+          <button
+            aria-checked="false"
+            class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+            data-language-option={value}
+            role="menuitemradio"
+            type="button"
+          >
+            <span>{label}</span>
+            <span class="hidden text-accent" data-language-check>
               <FiCheck aria-hidden="true" size={14} />
             </span>
           </button>
@@ -70,14 +110,27 @@ const themeOptions = [
   const preferencesMenu = document.querySelector<HTMLDivElement>("#preferences-menu");
   const themeTrigger = document.querySelector<HTMLButtonElement>("#theme-trigger");
   const themeMenu = document.querySelector<HTMLDivElement>("#theme-menu");
+  const languageTrigger = document.querySelector<HTMLButtonElement>("#language-trigger");
+  const languageMenu = document.querySelector<HTMLDivElement>("#language-menu");
   const themeOptions = document.querySelectorAll<HTMLButtonElement>("[data-theme-option]");
+  const languageOptions = document.querySelectorAll<HTMLButtonElement>("[data-language-option]");
 
   const closePreferences = (restoreFocus = false) => {
-    if (!preferencesTrigger || !preferencesMenu || !themeTrigger || !themeMenu) return;
+    if (
+      !preferencesTrigger ||
+      !preferencesMenu ||
+      !themeTrigger ||
+      !themeMenu ||
+      !languageTrigger ||
+      !languageMenu
+    )
+      return;
     preferencesMenu.hidden = true;
     preferencesTrigger.setAttribute("aria-expanded", "false");
     themeMenu.hidden = true;
     themeTrigger.setAttribute("aria-expanded", "false");
+    languageMenu.hidden = true;
+    languageTrigger.setAttribute("aria-expanded", "false");
     if (restoreFocus) preferencesTrigger.focus();
   };
 
@@ -90,14 +143,43 @@ const themeOptions = [
     });
   };
 
+  const updateLanguageSelection = (language: string) => {
+    languageOptions.forEach((option) => {
+      const selected = option.dataset.languageOption === language;
+      option.setAttribute("aria-checked", String(selected));
+      const check = option.querySelector<HTMLElement>("[data-language-check]");
+      if (check) check.classList.toggle("hidden", !selected);
+    });
+  };
+
   const applyTheme = (mode: "light" | "dark") => {
     document.documentElement.dataset.theme = mode;
     updateThemeSelection(mode);
   };
 
-  if (preferences && preferencesTrigger && preferencesMenu && themeTrigger && themeMenu) {
+  const applyLanguage = (language: "es" | "en") => {
+    document.cookie = `iridium-language=${language}; path=/; max-age=31536000`;
+    localStorage.setItem("iridium-language", language);
+    document.documentElement.lang = language;
+    updateLanguageSelection(language);
+
+    const targetUrl = new URL(window.location.href);
+    targetUrl.searchParams.set("lang", language);
+    window.location.assign(targetUrl.toString());
+  };
+
+  if (
+    preferences &&
+    preferencesTrigger &&
+    preferencesMenu &&
+    themeTrigger &&
+    themeMenu &&
+    languageTrigger &&
+    languageMenu
+  ) {
     const themeMode = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
     updateThemeSelection(themeMode);
+    updateLanguageSelection(localStorage.getItem("iridium-language") === "en" ? "en" : "es");
 
     preferencesTrigger.addEventListener("click", () => {
       const isOpening = preferencesMenu.hidden;
@@ -105,12 +187,28 @@ const themeOptions = [
       preferencesTrigger.setAttribute("aria-expanded", String(isOpening));
       themeMenu.hidden = true;
       themeTrigger.setAttribute("aria-expanded", "false");
+      languageMenu.hidden = true;
+      languageTrigger.setAttribute("aria-expanded", "false");
     });
 
     themeTrigger.addEventListener("click", () => {
       const isOpening = themeMenu.hidden;
       themeMenu.hidden = !isOpening;
       themeTrigger.setAttribute("aria-expanded", String(isOpening));
+      if (!themeMenu.hidden) {
+        languageMenu.hidden = true;
+        languageTrigger.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    languageTrigger.addEventListener("click", () => {
+      const isOpening = languageMenu.hidden;
+      languageMenu.hidden = !isOpening;
+      languageTrigger.setAttribute("aria-expanded", String(isOpening));
+      if (!languageMenu.hidden) {
+        themeMenu.hidden = true;
+        themeTrigger.setAttribute("aria-expanded", "false");
+      }
     });
 
     themeOptions.forEach((option) => {
@@ -120,6 +218,14 @@ const themeOptions = [
         localStorage.setItem("iridium-theme", mode);
         applyTheme(mode);
         closePreferences();
+      });
+    });
+
+    languageOptions.forEach((option) => {
+      option.addEventListener("click", () => {
+        const language = option.dataset.languageOption;
+        if (language !== "es" && language !== "en") return;
+        applyLanguage(language);
       });
     });
 

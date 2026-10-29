@@ -1,0 +1,51 @@
+{
+  "site": {
+    "title": "Image Transformer | Iridium"
+  },
+  "titleBar": {
+    "minimize": "Minimize window",
+    "toggleMaximize": "Maximize or restore window",
+    "close": "Close window"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "language": "Language",
+    "languageSpanish": "Español",
+    "languageEnglish": "English"
+  },
+  "converter": {
+    "titlePrefix": "Transform image to",
+    "selectFormat": "Select output format",
+    "description": "Converted images are saved next to the originals."
+  },
+  "upload": {
+    "addImages": "Add images",
+    "dropPrompt": "Drag and drop or",
+    "selectFiles": "select files",
+    "addMore": "Add more",
+    "convertTo": "Convert to",
+    "convertAll": "Convert ({{count}})",
+    "remove": "Remove",
+    "clear": "Clear",
+    "increaseQuality": "Increase quality",
+    "decreaseQuality": "Decrease quality",
+    "qualityLabel": "Quality",
+    "scrollbarLabel": "Image list scrolling",
+    "processing": "Convert",
+    "errors": {
+      "selectImagesFailed": "Could not select images",
+      "conversionFailed": "Error converting images",
+      "unknownError": "Unknown error",
+      "selectedImage": "selected image",
+      "selectedFile": "image",
+      "selectedFolder": "selected folder"
+    },
+    "progress": {
+      "converting": "Converting {{current}} of {{total}}",
+      "completed": "Conversion completed"
+    }
+  }
+}

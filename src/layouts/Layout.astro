@@ -1,13 +1,14 @@
 ---
 import "../styles/global.css";
-import { getTranslations } from "../i18n";
+import { getTranslations, resolveLanguage } from "../i18n";
 import CustomTitleBar from "../components/CustomTitleBar.astro";
 
-const t = await getTranslations();
+const language = resolveLanguage(Astro.cookies.get("iridium-language")?.value, Astro.url);
+const t = await getTranslations(language);
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={language}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
@@ -17,6 +18,18 @@ const t = await getTranslations();
     <script is:inline>
       const savedTheme = localStorage.getItem("iridium-theme");
       document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
+
+      const currentSearchLanguage = new URLSearchParams(window.location.search).get("lang");
+      const storedLanguage =
+        currentSearchLanguage === "en" || currentSearchLanguage === "es"
+          ? currentSearchLanguage
+          : localStorage.getItem("iridium-language");
+
+      if (storedLanguage === "en" || storedLanguage === "es") {
+        document.documentElement.lang = storedLanguage;
+        document.cookie = `iridium-language=${storedLanguage}; path=/; max-age=31536000`;
+        localStorage.setItem("iridium-language", storedLanguage);
+      }
     </script>
   </head>
   <body class="min-h-screen min-w-80 bg-surface font-sans text-foreground antialiased">

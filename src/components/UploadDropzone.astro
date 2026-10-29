@@ -1,8 +1,9 @@
 ---
 import ImageDropzone from "./ImageDropzone";
-import { getTranslations } from "../i18n";
+import { getTranslations, resolveLanguage } from "../i18n";
 
-const t = await getTranslations();
+const language = resolveLanguage(Astro.cookies.get("iridium-language")?.value, Astro.url);
+const t = await getTranslations(language);
 ---
 
 <ImageDropzone

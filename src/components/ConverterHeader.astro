@@ -1,8 +1,9 @@
 ---
-import { getTranslations } from "../i18n";
+import { getTranslations, resolveLanguage } from "../i18n";
 import FormatDropdown from "./FormatDropdown.tsx";
 
-const t = await getTranslations();
+const language = resolveLanguage(Astro.cookies.get("iridium-language")?.value, Astro.url);
+const t = await getTranslations(language);
 ---
 
 <section class="text-center" aria-labelledby="page-title">

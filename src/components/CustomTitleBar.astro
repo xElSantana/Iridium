@@ -1,9 +1,10 @@
 ---
-import { getTranslations } from "../i18n";
+import { getTranslations, resolveLanguage } from "../i18n";
 import PreferencesMenu from "./PreferencesMenu.astro";
 import { FiMinus, FiSquare, FiX } from "react-icons/fi";
 
-const t = await getTranslations();
+const language = resolveLanguage(Astro.cookies.get("iridium-language")?.value, Astro.url);
+const t = await getTranslations(language);
 ---
 
 <header class="flex h-10 shrink-0 items-center bg-surface-subtle text-sm text-foreground-secondary">
