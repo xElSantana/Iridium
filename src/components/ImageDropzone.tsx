@@ -156,7 +156,7 @@ export default function ImageDropzone() {
         completed: t("upload.progress.completed"),
       },
     }),
-    [t, language]
+    [t, language],
   );
 
   const {

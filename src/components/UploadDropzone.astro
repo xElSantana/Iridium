@@ -2,4 +2,10 @@
 import ImageDropzone from "./ImageDropzone";
 ---
 
-<ImageDropzone client:load />
+<ImageDropzone client:only="react">
+  <div
+    slot="fallback"
+    aria-hidden="true"
+    class="upload-zone h-64 w-full rounded-2xl border border-dashed border-border-strong sm:h-80 sm:rounded-3xl"
+  />
+</ImageDropzone>

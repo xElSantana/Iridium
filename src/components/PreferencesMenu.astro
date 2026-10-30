@@ -52,22 +52,20 @@ const languageOptions = [
         id="theme-menu"
         role="menu"
       >
-        {
-          themeOptions.map(({ value, key }) => (
-            <button
-              aria-checked="false"
-              class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
-              data-theme-option={value}
-              role="menuitemradio"
-              type="button"
-            >
-              <span data-i18n={key}>{t(key, lang)}</span>
-              <span class="hidden text-accent" data-theme-check>
-                <FiCheck aria-hidden="true" size={14} />
-              </span>
-            </button>
-          ))
-        }
+        {themeOptions.map(({ value, key }) => (
+          <button
+            aria-checked="false"
+            class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+            data-theme-option={value}
+            role="menuitemradio"
+            type="button"
+          >
+            <span data-i18n={key}>{t(key, lang)}</span>
+            <span class="hidden text-accent" data-theme-check>
+              <FiCheck aria-hidden="true" size={14} />
+            </span>
+          </button>
+        ))}
       </div>
     </div>
     <div class="relative border-t border-border/80">
@@ -90,22 +88,20 @@ const languageOptions = [
         id="language-menu"
         role="menu"
       >
-        {
-          languageOptions.map(({ value, key }) => (
-            <button
-              aria-checked="false"
-              class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
-              data-language-option={value}
-              role="menuitemradio"
-              type="button"
-            >
-              <span data-i18n={key}>{t(key, lang)}</span>
-              <span class="hidden text-accent" data-language-check>
-                <FiCheck aria-hidden="true" size={14} />
-              </span>
-            </button>
-          ))
-        }
+        {languageOptions.map(({ value, key }) => (
+          <button
+            aria-checked="false"
+            class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+            data-language-option={value}
+            role="menuitemradio"
+            type="button"
+          >
+            <span data-i18n={key}>{t(key, lang)}</span>
+            <span class="hidden text-accent" data-language-check>
+              <FiCheck aria-hidden="true" size={14} />
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   </div>

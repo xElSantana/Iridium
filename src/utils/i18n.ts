@@ -21,7 +21,7 @@ export function getLanguageFromAstro(astro: AstroGlobal): Language {
 export function t(key: string, lang: Language): string {
   const keys = key.split(".");
   let value: unknown = translations[lang];
-  
+
   for (const k of keys) {
     if (value && typeof value === "object" && k in value) {
       value = (value as Record<string, unknown>)[k];
@@ -29,6 +29,6 @@ export function t(key: string, lang: Language): string {
       return key;
     }
   }
-  
+
   return typeof value === "string" ? value : key;
 }

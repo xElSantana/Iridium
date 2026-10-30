@@ -11,9 +11,14 @@ const lang = getLanguageFromAstro(Astro);
     id="page-title"
   >
     <span data-i18n="converter.titlePrefix">{t("converter.titlePrefix", lang)}</span>
-    <FormatDropdown client:load broadcastFormatChange>
+    <FormatDropdown client:only="react" broadcastFormatChange>
       <span slot="fallback" aria-hidden="true" class="inline-flex h-14 w-44 rounded-lg bg-accent" />
     </FormatDropdown>
   </h1>
-  <p class="mx-auto mb-4 mt-3 max-w-2xl text-base text-foreground-muted" data-i18n="converter.description">{t("converter.description", lang)}</p>
+  <p
+    class="mx-auto mb-4 mt-3 max-w-2xl text-base text-foreground-muted"
+    data-i18n="converter.description"
+  >
+    {t("converter.description", lang)}
+  </p>
 </section>

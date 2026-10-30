@@ -25,7 +25,7 @@ const defaultLang = langParam === "en" || langParam === "es" ? langParam : "es";
     <title id="page-title">{translations[defaultLang].site.title}</title>
     <script is:inline>
       // CRÍTICO: Aplicar tema ANTES de cualquier renderizado para evitar parpadeo
-      (function() {
+      (function () {
         const savedTheme = localStorage.getItem("iridium-theme");
         document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
       })();
@@ -82,15 +82,6 @@ const defaultLang = langParam === "en" || langParam === "es" ? langParam : "es";
         });
       }
 
-      // Solo actualizar si el idioma es diferente al renderizado
-      if (initialLanguage !== defaultLang) {
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", () => updatePageLanguage(initialLanguage));
-        } else {
-          updatePageLanguage(initialLanguage);
-        }
-      }
-
       // Exportar funciones
       window.updatePageLanguage = updatePageLanguage;
       window.getTranslation = getTranslation;
@@ -106,5 +97,8 @@ const defaultLang = langParam === "en" || langParam === "es" ? langParam : "es";
         </div>
       </div>
     </div>
+    <script is:inline>
+      window.updatePageLanguage?.(window.getCurrentLanguage?.() || "es");
+    </script>
   </body>
 </html>
