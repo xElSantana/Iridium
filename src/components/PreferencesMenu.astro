@@ -1,22 +1,16 @@
 ---
-import esTranslations from "../i18n/locales/es/translation.json";
+import { getLanguageFromAstro, t } from "../utils/i18n";
 import { FiCheck, FiChevronRight } from "react-icons/fi";
 
+const lang = getLanguageFromAstro(Astro);
+
 const themeOptions = [
-  { value: "light", key: "preferences.themeLight", label: esTranslations.preferences.themeLight },
-  { value: "dark", key: "preferences.themeDark", label: esTranslations.preferences.themeDark },
+  { value: "light", key: "preferences.themeLight" },
+  { value: "dark", key: "preferences.themeDark" },
 ];
 const languageOptions = [
-  {
-    value: "es",
-    key: "preferences.languageSpanish",
-    label: esTranslations.preferences.languageSpanish,
-  },
-  {
-    value: "en",
-    key: "preferences.languageEnglish",
-    label: esTranslations.preferences.languageEnglish,
-  },
+  { value: "es", key: "preferences.languageSpanish" },
+  { value: "en", key: "preferences.languageEnglish" },
 ];
 ---
 
@@ -28,10 +22,10 @@ const languageOptions = [
     id="preferences-trigger"
     type="button"
   >
-    <span data-i18n="preferences.title">{esTranslations.preferences.title}</span>
+    <span data-i18n="preferences.title">{t("preferences.title", lang)}</span>
   </button>
   <div
-    aria-label={esTranslations.preferences.title}
+    aria-label={t("preferences.title", lang)}
     data-i18n-aria="preferences.title"
     class="absolute left-0 top-full z-50 min-w-44 rounded-lg border border-border bg-surface shadow-lg"
     hidden
@@ -47,31 +41,33 @@ const languageOptions = [
         role="menuitem"
         type="button"
       >
-        <span data-i18n="preferences.theme">{esTranslations.preferences.theme}</span>
+        <span data-i18n="preferences.theme">{t("preferences.theme", lang)}</span>
         <FiChevronRight aria-hidden="true" size={14} />
       </button>
       <div
-        aria-label={esTranslations.preferences.theme}
+        aria-label={t("preferences.theme", lang)}
         data-i18n-aria="preferences.theme"
         class="absolute left-full top-0 z-50 min-w-36 overflow-hidden rounded-lg border border-border bg-surface shadow-lg"
         hidden
         id="theme-menu"
         role="menu"
       >
-        {themeOptions.map(({ value, key, label }) => (
-          <button
-            aria-checked="false"
-            class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
-            data-theme-option={value}
-            role="menuitemradio"
-            type="button"
-          >
-            <span data-i18n={key}>{label}</span>
-            <span class="hidden text-accent" data-theme-check>
-              <FiCheck aria-hidden="true" size={14} />
-            </span>
-          </button>
-        ))}
+        {
+          themeOptions.map(({ value, key }) => (
+            <button
+              aria-checked="false"
+              class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+              data-theme-option={value}
+              role="menuitemradio"
+              type="button"
+            >
+              <span data-i18n={key}>{t(key, lang)}</span>
+              <span class="hidden text-accent" data-theme-check>
+                <FiCheck aria-hidden="true" size={14} />
+              </span>
+            </button>
+          ))
+        }
       </div>
     </div>
     <div class="relative border-t border-border/80">
@@ -83,31 +79,33 @@ const languageOptions = [
         role="menuitem"
         type="button"
       >
-        <span data-i18n="preferences.language">{esTranslations.preferences.language}</span>
+        <span data-i18n="preferences.language">{t("preferences.language", lang)}</span>
         <FiChevronRight aria-hidden="true" size={14} />
       </button>
       <div
-        aria-label={esTranslations.preferences.language}
+        aria-label={t("preferences.language", lang)}
         data-i18n-aria="preferences.language"
         class="absolute left-full top-0 z-50 min-w-36 overflow-hidden rounded-lg border border-border bg-surface shadow-lg"
         hidden
         id="language-menu"
         role="menu"
       >
-        {languageOptions.map(({ value, key, label }) => (
-          <button
-            aria-checked="false"
-            class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
-            data-language-option={value}
-            role="menuitemradio"
-            type="button"
-          >
-            <span data-i18n={key}>{label}</span>
-            <span class="hidden text-accent" data-language-check>
-              <FiCheck aria-hidden="true" size={14} />
-            </span>
-          </button>
-        ))}
+        {
+          languageOptions.map(({ value, key }) => (
+            <button
+              aria-checked="false"
+              class="flex w-full cursor-pointer items-center justify-between gap-4 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+              data-language-option={value}
+              role="menuitemradio"
+              type="button"
+            >
+              <span data-i18n={key}>{t(key, lang)}</span>
+              <span class="hidden text-accent" data-language-check>
+                <FiCheck aria-hidden="true" size={14} />
+              </span>
+            </button>
+          ))
+        }
       </div>
     </div>
   </div>

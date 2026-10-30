@@ -9,17 +9,48 @@ const translations = {
   es: esTranslations,
   en: enTranslations,
 };
+
+// Detectar idioma en el servidor
+const langParam = Astro.url.searchParams.get("lang");
+const defaultLang = langParam === "en" || langParam === "es" ? langParam : "es";
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={defaultLang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/png" href="/icon.png" />
     <meta name="generator" content={Astro.generator} />
-    <title id="page-title">{esTranslations.site.title}</title>
-    <script is:inline define:vars={{ translations }}>
+    <title id="page-title">{translations[defaultLang].site.title}</title>
+    <script is:inline>
+      // CRÍTICO: Aplicar tema ANTES de cualquier renderizado para evitar parpadeo
+      (function() {
+        const savedTheme = localStorage.getItem("iridium-theme");
+        document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
+      })();
+    </script>
+    <script is:inline define:vars={{ translations, defaultLang }}>
+      // Detectar idioma y sincronizar con localStorage
+      const urlParams = new URLSearchParams(window.location.search);
+      const langParam = urlParams.get("lang");
+      const storedLanguage = localStorage.getItem("iridium-language");
+      const initialLanguage =
+        langParam === "en" || langParam === "es"
+          ? langParam
+          : storedLanguage === "en" || storedLanguage === "es"
+            ? storedLanguage
+            : defaultLang;
+
+      // Si el idioma cambió, actualizar localStorage y aplicar traducciones
+      if (initialLanguage !== defaultLang) {
+        document.documentElement.lang = initialLanguage;
+        localStorage.setItem("iridium-language", initialLanguage);
+      } else {
+        localStorage.setItem("iridium-language", initialLanguage);
+      }
+
+      // Definir funciones globales
       window.__TRANSLATIONS__ = translations;
 
       function getTranslation(key, lang) {
@@ -51,30 +82,19 @@ const translations = {
         });
       }
 
-      const savedTheme = localStorage.getItem("iridium-theme");
-      document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const langParam = urlParams.get("lang");
-      const storedLanguage = localStorage.getItem("iridium-language");
-      const initialLanguage =
-        langParam === "en" || langParam === "es"
-          ? langParam
-          : storedLanguage === "en" || storedLanguage === "es"
-            ? storedLanguage
-            : "es";
-
-      localStorage.setItem("iridium-language", initialLanguage);
-
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => updatePageLanguage(initialLanguage));
-      } else {
-        updatePageLanguage(initialLanguage);
+      // Solo actualizar si el idioma es diferente al renderizado
+      if (initialLanguage !== defaultLang) {
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", () => updatePageLanguage(initialLanguage));
+        } else {
+          updatePageLanguage(initialLanguage);
+        }
       }
 
+      // Exportar funciones
       window.updatePageLanguage = updatePageLanguage;
       window.getTranslation = getTranslation;
-      window.getCurrentLanguage = () => localStorage.getItem("iridium-language") || "es";
+      window.getCurrentLanguage = () => localStorage.getItem("iridium-language") || defaultLang;
     </script>
   </head>
   <body class="min-h-screen min-w-80 bg-surface font-sans text-foreground antialiased">

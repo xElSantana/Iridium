@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useState, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { FiImage, FiUpload, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import { ToastContainer } from "react-toastify";
@@ -126,34 +126,38 @@ const ImageItemRow = memo(function ImageItemRow({
 });
 
 export default function ImageDropzone() {
-  const { t } = useClientTranslations();
+  const { t, language } = useClientTranslations();
   const [quality, setQuality] = useState(60);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
-  const translations = {
-    addImages: t("upload.addImages"),
-    dropPrompt: t("upload.dropPrompt"),
-    selectFiles: t("upload.selectFiles"),
-    convertTo: t("upload.convertTo"),
-    convertAll: t("upload.convertAll"),
-    remove: t("upload.remove"),
-    addMore: t("upload.addMore"),
-    clear: t("upload.clear"),
-    qualityLabel: t("upload.qualityLabel"),
-    increaseQuality: t("upload.increaseQuality"),
-    decreaseQuality: t("upload.decreaseQuality"),
-    scrollbarLabel: t("upload.scrollbarLabel"),
-    selectImagesFailed: t("upload.errors.selectImagesFailed"),
-    conversionFailed: t("upload.errors.conversionFailed"),
-    unknownError: t("upload.errors.unknownError"),
-    selectedImage: t("upload.errors.selectedImage"),
-    selectedFile: t("upload.errors.selectedFile"),
-    selectedFolder: t("upload.errors.selectedFolder"),
-    progress: {
-      converting: t("upload.progress.converting"),
-      completed: t("upload.progress.completed"),
-    },
-  };
+  // Memoizar las traducciones para evitar recrearlas en cada render
+  const translations = useMemo(
+    () => ({
+      addImages: t("upload.addImages"),
+      dropPrompt: t("upload.dropPrompt"),
+      selectFiles: t("upload.selectFiles"),
+      convertTo: t("upload.convertTo"),
+      convertAll: t("upload.convertAll"),
+      remove: t("upload.remove"),
+      addMore: t("upload.addMore"),
+      clear: t("upload.clear"),
+      qualityLabel: t("upload.qualityLabel"),
+      increaseQuality: t("upload.increaseQuality"),
+      decreaseQuality: t("upload.decreaseQuality"),
+      scrollbarLabel: t("upload.scrollbarLabel"),
+      selectImagesFailed: t("upload.errors.selectImagesFailed"),
+      conversionFailed: t("upload.errors.conversionFailed"),
+      unknownError: t("upload.errors.unknownError"),
+      selectedImage: t("upload.errors.selectedImage"),
+      selectedFile: t("upload.errors.selectedFile"),
+      selectedFolder: t("upload.errors.selectedFolder"),
+      progress: {
+        converting: t("upload.progress.converting"),
+        completed: t("upload.progress.completed"),
+      },
+    }),
+    [t, language]
+  );
 
   const {
     dropzoneRef,

@@ -1,6 +1,8 @@
 ---
-import esTranslations from "../i18n/locales/es/translation.json";
+import { getLanguageFromAstro, t } from "../utils/i18n";
 import FormatDropdown from "./FormatDropdown.tsx";
+
+const lang = getLanguageFromAstro(Astro);
 ---
 
 <section class="text-center" aria-labelledby="page-title">
@@ -8,15 +10,10 @@ import FormatDropdown from "./FormatDropdown.tsx";
     class="m-0 text-4xl font-extrabold text-foreground inline-flex items-center justify-center gap-2 flex-wrap"
     id="page-title"
   >
-    <span data-i18n="converter.titlePrefix">{esTranslations.converter.titlePrefix}</span>
+    <span data-i18n="converter.titlePrefix">{t("converter.titlePrefix", lang)}</span>
     <FormatDropdown client:load broadcastFormatChange>
       <span slot="fallback" aria-hidden="true" class="inline-flex h-14 w-44 rounded-lg bg-accent" />
     </FormatDropdown>
   </h1>
-  <p
-    class="mx-auto mb-4 mt-3 max-w-2xl text-base text-foreground-muted"
-    data-i18n="converter.description"
-  >
-    {esTranslations.converter.description}
-  </p>
+  <p class="mx-auto mb-4 mt-3 max-w-2xl text-base text-foreground-muted" data-i18n="converter.description">{t("converter.description", lang)}</p>
 </section>
