@@ -18,8 +18,7 @@
   },
   "converter": {
     "titlePrefix": "Transform image to",
-    "selectFormat": "Select output format",
-    "description": "Converted images are saved next to the originals."
+    "selectFormat": "Select output format"
   },
   "upload": {
     "addImages": "Add images",
@@ -44,8 +43,23 @@
       "selectedFolder": "selected folder"
     },
     "progress": {
-      "converting": "Converting {{current}} of {{total}}",
-      "completed": "Conversion completed"
+      "converting": "Converting {{current}} of {{total}}"
+    },
+    "save": {
+      "dialogTitle": "Save optimized results",
+      "imageFilter": "Image",
+      "zipFilter": "ZIP archive",
+      "zipFileName": "optimized_images.zip",
+      "pending": "Your results are ready to save.",
+      "savePending": "Save results",
+      "discardPending": "Discard results",
+      "cleanupPending": "Some temporary files could not be removed.",
+      "retryCleanup": "Retry cleanup",
+      "completed": "Results saved",
+      "failed": "Could not save the results",
+      "backupRecoveryFailed": "The save could not be completed. A backup copy was retained beside the selected destination.",
+      "discarded": "Temporary results discarded",
+      "discardFailed": "Could not remove the temporary results"
     }
   }
 }

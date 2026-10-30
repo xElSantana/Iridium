@@ -136,6 +136,113 @@ async fn optimize_images(
     .and_then(|result| result)
 }
 
+#[tauri::command]
+async fn save_optimized_images(
+    window: tauri::WebviewWindow,
+    temporary_folders: Vec<String>,
+    dialog_title: String,
+    image_filter: String,
+    zip_filter: String,
+    zip_file_name: String,
+) -> Result<bool, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let app = window.app_handle().clone();
+    let (validated_folders, files) =
+        image_optimizer::collect_optimized_files(&app, &temporary_folders)?;
+    let is_archive = files.len() > 1;
+    let suggested_name = if is_archive {
+        zip_file_name
+    } else {
+        files[0]
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| "El nombre de la imagen no es válido".to_string())?
+            .to_string()
+    };
+    let dialog = window
+        .dialog()
+        .file()
+        .set_parent(&window)
+        .set_title(dialog_title)
+        .set_file_name(suggested_name);
+    let selected_path = if is_archive {
+        dialog
+            .add_filter(zip_filter, &["zip"])
+            .blocking_save_file()
+    } else {
+        let extension = files[0]
+            .extension()
+            .and_then(|value| value.to_str())
+            .ok_or_else(|| "El formato de la imagen no es válido".to_string())?;
+        dialog
+            .add_filter(image_filter, &[extension])
+            .blocking_save_file()
+    };
+
+    if let Some(icon) = window.app_handle().default_window_icon() {
+        let _ = window.set_icon(icon.clone());
+    }
+
+    let Some(selected_path) = selected_path else {
+        return Ok(false);
+    };
+    let mut destination = std::path::PathBuf::from(selected_path.to_string());
+    let required_extension = if is_archive {
+        "zip"
+    } else {
+        files[0]
+            .extension()
+            .and_then(|value| value.to_str())
+            .ok_or_else(|| "El formato de la imagen no es válido".to_string())?
+    };
+    if !destination
+        .extension()
+        .and_then(|value| value.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case(required_extension))
+    {
+        destination.set_extension(required_extension);
+    }
+    if validated_folders
+        .iter()
+        .any(|folder| destination.starts_with(folder))
+    {
+        return Err("Selecciona una ubicación fuera de los archivos temporales".to_string());
+    }
+
+    tauri::async_runtime::spawn_blocking(move || {
+        image_optimizer::save_optimized_files(&files, &destination)
+    })
+    .await
+    .map_err(|_| "Error guardando los resultados".to_string())?
+    .map_err(|error| {
+        if error == image_optimizer::BACKUP_REMAINS_CODE {
+            error
+        } else {
+            "Error guardando los resultados".to_string()
+        }
+    })?;
+
+    if let Err(error) = image_optimizer::cleanup_optimized_folders(&app, &temporary_folders) {
+        log::warn!("No se pudieron limpiar los resultados temporales: {error}");
+    }
+
+    Ok(true)
+}
+
+#[tauri::command]
+fn discard_optimized_images(
+    app: tauri::AppHandle,
+    temporary_folders: Vec<String>,
+) -> Result<(), String> {
+    image_optimizer::cleanup_optimized_folders(&app, &temporary_folders)
+}
+
+#[tauri::command]
+fn retry_optimization_cleanup(app: tauri::AppHandle) -> Result<(), String> {
+    image_optimizer::cleanup_current_optimization_folders(&app)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -148,6 +255,8 @@ pub fn run() {
                         .build(),
                 )?;
             }
+
+            image_optimizer::cleanup_stale_temp_folders(app.handle());
 
             let window_config = &app.config().app.windows[0];
             tauri::WebviewWindowBuilder::from_config(app, window_config)?
@@ -166,6 +275,9 @@ pub fn run() {
             select_folder,
             select_images,
             optimize_images,
+            save_optimized_images,
+            discard_optimized_images,
+            retry_optimization_cleanup,
             list_folder_images,
             get_file_size,
             get_images_metadata,

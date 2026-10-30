@@ -7,7 +7,7 @@ import FormatDropdownValue from "./FormatDropdownValue";
 const lang = getLanguageFromAstro(Astro);
 ---
 
-<section class="text-center" aria-labelledby="page-title">
+<section class="mb-4 text-center" aria-labelledby="page-title">
   <h1
     class="m-0 text-4xl font-extrabold text-foreground inline-flex items-center justify-center gap-2 flex-wrap"
     id="page-title"
@@ -24,12 +24,6 @@ const lang = getLanguageFromAstro(Astro);
       </span>
     </FormatDropdown>
   </h1>
-  <p
-    class="mx-auto mb-4 mt-3 max-w-2xl text-base text-foreground-muted"
-    data-i18n="converter.description"
-  >
-    {t("converter.description", lang)}
-  </p>
 </section>
 
 <script

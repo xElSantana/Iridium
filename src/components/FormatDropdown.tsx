@@ -185,7 +185,7 @@ export default function FormatDropdown({
       {isOpen && isHeader && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border-2 border-border bg-surface py-1 shadow-lg"
+          className="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border-2 border-border bg-surface shadow-lg"
         >
           {formats.map((option) => {
             const isSelected = option.toUpperCase() === format.toUpperCase();
@@ -224,7 +224,7 @@ export default function FormatDropdown({
               width: `${coords.width}px`,
               zIndex: 9999,
             }}
-            className="rounded-lg border border-border bg-surface py-1 shadow-lg max-h-48 overflow-y-auto"
+            className="rounded-lg border border-border bg-surface shadow-lg max-h-48 overflow-y-auto"
           >
             {formats.map((option) => {
               const isSelected = option.toUpperCase() === format.toUpperCase();

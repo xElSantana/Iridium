@@ -14,12 +14,11 @@
     "themeDark": "Oscuro",
     "language": "Idioma",
     "languageSpanish": "Español",
-    "languageEnglish": "Inglés"
+    "languageEnglish": "English"
   },
   "converter": {
     "titlePrefix": "Transformar imagen a",
-    "selectFormat": "Seleccionar formato de salida",
-    "description": "Las imágenes transformadas se guardan junto a las originales."
+    "selectFormat": "Seleccionar formato de salida"
   },
   "upload": {
     "addImages": "Añadir imágenes",
@@ -44,8 +43,23 @@
       "selectedFolder": "carpeta seleccionada"
     },
     "progress": {
-      "converting": "Transformando {{current}} de {{total}}",
-      "completed": "Transformación completada"
+      "converting": "Transformando {{current}} de {{total}}"
+    },
+    "save": {
+      "dialogTitle": "Guardar resultados optimizados",
+      "imageFilter": "Imagen",
+      "zipFilter": "Archivo ZIP",
+      "zipFileName": "imagenes_optimizadas.zip",
+      "pending": "Los resultados están listos para guardar.",
+      "savePending": "Guardar resultados",
+      "discardPending": "Descartar resultados",
+      "cleanupPending": "No se pudieron eliminar algunos archivos temporales.",
+      "retryCleanup": "Reintentar limpieza",
+      "completed": "Resultados guardados",
+      "failed": "No se pudieron guardar los resultados",
+      "backupRecoveryFailed": "No se pudo completar el guardado. Se conservó una copia de respaldo junto al destino elegido.",
+      "discarded": "Resultados temporales descartados",
+      "discardFailed": "No se pudieron eliminar los resultados temporales"
     }
   }
 }

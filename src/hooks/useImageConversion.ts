@@ -10,9 +10,19 @@ interface ProgressPayload {
   total?: number;
 }
 
+interface OptimizedItem {
+  source_path: string;
+  output_size: number;
+}
+
 interface OptimizeImagesResult {
-  output_folder: string;
-  items: Array<{ source_path: string; output_size: number }>;
+  temporary_folder: string;
+  items: OptimizedItem[];
+}
+
+interface PendingResults {
+  folders: string[];
+  items: OptimizedItem[];
 }
 
 interface ImageConversionTranslations {
@@ -20,9 +30,24 @@ interface ImageConversionTranslations {
   selectedImage: string;
   selectedFile: string;
   selectedFolder: string;
+  save: {
+    dialogTitle: string;
+    imageFilter: string;
+    zipFilter: string;
+    zipFileName: string;
+    pending: string;
+    savePending: string;
+    discardPending: string;
+    cleanupPending: string;
+    retryCleanup: string;
+    completed: string;
+    failed: string;
+    backupRecoveryFailed: string;
+    discarded: string;
+    discardFailed: string;
+  };
   progress: {
     converting: string;
-    completed: string;
   };
 }
 
@@ -33,8 +58,27 @@ export function useImageConversion(
   onItemConverted: (path: string, outputSize: number) => void,
 ) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [pendingResults, setPendingResults] = useState<PendingResults | null>(null);
+  const [hasPendingCleanup, setHasPendingCleanup] = useState(false);
+  const pendingResultsRef = useRef<PendingResults | null>(null);
   const unlistenProgressRef = useRef<UnlistenFn | null>(null);
   const rafIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    pendingResultsRef.current = pendingResults;
+  }, [pendingResults]);
+
+  useEffect(() => {
+    return () => {
+      const folders = pendingResultsRef.current?.folders ?? [];
+      if (folders.length > 0) {
+        void invoke("discard_optimized_images", { temporaryFolders: folders }).catch(() => {
+          console.error("No se pudieron eliminar los resultados temporales.");
+        });
+      }
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -47,8 +91,128 @@ export function useImageConversion(
     };
   }, []);
 
+  const saveResults = async (results: PendingResults, toastId: string | number) => {
+    setIsSaving(true);
+    try {
+      const saved = await invoke<boolean>("save_optimized_images", {
+        temporaryFolders: results.folders,
+        dialogTitle: translations.save.dialogTitle,
+        imageFilter: translations.save.imageFilter,
+        zipFilter: translations.save.zipFilter,
+        zipFileName: translations.save.zipFileName,
+      });
+
+      if (!saved) {
+        try {
+          await invoke("discard_optimized_images", { temporaryFolders: results.folders });
+        } catch {
+          try {
+            await invoke("retry_optimization_cleanup");
+          } catch {
+            setHasPendingCleanup(true);
+          }
+        }
+        setPendingResults(null);
+        toast.dismiss(toastId);
+        return;
+      }
+
+      for (const item of results.items) {
+        onItemConverted(item.source_path, item.output_size);
+      }
+      setPendingResults(null);
+      toast.update(toastId, {
+        render: translations.save.completed,
+        type: "success",
+        isLoading: false,
+        autoClose: 2500,
+        closeButton: true,
+      });
+    } catch (reason) {
+      setPendingResults(results);
+      const backupNeedsRecovery =
+        reason === "IRIDIUM_BACKUP_REMAINS" ||
+        (reason instanceof Error && reason.message === "IRIDIUM_BACKUP_REMAINS");
+      toast.update(toastId, {
+        render: backupNeedsRecovery
+          ? translations.save.backupRecoveryFailed
+          : translations.save.failed,
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+        closeButton: true,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const savePendingResults = async () => {
+    if (!pendingResults || isSaving) return;
+    const toastId = toast.loading(translations.save.pending);
+    await saveResults(pendingResults, toastId);
+  };
+
+  const discardPendingResults = async () => {
+    if (!pendingResults || isSaving) return;
+    setIsSaving(true);
+    try {
+      await invoke("discard_optimized_images", { temporaryFolders: pendingResults.folders });
+      setPendingResults(null);
+      toast.success(translations.save.discarded);
+    } catch {
+      toast.error(translations.save.discardFailed);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const retryPendingCleanup = async () => {
+    if (!hasPendingCleanup || isSaving) return;
+    setIsSaving(true);
+    try {
+      await invoke("retry_optimization_cleanup");
+      setHasPendingCleanup(false);
+      toast.success(translations.save.discarded);
+    } catch {
+      toast.error(translations.save.discardFailed);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const sanitizeConversionErrorMessage = (message: string) => {
+    const replacements = new Map<string, string>();
+    const uniqueDirectories = new Set<string>();
+
+    for (const item of selectedItems) {
+      const separator = Math.max(item.path.lastIndexOf("/"), item.path.lastIndexOf("\\"));
+      const directory = item.path.slice(0, separator);
+      uniqueDirectories.add(directory);
+      replacements.set(item.path, translations.selectedImage);
+      replacements.set(item.name, translations.selectedFile);
+    }
+
+    for (const directory of uniqueDirectories) {
+      replacements.set(directory, translations.selectedFolder);
+    }
+
+    return Array.from(replacements.entries()).reduce(
+      (sanitized, [originalValue, replacementValue]) =>
+        sanitized.replaceAll(originalValue, replacementValue),
+      message,
+    );
+  };
+
   const convertImages = async () => {
-    if (selectedItems.length === 0 || isProcessing) return;
+    if (
+      selectedItems.length === 0 ||
+      isProcessing ||
+      pendingResults !== null ||
+      hasPendingCleanup
+    ) {
+      return;
+    }
 
     const totalImages = selectedItems.length;
     const groups = new Map<string, { format: string; paths: string[] }>();
@@ -72,6 +236,8 @@ export function useImageConversion(
     let progressOffset = 0;
     let lastToastUpdate = 0;
     let pendingCurrent = 0;
+    const generatedFolders: string[] = [];
+    const convertedItems: OptimizedItem[] = [];
 
     const updateToastProgress = (current: number) => {
       pendingCurrent = current;
@@ -119,9 +285,8 @@ export function useImageConversion(
           outputFormat: group.format,
           quality,
         });
-        for (const item of result.items) {
-          onItemConverted(item.source_path, item.output_size);
-        }
+        generatedFolders.push(result.temporary_folder);
+        convertedItems.push(...result.items);
         completed += group.paths.length;
       }
 
@@ -130,30 +295,23 @@ export function useImageConversion(
         rafIdRef.current = null;
       }
 
-      toast.update(toastId, {
-        render: translations.progress.completed,
-        type: "success",
-        isLoading: false,
-        autoClose: 2000,
-        closeButton: true,
-      });
+      await saveResults({ folders: generatedFolders, items: convertedItems }, toastId);
     } catch (reason) {
+      let cleanupFailed = false;
+      try {
+        await invoke("retry_optimization_cleanup");
+      } catch {
+        cleanupFailed = true;
+      }
+      setHasPendingCleanup(cleanupFailed);
       let message =
         typeof reason === "string" ? reason : reason instanceof Error ? reason.message : "";
-
-      const uniqueDirectories = new Set<string>();
-      for (const item of selectedItems) {
-        const separator = Math.max(item.path.lastIndexOf("/"), item.path.lastIndexOf("\\"));
-        uniqueDirectories.add(item.path.slice(0, separator));
-        message = message.replaceAll(item.path, translations.selectedImage);
-        message = message.replaceAll(item.name, translations.selectedFile);
-      }
-      for (const directory of uniqueDirectories) {
-        message = message.replaceAll(directory, translations.selectedFolder);
-      }
+      message = sanitizeConversionErrorMessage(message);
 
       toast.update(toastId, {
-        render: message || translations.conversionFailed,
+        render: cleanupFailed
+          ? `${message || translations.conversionFailed} ${translations.save.discardFailed}`
+          : message || translations.conversionFailed,
         type: "error",
         isLoading: false,
         autoClose: 2000,
@@ -172,6 +330,12 @@ export function useImageConversion(
 
   return {
     isProcessing,
+    isSaving,
+    hasPendingResults: pendingResults !== null,
+    hasPendingCleanup,
+    savePendingResults,
+    discardPendingResults,
+    retryPendingCleanup,
     convertImages,
   };
 }

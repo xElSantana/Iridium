@@ -152,9 +152,24 @@ export default function ImageDropzone() {
       selectedImage: t("upload.errors.selectedImage"),
       selectedFile: t("upload.errors.selectedFile"),
       selectedFolder: t("upload.errors.selectedFolder"),
+      save: {
+        dialogTitle: t("upload.save.dialogTitle"),
+        imageFilter: t("upload.save.imageFilter"),
+        zipFilter: t("upload.save.zipFilter"),
+        zipFileName: t("upload.save.zipFileName"),
+        pending: t("upload.save.pending"),
+        savePending: t("upload.save.savePending"),
+        discardPending: t("upload.save.discardPending"),
+        cleanupPending: t("upload.save.cleanupPending"),
+        retryCleanup: t("upload.save.retryCleanup"),
+        completed: t("upload.save.completed"),
+        failed: t("upload.save.failed"),
+        backupRecoveryFailed: t("upload.save.backupRecoveryFailed"),
+        discarded: t("upload.save.discarded"),
+        discardFailed: t("upload.save.discardFailed"),
+      },
       progress: {
         converting: t("upload.progress.converting"),
-        completed: t("upload.progress.completed"),
       },
     }),
     [t, language],
@@ -183,12 +198,16 @@ export default function ImageDropzone() {
     if (preferencesLoaded) saveImageQuality(quality);
   }, [preferencesLoaded, quality]);
 
-  const { isProcessing, convertImages } = useImageConversion(
-    selectedItems,
-    quality,
-    translations,
-    updateItemOutputSize,
-  );
+  const {
+    isProcessing,
+    isSaving,
+    hasPendingResults,
+    hasPendingCleanup,
+    savePendingResults,
+    discardPendingResults,
+    retryPendingCleanup,
+    convertImages,
+  } = useImageConversion(selectedItems, quality, translations, updateItemOutputSize);
 
   const handleConvert = () => {
     clearSelectionError();
@@ -273,7 +292,12 @@ export default function ImageDropzone() {
                 type="button"
                 id="btn-convert-all"
                 onClick={handleConvert}
-                disabled={isProcessing || selectedItems.length === 0}
+                disabled={
+                  isProcessing ||
+                  hasPendingResults ||
+                  hasPendingCleanup ||
+                  selectedItems.length === 0
+                }
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-accent hover:bg-accent-hover disabled:bg-disabled text-on-accent rounded-full text-xs font-bold transition-all shadow-sm hover:shadow disabled:cursor-not-allowed cursor-pointer"
               >
                 <span>
@@ -282,6 +306,43 @@ export default function ImageDropzone() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {hasPendingResults && (
+        <div className="mt-4 flex flex-wrap items-center gap-3" role="status">
+          <p className="text-sm text-foreground-secondary">{translations.save.pending}</p>
+          <button
+            type="button"
+            onClick={() => void savePendingResults()}
+            disabled={isProcessing || isSaving}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-border-strong rounded-full text-xs font-semibold text-foreground-secondary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          >
+            {translations.save.savePending}
+          </button>
+          <button
+            type="button"
+            onClick={() => void discardPendingResults()}
+            disabled={isProcessing || isSaving}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-border-strong rounded-full text-xs font-semibold text-foreground-secondary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          >
+            <FiTrash2 size={14} />
+            {translations.save.discardPending}
+          </button>
+        </div>
+      )}
+
+      {hasPendingCleanup && (
+        <div className="mt-4 flex flex-wrap items-center gap-3" role="status">
+          <p className="text-sm text-foreground-secondary">{translations.save.cleanupPending}</p>
+          <button
+            type="button"
+            onClick={() => void retryPendingCleanup()}
+            disabled={isProcessing || isSaving}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-border-strong rounded-full text-xs font-semibold text-foreground-secondary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          >
+            {translations.save.retryCleanup}
+          </button>
         </div>
       )}
 
