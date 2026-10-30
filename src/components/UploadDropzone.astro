@@ -1,11 +1,23 @@
 ---
 import ImageDropzone from "./ImageDropzone";
+import UploadPrompt from "./UploadPrompt";
+import { getLanguageFromAstro, t } from "../utils/i18n";
+
+const lang = getLanguageFromAstro(Astro);
 ---
 
-<ImageDropzone client:only="react">
-  <div
-    slot="fallback"
-    aria-hidden="true"
-    class="upload-zone h-64 w-full rounded-2xl border border-dashed border-border-strong sm:h-80 sm:rounded-3xl"
-  />
-</ImageDropzone>
+<div class="h-64 w-full sm:h-80">
+  <ImageDropzone client:only="react">
+    <div
+      slot="fallback"
+      aria-hidden="true"
+      class="upload-zone grid h-64 w-full cursor-pointer place-items-center rounded-2xl border border-dashed border-border-strong bg-transparent text-center outline outline-dotted outline-border-strong outline-offset-2 sm:h-80 sm:rounded-3xl"
+    >
+      <UploadPrompt
+        addImages={t("upload.addImages", lang)}
+        dropPrompt={t("upload.dropPrompt", lang)}
+        selectFiles={t("upload.selectFiles", lang)}
+      />
+    </div>
+  </ImageDropzone>
+</div>

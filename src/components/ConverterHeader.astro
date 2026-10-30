@@ -1,6 +1,8 @@
 ---
 import { getLanguageFromAstro, t } from "../utils/i18n";
+import { DEFAULT_OUTPUT_FORMAT, SUPPORTED_FORMATS } from "../constants/formats";
 import FormatDropdown from "./FormatDropdown.tsx";
+import FormatDropdownValue from "./FormatDropdownValue";
 
 const lang = getLanguageFromAstro(Astro);
 ---
@@ -12,7 +14,14 @@ const lang = getLanguageFromAstro(Astro);
   >
     <span data-i18n="converter.titlePrefix">{t("converter.titlePrefix", lang)}</span>
     <FormatDropdown client:only="react" broadcastFormatChange>
-      <span slot="fallback" aria-hidden="true" class="inline-flex h-14 w-44 rounded-lg bg-accent" />
+      <span
+        id="format-dropdown-fallback"
+        slot="fallback"
+        aria-hidden="true"
+        class="inline-flex h-14 w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-4xl font-extrabold text-on-accent transition-colors hover:bg-accent-hover"
+      >
+        <FormatDropdownValue format={DEFAULT_OUTPUT_FORMAT} />
+      </span>
     </FormatDropdown>
   </h1>
   <p
@@ -22,3 +31,18 @@ const lang = getLanguageFromAstro(Astro);
     {t("converter.description", lang)}
   </p>
 </section>
+
+<script
+  is:inline
+  define:vars={{ supportedFormats: SUPPORTED_FORMATS, defaultOutputFormat: DEFAULT_OUTPUT_FORMAT }}
+>
+  const formatLabel = document.querySelector("#format-dropdown-fallback [data-format-value]");
+  if (formatLabel) {
+    try {
+      const savedFormat = localStorage.getItem("iridium:output-format");
+      if (supportedFormats.includes(savedFormat)) formatLabel.textContent = savedFormat;
+    } catch {
+      formatLabel.textContent = defaultOutputFormat;
+    }
+  }
+</script>

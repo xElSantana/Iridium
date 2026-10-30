@@ -9,7 +9,7 @@
 
 ## Documentación
 
-- **Tauri:** `https://www.blocknotejs.org/docs/getting-started/mantine`
+- **Tauri:** `https://v2.tauri.app/start/`
 - **Astro:** `https://docs.astro.build/en/getting-started/`
 - **Tailwind:** `https://tailwindcss.com/docs/installation/framework-guides/astro`
 - **i18n:** `https://www.i18next.com/`

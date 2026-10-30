@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { FiCheck, FiChevronDown } from "react-icons/fi";
-import { SUPPORTED_FORMATS } from "../constants/formats";
-import { readOutputFormat } from "../utils/converterPreferences";
+import { FiCheck } from "react-icons/fi";
+import { DEFAULT_OUTPUT_FORMAT, SUPPORTED_FORMATS } from "../constants/formats";
+import { readOutputFormat, saveOutputFormat } from "../utils/converterPreferences";
 import { useClientTranslations } from "../hooks/useClientTranslations";
+import FormatDropdownValue from "./FormatDropdownValue";
 
 interface FormatDropdownProps {
   formats?: readonly string[];
@@ -25,7 +26,7 @@ interface DropdownCoords {
 export default function FormatDropdown({
   formats = SUPPORTED_FORMATS,
   value,
-  defaultValue = "JPG",
+  defaultValue = DEFAULT_OUTPUT_FORMAT,
   variant = "header",
   disabled = false,
   broadcastFormatChange = false,
@@ -146,6 +147,7 @@ export default function FormatDropdown({
     onChange?.(nextFormat);
 
     if (broadcastFormatChange) {
+      saveOutputFormat(nextFormat);
       window.dispatchEvent(
         new CustomEvent("formatChanged", {
           detail: { format: nextFormat.toLowerCase() },
@@ -177,12 +179,7 @@ export default function FormatDropdown({
             : "flex w-full cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 py-1.5 text-xs font-semibold text-foreground-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground-muted disabled:cursor-not-allowed disabled:opacity-50"
         }
       >
-        <span>{format.toUpperCase()}</span>
-        <FiChevronDown
-          aria-hidden="true"
-          className={`chevron-icon transition-transform ${isOpen ? "rotate-180" : ""}`}
-          size={isHeader ? 24 : 14}
-        />
+        <FormatDropdownValue format={format} isOpen={isOpen} iconSize={isHeader ? 24 : 14} />
       </button>
 
       {isOpen && isHeader && (

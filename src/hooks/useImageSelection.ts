@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import { readOutputFormat, saveOutputFormat } from "../utils/converterPreferences";
+import { DEFAULT_OUTPUT_FORMAT, SUPPORTED_FORMATS } from "../constants/formats";
+import { readOutputFormat } from "../utils/converterPreferences";
 
 export interface ImageFileItem {
   id: string;
@@ -21,7 +22,9 @@ interface ImageSelectionTranslations {
 
 export function useImageSelection(translations: ImageSelectionTranslations) {
   const [selectedItems, setSelectedItems] = useState<ImageFileItem[]>([]);
-  const [globalFormat, setGlobalFormat] = useState("JPG");
+  const [globalFormat, setGlobalFormat] = useState(
+    () => readOutputFormat() ?? DEFAULT_OUTPUT_FORMAT,
+  );
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
   const dropzoneRef = useRef<HTMLDivElement>(null);
@@ -93,15 +96,13 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
   }, []);
 
   useEffect(() => {
-    const savedFormat = readOutputFormat();
-    if (savedFormat) setGlobalFormat(savedFormat);
-
     const handleFormatChange = (event: Event) => {
       const customEvent = event as CustomEvent<{ format?: string }>;
-      if (!customEvent.detail?.format) return;
+      const newFormat = SUPPORTED_FORMATS.find(
+        (format) => format === customEvent.detail?.format?.toUpperCase(),
+      );
+      if (!newFormat) return;
 
-      const newFormat = customEvent.detail.format.toUpperCase();
-      saveOutputFormat(newFormat);
       setGlobalFormat(newFormat);
       setSelectedItems((previous) => previous.map((item) => ({ ...item, format: newFormat })));
     };

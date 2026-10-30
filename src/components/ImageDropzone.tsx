@@ -1,9 +1,10 @@
 import { memo, useEffect, useState, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { FiImage, FiUpload, FiPlus, FiTrash2, FiX } from "react-icons/fi";
+import { FiImage, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import QualityInput from "./QualityInput.tsx";
+import UploadPrompt from "./UploadPrompt.tsx";
 import FormatDropdown from "./FormatDropdown.tsx";
 import CustomScrollArea from "./CustomScrollArea.tsx";
 import { formatBytes } from "../utils/format";
@@ -206,22 +207,11 @@ export default function ImageDropzone() {
             isDragging ? "outline-2 outline-accent" : ""
           }`}
         >
-          <span className="flex flex-col items-center p-6">
-            <span
-              className="relative mb-2 grid h-12 w-16 place-items-center text-foreground-faint"
-              aria-hidden="true"
-            >
-              <FiImage size={42} />
-              <span className="absolute bottom-0 -right-1 grid size-6 place-items-center rounded-full bg-accent text-on-accent">
-                <FiUpload size={15} />
-              </span>
-            </span>
-            <span className="text-base font-bold text-foreground">{translations.addImages}</span>
-            <span className="mt-1.5 text-xs text-foreground-soft">
-              {translations.dropPrompt}{" "}
-              <span className="font-bold text-accent">{translations.selectFiles}</span>
-            </span>
-          </span>
+          <UploadPrompt
+            addImages={translations.addImages}
+            dropPrompt={translations.dropPrompt}
+            selectFiles={translations.selectFiles}
+          />
         </button>
       ) : (
         <div
