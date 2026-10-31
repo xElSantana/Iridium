@@ -51,6 +51,16 @@ pnpm lint
 pnpm format
 ```
 
+## Publicar una versión
+
+1. Actualiza la versión en `package.json`.
+2. Desde Control de código fuente de VS Code, confirma los cambios y súbelos a GitHub.
+3. Abre la paleta de comandos (`Ctrl+Shift+P`) y ejecuta **Git: Create Tag**. Crea un tag con el prefijo `v` y la misma versión, por ejemplo `v1.1.0`.
+4. Ejecuta **Git: Push Tags** para subir el tag. Esto dispara el workflow de GitHub Actions.
+5. Cuando termine, revisa la release en borrador y publícala desde GitHub.
+
+El workflow compila para Windows, Linux y macOS. En Linux genera paquetes AppImage, `.deb` y `.rpm`.
+
 ### Estructura del proyecto
 
 ```
