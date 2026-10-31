@@ -11,6 +11,15 @@ const lang = getLanguageFromAstro(Astro);
     <img alt="Iridium" class="block h-6 w-6" data-tauri-drag-region src="/icon.png" />
   </div>
   <PreferencesMenu />
+  <a
+    class="titlebar-preferences-trigger flex h-8 items-center rounded-md px-3 focus-visible:outline-2 focus-visible:outline-accent"
+    href="https://github.com/xElSantana/Iridium"
+    id="github-link"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    GitHub
+  </a>
   <div class="h-full flex-1" data-tauri-drag-region></div>
   <div class="flex h-full" id="window-controls">
     <button
@@ -46,8 +55,21 @@ const lang = getLanguageFromAstro(Astro);
 <script>
   import { isTauri } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { openUrl } from "@tauri-apps/plugin-opener";
 
   const controls = document.querySelector<HTMLDivElement>("#window-controls");
+  const githubLink = document.querySelector<HTMLAnchorElement>("#github-link");
+
+  githubLink?.addEventListener("click", async (event) => {
+    if (!isTauri()) return;
+
+    event.preventDefault();
+    try {
+      await openUrl(githubLink.href);
+    } catch {
+      console.error("No se pudo abrir GitHub.");
+    }
+  });
 
   if (controls && !isTauri()) {
     controls.hidden = true;

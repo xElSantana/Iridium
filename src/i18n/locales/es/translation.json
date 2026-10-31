@@ -14,7 +14,8 @@
     "themeDark": "Oscuro",
     "language": "Idioma",
     "languageSpanish": "Español",
-    "languageEnglish": "English"
+    "languageEnglish": "English",
+    "version": "Versión"
   },
   "converter": {
     "titlePrefix": "Transformar imagen a",

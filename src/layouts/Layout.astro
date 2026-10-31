@@ -10,7 +10,6 @@ const translations = {
   en: enTranslations,
 };
 
-// Detectar idioma en el servidor
 const langParam = Astro.url.searchParams.get("lang");
 const defaultLang = langParam === "en" || langParam === "es" ? langParam : "es";
 ---
@@ -24,14 +23,15 @@ const defaultLang = langParam === "en" || langParam === "es" ? langParam : "es";
     <meta name="generator" content={Astro.generator} />
     <title id="page-title">{translations[defaultLang].site.title}</title>
     <script is:inline>
-      // CRÍTICO: Aplicar tema ANTES de cualquier renderizado para evitar parpadeo
+      document.addEventListener("contextmenu", (event) => event.preventDefault(), true);
+    </script>
+    <script is:inline>
       (function () {
         const savedTheme = localStorage.getItem("iridium-theme");
         document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
       })();
     </script>
     <script is:inline define:vars={{ translations, defaultLang }}>
-      // Detectar idioma y sincronizar con localStorage
       const urlParams = new URLSearchParams(window.location.search);
       const langParam = urlParams.get("lang");
       const storedLanguage = localStorage.getItem("iridium-language");
@@ -42,15 +42,12 @@ const defaultLang = langParam === "en" || langParam === "es" ? langParam : "es";
             ? storedLanguage
             : defaultLang;
 
-      // Si el idioma cambió, actualizar localStorage y aplicar traducciones
       if (initialLanguage !== defaultLang) {
         document.documentElement.lang = initialLanguage;
         localStorage.setItem("iridium-language", initialLanguage);
       } else {
         localStorage.setItem("iridium-language", initialLanguage);
       }
-
-      // Definir funciones globales
       window.__TRANSLATIONS__ = translations;
 
       function getTranslation(key, lang) {
@@ -82,7 +79,6 @@ const defaultLang = langParam === "en" || langParam === "es" ? langParam : "es";
         });
       }
 
-      // Exportar funciones
       window.updatePageLanguage = updatePageLanguage;
       window.getTranslation = getTranslation;
       window.getCurrentLanguage = () => localStorage.getItem("iridium-language") || defaultLang;

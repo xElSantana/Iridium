@@ -1,8 +1,10 @@
 ---
 import { getLanguageFromAstro, t } from "../utils/i18n";
 import { FiCheck, FiChevronRight } from "react-icons/fi";
+import packageJson from "../../package.json";
 
 const lang = getLanguageFromAstro(Astro);
+const appVersion = packageJson.version;
 
 const themeOptions = [
   { value: "light", key: "preferences.themeLight" },
@@ -72,7 +74,7 @@ const languageOptions = [
       <button
         aria-expanded="false"
         aria-haspopup="menu"
-        class="flex w-full cursor-pointer items-center justify-between gap-6 rounded-b-lg px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+        class="flex w-full cursor-pointer items-center justify-between gap-6 px-3 py-2 text-left hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
         id="language-trigger"
         role="menuitem"
         type="button"
@@ -103,6 +105,10 @@ const languageOptions = [
           </button>
         ))}
       </div>
+    </div>
+    <div class="flex items-center justify-between gap-6 border-t border-border/80 px-3 py-2">
+      <span data-i18n="preferences.version">{t("preferences.version", lang)}</span>
+      <span>{appVersion}</span>
     </div>
   </div>
 </div>
