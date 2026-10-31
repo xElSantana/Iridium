@@ -8,7 +8,12 @@ const lang = getLanguageFromAstro(Astro);
 
 <header class="flex h-10 shrink-0 items-center bg-surface-subtle text-sm text-foreground-secondary">
   <div class="flex h-full shrink-0 items-center px-3" data-tauri-drag-region>
-    <img alt="Iridium" class="block h-6 w-6" data-tauri-drag-region src="/icon.png" />
+    <img
+      alt="Iridium"
+      class="block h-full w-auto object-contain py-1.5"
+      data-tauri-drag-region
+      src="/icon.png"
+    />
   </div>
   <PreferencesMenu />
   <a

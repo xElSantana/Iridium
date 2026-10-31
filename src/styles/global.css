@@ -67,10 +67,10 @@
   --theme-border: var(--color-zinc-500);
   --theme-border-muted: var(--color-zinc-600);
   --theme-border-strong: var(--color-zinc-400);
-  --theme-accent: var(--color-green-500);
-  --theme-accent-hover: var(--color-green-400);
-  --theme-accent-soft: var(--color-green-400);
-  --theme-on-accent: var(--color-zinc-900);
+  --theme-accent: var(--color-green-600);
+  --theme-accent-hover: var(--color-green-700);
+  --theme-accent-soft: var(--color-green-500);
+  --theme-on-accent: var(--color-white);
   --theme-danger: var(--color-red-500);
   --theme-warning: var(--color-amber-400);
   --theme-disabled: var(--color-zinc-500);
