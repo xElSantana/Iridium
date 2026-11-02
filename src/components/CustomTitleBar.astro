@@ -1,7 +1,7 @@
 ---
 import { getLanguageFromAstro, t } from "../utils/i18n";
 import PreferencesMenu from "./PreferencesMenu.astro";
-import { FiMinus, FiSquare, FiX } from "react-icons/fi";
+import { FiMinus, FiRefreshCw, FiSquare, FiX } from "react-icons/fi";
 
 const lang = getLanguageFromAstro(Astro);
 ---
@@ -26,6 +26,17 @@ const lang = getLanguageFromAstro(Astro);
     GitHub
   </a>
   <div class="h-full flex-1" data-tauri-drag-region></div>
+  <button
+    aria-label={t("updates.available", lang)}
+    data-i18n-aria="updates.available"
+    class="flex w-10 cursor-pointer items-center justify-center transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-wait"
+    hidden
+    id="update-button"
+    title={t("updates.available", lang)}
+    type="button"
+  >
+    <FiRefreshCw aria-hidden="true" size={15} />
+  </button>
   <div class="flex h-full" id="window-controls">
     <button
       aria-label={t("titleBar.minimize", lang)}
@@ -60,10 +71,56 @@ const lang = getLanguageFromAstro(Astro);
 <script>
   import { isTauri } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { relaunch } from "@tauri-apps/plugin-process";
   import { openUrl } from "@tauri-apps/plugin-opener";
+  import { check } from "@tauri-apps/plugin-updater";
 
   const controls = document.querySelector<HTMLDivElement>("#window-controls");
   const githubLink = document.querySelector<HTMLAnchorElement>("#github-link");
+  const updateButton = document.querySelector<HTMLButtonElement>("#update-button");
+  let availableUpdate: Awaited<ReturnType<typeof check>> = null;
+
+  const translate = (key: string) => {
+    const language = window.getCurrentLanguage?.() || "es";
+    return window.getTranslation?.(key, language) || key;
+  };
+
+  if (updateButton && isTauri()) {
+    updateButton.addEventListener("click", async () => {
+      if (!availableUpdate) return;
+
+      const message = translate("updates.availableMessage").replace(
+        "{{version}}",
+        availableUpdate.version,
+      );
+      if (!window.confirm(message)) return;
+
+      updateButton.disabled = true;
+      try {
+        await availableUpdate.downloadAndInstall();
+        await relaunch();
+      } catch {
+        updateButton.disabled = false;
+        window.alert(translate("updates.installFailed"));
+      }
+    });
+
+    window.addEventListener("languagechange", () => {
+      updateButton.title = translate("updates.available");
+    });
+
+    void check()
+      .then((update) => {
+        availableUpdate = update;
+        if (update) {
+          updateButton.hidden = false;
+          updateButton.title = translate("updates.available");
+        }
+      })
+      .catch(() => {
+        console.warn("No se pudo comprobar si hay actualizaciones.");
+      });
+  }
 
   githubLink?.addEventListener("click", async (event) => {
     if (!isTauri()) return;

@@ -7,6 +7,11 @@
     "toggleMaximize": "Maximize or restore window",
     "close": "Close window"
   },
+  "updates": {
+    "available": "Update available",
+    "availableMessage": "A new version of Iridium ({{version}}) is available. Install it now?",
+    "installFailed": "The update could not be installed. Please try again later."
+  },
   "preferences": {
     "title": "Preferences",
     "theme": "Theme",

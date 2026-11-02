@@ -194,7 +194,7 @@ export default function ImageDropzone() {
       ) : (
         <div
           id="card-preview"
-          className={`flex h-64 flex-col rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all sm:h-80 sm:rounded-3xl ${
+          className={`flex h-64 flex-col rounded-2xl border border-border bg-surface p-6 transition-all sm:h-80 sm:rounded-3xl ${
             isDragging ? "outline-2 outline-accent" : ""
           }`}
         >
