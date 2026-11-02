@@ -7,19 +7,13 @@ use tauri::Emitter;
 
 mod image_processing;
 mod optimized_output;
-mod thumbnail;
 
 pub(crate) use self::optimized_output::{
     cleanup_current_optimization_folders, cleanup_optimized_folders,
     cleanup_stale_temp_folders, collect_optimized_files, save_optimized_files,
     BACKUP_REMAINS_CODE,
 };
-pub(crate) use self::thumbnail::generate_thumbnail;
 
-const MAX_FILE_BYTES: u64 = 128 * 1024 * 1024;
-const MAX_IMAGE_DIMENSION: u32 = 32_768;
-const MAX_IMAGE_PIXELS: u64 = 40_000_000;
-const MAX_DECODE_BYTES: u64 = 384 * 1024 * 1024;
 pub(super) const SUPPORTED_EXTENSIONS: &[&str] =
     &["jpg", "jpeg", "png", "webp", "avif", "bmp", "tiff", "gif"];
 

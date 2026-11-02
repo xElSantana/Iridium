@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -15,9 +15,9 @@ jobs:
       matrix:
         include:
           - platform: ubuntu-24.04
-            args: ''
+            args: ""
           - platform: windows-latest
-            args: ''
+            args: ""
           - platform: macos-latest
             args: --target x86_64-apple-darwin
           - platform: macos-latest

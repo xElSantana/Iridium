@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use image::{DynamicImage, ImageBuffer, ImageEncoder, ImageFormat, ImageReader, Luma};
 
-use super::{MAX_DECODE_BYTES, MAX_FILE_BYTES, MAX_IMAGE_DIMENSION, MAX_IMAGE_PIXELS, SUPPORTED_EXTENSIONS};
+use super::SUPPORTED_EXTENSIONS;
 
 #[derive(Clone, Copy)]
 pub(super) enum OutputFormat {
@@ -74,11 +74,6 @@ pub(super) fn process_image(
     format: OutputFormat,
     quality: u8,
 ) -> Result<u64, String> {
-    let metadata = fs::metadata(source).map_err(|_| "El archivo no se pudo abrir".to_string())?;
-    if metadata.len() > MAX_FILE_BYTES {
-        return Err("El archivo supera el tamaño máximo permitido".to_string());
-    }
-
     let image = if source
         .extension()
         .and_then(|value| value.to_str())
@@ -112,15 +107,10 @@ pub(super) fn decode_image(path: &Path) -> Result<DynamicImage, String> {
         .map_err(|_| "El archivo no se pudo abrir".to_string())?
         .with_guessed_format()
         .map_err(|_| "No se pudo determinar el formato de la imagen".to_string())?;
-    let mut limits = image::Limits::default();
-    limits.max_image_width = Some(MAX_IMAGE_DIMENSION);
-    limits.max_image_height = Some(MAX_IMAGE_DIMENSION);
-    limits.max_alloc = Some(MAX_DECODE_BYTES);
-    reader.limits(limits);
+    reader.limits(image::Limits::no_limits());
     let image = reader
         .decode()
         .map_err(|_| "No se pudo decodificar la imagen".to_string())?;
-    validate_dimensions(image.width(), image.height())?;
     Ok(image)
 }
 
@@ -137,7 +127,6 @@ pub(super) fn decode_avif(path: &Path) -> Result<DynamicImage, String> {
     }
     let width = dimensions.max_frame_width.get();
     let height = dimensions.max_frame_height.get();
-    validate_dimensions(width, height)?;
 
     let decoded = avif_decode::Decoder::from_avif(&bytes)
         .and_then(avif_decode::Decoder::to_image)
@@ -203,18 +192,6 @@ pub(super) fn decode_avif(path: &Path) -> Result<DynamicImage, String> {
                 .ok_or_else(|| "Los datos de la imagen AVIF no son válidos".to_string())
         }
     }
-}
-
-fn validate_dimensions(width: u32, height: u32) -> Result<(), String> {
-    if width == 0
-        || height == 0
-        || width > MAX_IMAGE_DIMENSION
-        || height > MAX_IMAGE_DIMENSION
-        || u64::from(width) * u64::from(height) > MAX_IMAGE_PIXELS
-    {
-        return Err("Las dimensiones de la imagen superan el límite permitido".to_string());
-    }
-    Ok(())
 }
 
 fn to_u8(value: u16) -> u8 {

@@ -1,5 +1,4 @@
 import { memo, useEffect, useState, useMemo } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { FiImage, FiPlus, FiTrash2, FiX } from "react-icons/fi";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -23,8 +22,6 @@ interface ImageItemRowProps {
   disabled: boolean;
 }
 
-const thumbnailCache = new Map<string, string>();
-
 const ImageItemRow = memo(function ImageItemRow({
   item,
   labelConvertTo,
@@ -33,49 +30,11 @@ const ImageItemRow = memo(function ImageItemRow({
   onRemove,
   disabled,
 }: ImageItemRowProps) {
-  const [thumbSrc, setThumbSrc] = useState<string>(() => thumbnailCache.get(item.path) ?? "");
-
-  useEffect(() => {
-    if (thumbnailCache.has(item.path)) {
-      setThumbSrc(thumbnailCache.get(item.path)!);
-      return;
-    }
-
-    let active = true;
-    invoke<string>("get_image_thumbnail", { path: item.path })
-      .then((dataUrl) => {
-        thumbnailCache.set(item.path, dataUrl);
-        if (active) setThumbSrc(dataUrl);
-      })
-      .catch(() => {
-        thumbnailCache.set(item.path, item.url);
-        if (active) setThumbSrc(item.url);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [item.path, item.url]);
-
   return (
     <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0 gap-3">
       <div className="flex items-center gap-3.5 min-w-0">
         <div className="size-12 rounded-xl overflow-hidden bg-surface-subtle flex items-center justify-center shrink-0 border border-border">
-          {thumbSrc ? (
-            <img
-              src={thumbSrc}
-              alt=""
-              className="w-full h-full object-cover"
-              decoding="async"
-              onError={() => {
-                if (thumbSrc !== item.url) {
-                  setThumbSrc(item.url);
-                }
-              }}
-            />
-          ) : (
-            <FiImage className="text-foreground-faint" size={20} />
-          )}
+          <FiImage className="text-foreground-faint" size={20} />
         </div>
         <div className="min-w-0">
           <p className="font-semibold text-sm text-foreground truncate" title={item.name}>

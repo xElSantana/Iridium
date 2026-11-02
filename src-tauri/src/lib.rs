@@ -36,14 +36,6 @@ fn get_images_metadata(paths: Vec<String>) -> Vec<ImageMetadata> {
 }
 
 #[tauri::command]
-async fn get_image_thumbnail(path: String) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || image_optimizer::generate_thumbnail(&path))
-        .await
-        .map_err(|e| e.to_string())
-        .and_then(|r| r)
-}
-
-#[tauri::command]
 async fn select_folder(window: tauri::WebviewWindow) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
 
@@ -281,8 +273,7 @@ pub fn run() {
             retry_optimization_cleanup,
             list_folder_images,
             get_file_size,
-            get_images_metadata,
-            get_image_thumbnail
+            get_images_metadata
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");
