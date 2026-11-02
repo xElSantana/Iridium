@@ -2,7 +2,7 @@
 
 <img width="903" height="690" alt="Captura de pantalla de 2026-11-02 13-33-11" src="https://github.com/user-attachments/assets/921a2f55-3446-4e34-bdbf-b0a4440529b1" />
 
-Optimiza imágenes para reducir su peso y convertirlas entre varios formatos sin complicar el flujo de trabajo.
+Iridium es una aplicación de escritorio para optimizar imágenes, reducir su tamaño y convertirlas entre distintos formatos de forma sencilla.
 
 Iridium combina un frontend ligero con Tauri y un motor de procesamiento en Rust para ofrecer una app de escritorio rápida y enfocada en la compresión y exportación de imágenes.
 
