@@ -1,6 +1,6 @@
 # Iridium
 
-<img width="1920" height="1080" alt="Captura de pantalla de 2026-11-02 12-45-55" src="https://github.com/user-attachments/assets/9c5740f0-5f49-458f-86e1-ab9e2fcadf97" />
+<img width="903" height="690" alt="Captura de pantalla de 2026-11-02 13-33-11" src="https://github.com/user-attachments/assets/921a2f55-3446-4e34-bdbf-b0a4440529b1" />
 
 Optimiza imágenes para reducir su peso y convertirlas entre varios formatos sin complicar el flujo de trabajo.
 
