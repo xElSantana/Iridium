@@ -1,8 +1,5 @@
 # Iridium
-
-<p align="center">
-  <img src="public/icon.svg" alt="Iridium logo" width="120" />
-</p>
+<img width="801" height="602" alt="iridium" src="https://github.com/user-attachments/assets/02612912-ee56-4fd6-b0df-d86a10d825b2" />
 
 Optimiza imágenes para reducir su peso y convertirlas entre varios formatos sin complicar el flujo de trabajo.
 
