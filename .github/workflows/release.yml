@@ -65,6 +65,6 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: Iridium ${{ github.ref_name }}
           releaseBody: Descarga el instalador correspondiente a tu sistema operativo desde los recursos de esta versión.
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
