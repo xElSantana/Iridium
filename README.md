@@ -1,116 +1,86 @@
-# Iridium - Optimizador de Imágenes
+# Iridium
 
-Aplicación de escritorio ultrarrápida para optimizar y convertir imágenes en lote.
+<p align="center">
+  <img src="public/icon.svg" alt="Iridium logo" width="120" />
+</p>
 
-## Características
+Optimiza imágenes para reducir su peso y convertirlas entre varios formatos sin complicar el flujo de trabajo.
 
-- ✨ **Optimización masiva**: Procesa carpetas completas de imágenes
-- 🚀 **Nativo**: Procesamiento de imágenes integrado en Rust
-- 🎨 **Múltiples formatos**: Soporta WebP, AVIF, JPG, PNG
-- 📦 **Compresión inteligente**: Reduce el peso sin perder calidad visible
-- 🖥️ **Multiplataforma**: Windows, macOS y Linux
+Iridium combina un frontend ligero con Tauri y un motor de procesamiento en Rust para ofrecer una app de escritorio rápida y enfocada en la compresión y exportación de imágenes.
 
-## Stack Tecnológico
+## ¿Qué hace esta app?
 
-- **Frontend**: Astro + React + Tailwind CSS
-- **Backend**: Tauri (Rust)
-- **Procesamiento de imágenes**: Rust (`image`, WebP y AVIF)
-- **i18n**: i18next
+- Reduce el tamaño de imágenes JPG, PNG, WEBP, AVIF, BMP y TIFF.
+- Convierte archivos a un formato de salida elegido por el usuario.
+- Ajusta la calidad de salida para equilibrar peso vs. detalle.
+- Procesa varios archivos o una carpeta completa en lote.
+- Guarda los resultados en una ubicación elegida por el usuario.
+- Mantiene una gestión de resultados temporales para evitar pérdida de trabajo.
 
-## Desarrollo
 
-### Requisitos previos
+## Requisitos
+
+Antes de empezar, asegúrate de tener instalado:
 
 - Node.js >= 22.23.4
-- pnpm (gestor de paquetes)
-- Rust (para Tauri)
+- pnpm
+- Rust y toolchain de Tauri
+- Dependencias del sistema para compilar Tauri en Linux (según tu entorno)
 
-### Instalación
+## Instalación
 
 ```bash
-# Instalar dependencias de Node.js
 pnpm install
 ```
 
-### Comandos disponibles
+## Desarrollo
+
+Para lanzar la app en modo desarrollo:
 
 ```bash
-# Desarrollo (frontend + Tauri)
-pnpm exec tauri dev
-
-# Build de producción
-pnpm exec tauri build
-
-# Solo desarrollo del frontend
-pnpm dev
-
-# Linting
-pnpm lint
-
-# Formateo de código
-pnpm format
+pnpm tauri dev
 ```
 
-## Publicar una versión
+Si solo quieres arrancar la parte web de Astro:
 
-1. Actualiza la versión en `package.json`.
-2. Desde Control de código fuente de VS Code, confirma los cambios y súbelos a GitHub.
-3. Abre la paleta de comandos (`Ctrl+Shift+P`) y ejecuta **Git: Create Tag**. Crea un tag con el prefijo `v` y la misma versión, por ejemplo `v1.1.0`.
-4. Ejecuta **Git: Push Tags** para subir el tag. Esto dispara el workflow de GitHub Actions.
-5. Cuando termine, revisa la release en borrador y publícala desde GitHub.
-
-El workflow compila para Windows, Linux y macOS. En Linux genera paquetes AppImage, `.deb` y `.rpm`.
-
-### Estructura del proyecto
-
-```
-Iridium/
-├── src/                    # Frontend Astro + React
-│   ├── components/         # Componentes React/Astro
-│   ├── pages/             # Rutas de la aplicación
-│   ├── i18n/              # Traducciones
-│   └── styles/            # Estilos globales
-└── src-tauri/             # Backend Tauri y procesamiento Rust
-	└── src/               # Código Rust
+```bash
+pnpm run dev
 ```
 
-## Cómo funciona
+## Build y empaquetado
 
-1. El usuario selecciona una carpeta con imágenes
-2. Elige el formato de salida (WebP, AVIF, JPG, PNG)
-3. Ajusta la calidad de compresión (1-100)
-4. El frontend (React) invoca un comando Tauri
-5. Tauri procesa las imágenes con las bibliotecas Rust incluidas en la aplicación
-6. Las imágenes optimizadas se guardan en `[carpeta-original]_optimizado`
-7. El progreso se reporta en tiempo real al frontend
+Generar la versión web:
+
+```bash
+pnpm build
+```
+
+Compilar la app desktop con Tauri:
+
+```bash
+pnpm tauri build
+```
+
+## Flujo de uso típico
+
+1. Abre la aplicación.
+2. Selecciona una o varias imágenes o una carpeta completa.
+3. Elige el formato de salida deseado.
+4. Ajusta la calidad según el nivel de compresión que quieras.
+5. Inicia la optimización.
+6. Revisa el progreso y guarda los resultados finales donde prefieras.
 
 ## Formatos soportados
 
-### Entrada
+La app actualmente admite estas extensiones:
 
-- JPG/JPEG
+- JPG
 - PNG
-- WebP
+- WEBP
 - AVIF
 - BMP
 - TIFF
-- GIF
-
-### Salida
-
-- WebP (recomendado para web)
-- AVIF (mejor compresión)
-- JPG (compatibilidad universal)
-- PNG (transparencias)
-
-## Icono de escritorio
-
-Para regenerar los iconos de la aplicación desde el archivo fuente:
-
-```sh
-pnpm exec tauri icon public/icon.png --output src-tauri/icons --fit contain
-```
 
 ## Licencia
 
-[Tu licencia aquí]
+Este proyecto usa la licencia MIT.
