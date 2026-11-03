@@ -50,7 +50,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "RWTA71K7KAJO0l0EzSne4+AuP60HAf+Ou3LKFu3VbUxtHEUFTcHqmocY",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQyNEUwMjI4QkI1MkVGQzAKUldUQTcxSzdLQUpPMGwwRXpTbmU0K0F1UDYwSEFmK091M0xLRnUzVmJVeHRIRVVGVGNIcW1vY1kK",
       "endpoints": [
         "https://github.com/xElSantana/Iridium/releases/latest/download/latest.json"
       ]
