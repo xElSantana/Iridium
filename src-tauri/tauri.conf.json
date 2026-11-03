@@ -50,7 +50,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "untrusted comment: minisign public key: D24E0228BB52EFC0\nRWTA71K7KAJO0l0EzSne4+AuP60HAf+Ou3LKFu3VbUxtHEUFTcHqmocY",
+      "pubkey": "RWTA71K7KAJO0l0EzSne4+AuP60HAf+Ou3LKFu3VbUxtHEUFTcHqmocY",
       "endpoints": [
         "https://github.com/xElSantana/Iridium/releases/latest/download/latest.json"
       ]
