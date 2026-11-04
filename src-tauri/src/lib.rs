@@ -12,13 +12,6 @@ struct ImageMetadata {
 }
 
 #[tauri::command]
-fn get_file_size(path: String) -> Result<u64, String> {
-    std::fs::metadata(&path)
-        .map(|m| m.len())
-        .map_err(|_| "No se pudo leer el tamaño del archivo".to_string())
-}
-
-#[tauri::command]
 fn get_images_metadata(paths: Vec<String>) -> Vec<ImageMetadata> {
     paths
         .into_iter()
@@ -33,58 +26,6 @@ fn get_images_metadata(paths: Vec<String>) -> Vec<ImageMetadata> {
             ImageMetadata { path, name, size }
         })
         .collect()
-}
-
-#[tauri::command]
-async fn select_folder(window: tauri::WebviewWindow) -> Result<String, String> {
-    use tauri_plugin_dialog::DialogExt;
-
-    let folder = window
-        .dialog()
-        .file()
-        .set_parent(&window)
-        .set_title("Selecciona la carpeta con imágenes")
-        .blocking_pick_folder();
-
-    if let Some(icon) = window.app_handle().default_window_icon() {
-        let _ = window.set_icon(icon.clone());
-    }
-
-    match folder {
-        Some(path) => Ok(path.to_string()),
-        None => Err("No se seleccionó ninguna carpeta".to_string()),
-    }
-}
-
-#[tauri::command]
-fn list_folder_images(folder_path: String) -> Result<Vec<String>, String> {
-    use std::fs;
-
-    let dir = std::path::Path::new(&folder_path);
-    if !dir.is_dir() {
-        return Err(format!("No es una carpeta válida: {}", folder_path));
-    }
-
-    let entries = fs::read_dir(dir).map_err(|e| format!("Error leyendo carpeta: {}", e))?;
-
-    let mut paths: Vec<String> = entries
-        .filter_map(|entry| {
-            let entry = entry.ok()?;
-            let path = entry.path();
-            if !path.is_file() {
-                return None;
-            }
-            let ext = path.extension()?.to_str()?.to_lowercase();
-            if SUPPORTED_EXTENSIONS.contains(&ext.as_str()) {
-                path.to_str().map(|s| s.to_owned())
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    paths.sort();
-    Ok(paths)
 }
 
 #[tauri::command]
@@ -267,14 +208,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            select_folder,
             select_images,
             optimize_images,
             save_optimized_images,
             discard_optimized_images,
             retry_optimization_cleanup,
-            list_folder_images,
-            get_file_size,
             get_images_metadata
         ])
         .run(tauri::generate_context!())

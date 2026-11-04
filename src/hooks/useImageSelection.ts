@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { DEFAULT_OUTPUT_FORMAT, SUPPORTED_FORMATS } from "../constants/formats";
@@ -9,7 +9,6 @@ export interface ImageFileItem {
   id: string;
   path: string;
   name: string;
-  url: string;
   format: string;
   size: number;
   outputSize?: number;
@@ -54,7 +53,6 @@ export function useImageSelection(translations: ImageSelectionTranslations) {
       id: crypto.randomUUID(),
       path: meta.path,
       name: meta.name,
-      url: convertFileSrc(meta.path),
       format: globalFormat,
       size: meta.size,
     }));
