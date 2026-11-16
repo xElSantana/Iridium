@@ -9,11 +9,9 @@ declare global {
 }
 
 export function useClientTranslations() {
-  // Leer el idioma SINCRÓNICAMENTE en el primer render
   const [language, setLanguage] = useState<string>(() => {
     if (typeof window === "undefined") return "es";
 
-    // Leer directamente del localStorage para evitar el flash
     const stored = localStorage.getItem("iridium-language");
     return stored === "en" || stored === "es" ? stored : "es";
   });
@@ -21,7 +19,6 @@ export function useClientTranslations() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Verificar si el idioma cambió desde el render inicial
     const current = window.getCurrentLanguage?.() || "es";
     if (current !== language) {
       setLanguage(current);

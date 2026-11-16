@@ -18,9 +18,7 @@ export function saveOutputFormat(format: string) {
 
   try {
     localStorage.setItem(OUTPUT_FORMAT_KEY, supportedFormat);
-  } catch {
-    // Preferences are optional; storage errors should not block conversion.
-  }
+  } catch {}
 }
 
 export function readImageQuality(): number | null {
@@ -40,7 +38,5 @@ export function saveImageQuality(quality: number) {
 
   try {
     localStorage.setItem(IMAGE_QUALITY_KEY, String(quality));
-  } catch {
-    // Preferences are optional; storage errors should not block conversion.
-  }
+  } catch {}
 }
